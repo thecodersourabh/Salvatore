@@ -1,0 +1,9 @@
+{
+  "domain": "dev-arrows.au.auth0.com",
+  "clientId": "wyCAzyDQa7umHNaXCColuKkLtx0pkX0G",
+  "authorizationParams": {
+    "audience": "https://dev-arrows.au.auth0.com/api/v2/"
+  },
+  "apiUrl": "https://dev-arrows.au.auth0.com/api/v2/",
+  "errorPath": "/error"
+}

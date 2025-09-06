@@ -11,7 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { AddressService } from '../../../services';
-import { Address as ApiAddress, CreateAddressRequest, UpdateAddressRequest } from '../../../types/api';
+import { Address as ApiAddress, CreateAddressRequest, UpdateAddressRequest } from '../../../types/user';
 
 interface Address {
   id?: string;

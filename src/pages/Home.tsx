@@ -1,121 +1,83 @@
-import { BedDouble, Ruler, Scissors, Sparkles } from "lucide-react";
-import { CategoryCard } from "../components/CategoryCard";
-import { useCart } from "../context/CartContext";
-import { useNavigate } from "react-router-dom";
+import { User, LogIn } from "lucide-react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 export const Home = () => {
-  const { addItem } = useCart();
-  const navigate = useNavigate();
+  const { loginWithRedirect } = useAuth0();
   return (
-    <>
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div
-        className="relative h-[500px] bg-cover bg-center"
+        className="relative h-screen bg-cover bg-center"
         style={{
           backgroundImage:
             'url("https://images.unsplash.com/photo-1528578950694-9f79b45a3397?auto=format&fit=crop&q=80")',
         }}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-40" />
+        <div className="absolute inset-0 bg-black bg-opacity-60" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white">
-            <h1 className="text-5xl font-bold mb-4">
-              Design Your Dream Fabric
+          <div className="text-center text-white max-w-4xl px-4">
+            <h1 className="text-6xl font-bold mb-6">
+              Welcome to Salvatore
             </h1>
-            <p className="text-xl mb-8">
-              Turn your creativity into beautiful custom fabrics
+            <p className="text-2xl mb-8">
+              Your One-Stop Platform for Professional Services
             </p>
-            <button
-              onClick={() => navigate("/design")}
-              className="bg-rose-600 text-white px-8 py-3 rounded-full hover:bg-rose-700 transition"
-            >
-              Start Designing
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* New Product Section */}
-      <div className="bg-gray-50 py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-block bg-rose-100 text-rose-600 px-4 py-1 rounded-full text-sm font-semibold">
-                NEW
-              </div>
-              <h2 className="text-4xl font-bold">
-                Extra-Wide Cotton Sateen Fabrics
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                With 116" (over 9½ feet!) of printed width, these two 100%
-                cotton fabrics are perfect for large scale projects like
-                bedding, table linens and quilt backings. Now available by the
-                yard featuring your choice of any Spoonflower print.
-              </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <Ruler className="h-5 w-5" />
-                  <span>116" Width</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <Scissors className="h-5 w-5" />
-                  <span>100% Cotton</span>
-                </div>
-              </div>
+            <p className="text-xl mb-12 text-gray-200">
+              Connect with skilled professionals, manage your service business, and grow your client base.
+              Join our network of electricians, plumbers, tailors, and more.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() =>
-                  addItem({
-                    id: "cotton-sateen",
-                    name: "Extra-Wide Cotton Sateen Fabric",
-                    price: 24.99,
-                    image:
-                      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80",
-                  })
-                }
-                className="bg-rose-600 text-white px-6 py-3 rounded-full hover:bg-rose-700 transition"
+                onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' }})}
+                className="bg-rose-600 text-white px-8 py-4 rounded-lg hover:bg-rose-700 transition flex items-center justify-center space-x-2"
               >
-                Shop Now
+                <User className="h-5 w-5" />
+                <span>Register as Service Provider</span>
+              </button>
+              <button
+                onClick={() => loginWithRedirect()}
+                className="bg-white text-rose-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition flex items-center justify-center space-x-2"
+              >
+                <LogIn className="h-5 w-5" />
+                <span>Sign In to Your Account</span>
               </button>
             </div>
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80"
-                alt="Extra-Wide Cotton Sateen Fabric"
-                className="rounded-lg shadow-xl"
-              />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Featured Categories */}
-      <div className="max-w-7xl mx-auto py-16 px-4">
-        <h2 className="text-3xl font-bold mb-12 text-center">
-          Featured Collections
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <CategoryCard
-            title="Custom Bedding"
-            image="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80"
-            icon={<BedDouble className="h-6 w-6" />}
-          />
-          <CategoryCard
-            title="Designer Prints"
-            image="https://images.unsplash.com/photo-1528458909336-e7a0adfed0a5?auto=format&fit=crop&q=80"
-            icon={<Sparkles className="h-6 w-6" />}
-          />
-          <CategoryCard
-            title="Seasonal Fabrics"
-            image="https://images.unsplash.com/photo-1544365558-35aa4afcf11f?auto=format&fit=crop&q=80"
-            icon={<Scissors className="h-6 w-6" />}
-          />
+      {/* Features Section */}
+      <div className="bg-white py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Choose Salvatore?</h2>
+            <p className="text-xl text-gray-600">Everything you need to grow your service business</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="bg-rose-100 p-4 rounded-full mb-6">
+                <User className="h-8 w-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Professional Profile</h3>
+              <p className="text-gray-600">Build your professional presence with a customized profile that showcases your expertise and services.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="bg-rose-100 p-4 rounded-full mb-6">
+                <LogIn className="h-8 w-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Easy Management</h3>
+              <p className="text-gray-600">Manage bookings, client communications, and service scheduling all in one place.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6">
+              <div className="bg-rose-100 p-4 rounded-full mb-6">
+                <User className="h-8 w-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Client Growth</h3>
+              <p className="text-gray-600">Connect with new clients and grow your business through our platform's network.</p>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Design Challenge Banner */}
-      <div className="bg-gray py-12">
-        <div className="max-w-7xl mx-auto px-4"></div>
-      </div>
-    </>
+    </div>
   );
 };

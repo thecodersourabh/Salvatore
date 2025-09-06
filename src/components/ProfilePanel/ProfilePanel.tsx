@@ -21,7 +21,7 @@ interface ProfilePanelProps {
 }
 
 export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
-  const { user, logout, isAuthenticated, loading } = useAuth();
+  const { userContext: user, logout, isAuthenticated, loading: loading } = useAuth();
   const { setIsCartOpen } = useCart();
 
   // Track profile panel state changes
@@ -89,7 +89,8 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
 
       {/* Side Panel */}
       <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col">
-        {/* Header */}        <div className="p-4 border-b flex justify-between items-center">
+        {/* Header */}        
+        <div className="p-4 border-b flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <User className="h-5 w-5 text-rose-600" />
             <h2 className="text-lg font-semibold">My Profile</h2>
@@ -104,7 +105,11 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Profile Info */}
-          <div className="p-4 border-b bg-gray-50">
+          <Link 
+            to="/profile" 
+            onClick={onClose}
+            className="block p-4 border-b bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
             <div className="flex items-center">
               {(user as any)?.picture && (
                 <img 
@@ -118,7 +123,8 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
                 <p className="text-sm text-gray-600">{(user as any)?.email}</p>
               </div>
             </div>
-          </div>          {/* Menu Items - Scrollable */}
+          </Link>          
+          {/* Menu Items - Scrollable */}
           <nav className="flex-1 overflow-y-auto">
             <ul className="divide-y divide-gray-200">
               {menuItems.map((item, index) => (

@@ -1,0 +1,955 @@
+/* Animation classes */
+@import 'animate.css';
+
+/* Utility Classes */
+.ion-margin-vertical {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.ion-padding-horizontal {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Step Content Wrapper */
+.step-content-wrapper {
+  padding: 24px 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.step-content-wrapper .form-fields-list {
+  margin-top: 24px;
+  padding: 16px !important;
+  background: transparent;
+  border-radius: 8px;
+}
+
+/* Custom Form Fields */
+.form-fields-list {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.custom-item {
+  --background: #ffffff;
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 16px;
+  --highlight-height: 0;
+  --min-height: 72px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.custom-item {
+  background: #ffffff !important;
+  margin-bottom: 16px !important;
+  padding: 8px 16px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.custom-item:hover .custom-input,
+.custom-item:hover .custom-select,
+.custom-item:hover .custom-textarea {
+  border-color: #f43f5e !important;
+}
+
+.custom-item.item-has-focus .custom-input,
+.custom-item.item-has-focus .custom-select,
+.custom-item.item-has-focus .custom-textarea {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 0 1px #f43f5e !important;
+}
+
+.custom-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Input Container Styling */
+.custom-item::part(native) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* Label Styling */
+.custom-item {
+  --min-height: 80px !important;
+  padding-top: 8px !important;
+}
+
+.custom-item ion-label {
+  position: relative !important;
+  margin: 0 0 4px !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.3px;
+  transform: none !important;
+  transition: all 0.2s ease;
+  max-width: 100% !important;
+  flex: none !important;
+  display: block !important;
+  pointer-events: none;
+}
+
+.custom-item.item-has-value ion-label,
+.custom-item.item-has-focus ion-label {
+  color: #f43f5e !important;
+}
+
+/* Input Field Styling */
+.custom-input,
+.custom-select,
+.custom-textarea {
+  --padding-start: 16px !important;
+  --padding-end: 16px !important;
+  --padding-top: 8px !important;
+  --padding-bottom: 8px !important;
+  --placeholder-color: #9ca3af !important;
+  margin: 0 !important;
+  font-size: 1rem !important;
+  --background: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  min-height: 44px !important;
+}
+
+/* Input wrapper styling */
+.custom-item .input-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+/* Floating Label Animation */
+.custom-item.item-has-value ion-label,
+.custom-item.item-has-focus ion-label {
+  color: var(--ion-color-primary);
+  transform: translateY(-16px) scale(0.9) !important;
+}
+
+/* Input Focus State */
+.custom-item.item-has-focus {
+  --highlight-height: 2px;
+  --highlight-color: var(--ion-color-primary);
+}
+
+/* Input Placeholder */
+.custom-input::placeholder {
+  color: var(--ion-color-medium-shade);
+  opacity: 0.7;
+}
+
+/* Error State */
+.custom-item.ion-invalid {
+  --highlight-color: var(--ion-color-danger);
+}
+
+.custom-item.ion-invalid ion-label {
+  color: var(--ion-color-danger);
+}
+
+.custom-textarea {
+  --height: 120px;
+}
+
+/* Skill Item Styling */
+.skill-item {
+  --padding-bottom: 16px;
+}
+
+.skill-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.year-input {
+  max-width: 80px;
+}
+
+/* Select Customization */
+ion-select.custom-select::part(text) {
+  color: var(--ion-color-dark);
+}
+
+ion-select.custom-select::part(icon) {
+  color: var(--ion-color-primary);
+  opacity: 0.8;
+}
+
+/* Error Container */
+.error-container {
+  padding: 32px;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.error-container h2 {
+  color: var(--ion-color-danger);
+  margin: 16px 0;
+}
+
+.error-container p {
+  color: var(--ion-color-medium);
+  margin-bottom: 24px;
+}
+
+/* Animation Durations */
+.animate__fadeInUp {
+  animation-duration: 0.5s;
+}
+
+.animate__slideInRight {
+  animation-duration: 0.3s;
+}
+
+/* Responsive Adjustments */
+@media (min-width: 768px) {
+  .step-content-wrapper {
+    padding: 32px;
+    max-width: 640px;
+  }
+
+  .custom-item {
+    padding: 12px 24px !important;
+    margin-bottom: 20px;
+  }
+
+  .custom-item .input-wrapper {
+    padding: 0 !important;
+  }
+
+  .custom-input,
+  .custom-select,
+  .custom-textarea {
+    --padding-start: 16px !important;
+    --padding-end: 16px !important;
+    min-height: 48px !important;
+  }
+
+  .custom-item ion-label {
+    font-size: 0.9rem !important;
+    margin-bottom: 6px !important;
+  }
+
+  .skill-controls {
+    gap: 16px;
+  }
+}
+
+.profile-update-modal {
+  --height: 90%;
+  --border-radius: 20px 20px 0 0;
+}
+
+.profile-update-modal::part(content) {
+  border-radius: var(--border-radius);
+}
+
+.step-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.step-progress {
+  height: 4px;
+  --buffer-background: var(--ion-color-light);
+  --progress-background: var(--ion-color-primary);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate__animated {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+
+.animate__fadeIn {
+  animation-name: fadeIn;
+}
+
+.animate__slideInRight {
+  animation-name: slideIn;
+}
+
+/* Profile Image Styling */
+.profile-image-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  border: 2px solid #f1f5f9;
+  background: #fff1f2;
+}
+
+.profile-image-container:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-color: #f43f5e;
+}
+
+.profile-image-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(var(--ion-color-primary-rgb), 0.2),
+    rgba(var(--ion-color-secondary-rgb), 0.2)
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.profile-image-container:hover::before {
+  opacity: 1;
+}
+
+.profile-image-container:hover {
+  transform: scale(1.05);
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.profile-image-container:hover .profile-image-overlay {
+  opacity: 1;
+}
+
+.profile-image-placeholder {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background-color: var(--ion-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profile-image-placeholder:hover {
+  background-color: var(--ion-color-light-shade);
+}
+
+.image-upload-button {
+  width: 100%;
+  height: 100%;
+  --padding-start: 0;
+  --padding-end: 0;
+  font-size: 1rem;
+}
+
+/* Form Field Styling */
+.form-field {
+  margin-bottom: 1.5rem;
+  --background: var(--ion-color-light);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --highlight-height: 0;
+  border: 1px solid var(--ion-color-light-shade);
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+/* Custom Input Styling */
+.custom-input,
+.custom-textarea {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --border-radius: 8px;
+  --background: #ffffff;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  border: 1px solid var(--ion-color-light-shade);
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+.custom-input:focus-within,
+.custom-textarea:focus-within {
+  border-color: var(--ion-color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.1);
+}
+
+.form-field:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--ion-color-primary);
+}
+
+/* Select/Dropdown Styling */
+ion-select {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --placeholder-color: var(--ion-color-medium);
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+ion-select:hover {
+  border-color: var(--ion-color-medium);
+}
+
+ion-select.select-focused {
+  border-color: var(--ion-color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.1);
+}
+
+/* Modern Select Interface */
+.select-interface-option {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --background: #ffffff;
+  --background-hover: var(--ion-color-light);
+  --color: var(--ion-color-dark);
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.select-interface-option.select-interface-option-selected {
+  --background: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary);
+  font-weight: 500;
+}
+
+ion-select::part(icon) {
+  color: var(--ion-color-medium);
+  opacity: 1;
+}
+
+ion-select::part(text) {
+  color: var(--ion-color-dark);
+}
+
+/* Alert/Modal Styling for Dropdowns */
+.alert-wrapper {
+  --min-width: 320px;
+  --width: 90%;
+  --max-width: 400px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.alert-radio-group {
+  padding: 8px 0;
+  max-height: 360px;
+}
+
+.alert-radio-label {
+  padding: 12px 16px;
+  color: var(--ion-color-dark);
+}
+
+/* Input Spacing and Labels */
+ion-item.form-field ion-label {
+  margin-bottom: 8px;
+  color: var(--ion-color-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* Field Description */
+.field-description {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+/* Required Field Indicator */
+.required-field::after {
+  content: '*';
+  color: var(--ion-color-danger);
+  margin-left: 4px;
+}
+
+ion-item.form-field ion-input,
+ion-item.form-field ion-textarea,
+ion-item.form-field ion-select {
+  margin-top: 4px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  font-size: 1rem;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.form-group:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+.form-group-title {
+  color: var(--ion-color-dark);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--ion-color-light);
+  padding-bottom: 0.75rem;
+}
+
+.form-group-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+  margin-bottom: 16px;
+}
+
+/* Grid Spacing */
+ion-grid {
+  padding: 16px;
+}
+
+ion-row {
+  margin-bottom: 16px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .form-field {
+    margin-bottom: 1rem;
+  }
+
+  ion-grid {
+    padding: 12px;
+  }
+
+  .form-group {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Skills and Certifications */
+.skills-input-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.add-skill-button {
+  margin-left: 8px;
+}
+
+.skills-container,
+.certifications-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.skill-chip,
+.certification-chip {
+  --background: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary-contrast);
+  animation: fadeIn 0.3s ease-in-out;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skill-chip:hover,
+.certification-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Grid */
+@media (max-width: 768px) {
+  .profile-image-container,
+  .profile-image-placeholder {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .step-title {
+    font-size: 1.25rem;
+  }
+  
+  .skills-container,
+  .certifications-container {
+    padding: 8px;
+  }
+}
+
+/* Loading Animations */
+.ion-skeleton-text {
+  --border-radius: 4px;
+  --background-rgb: var(--ion-color-light-rgb);
+  opacity: 0.7;
+}
+
+/* Animated Items */
+.animated-item {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animated-item ion-label {
+  transition: transform 0.3s ease;
+}
+
+.animated-item:focus-within ion-label {
+  transform: translateY(-2px);
+}
+
+.nav-button {
+  --padding-start: 1rem;
+  --padding-end: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  --opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.close-button {
+  margin-left: 0.5rem;
+  --border-radius: 50%;
+  --padding-start: 0.5rem;
+  --padding-end: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.close-button:hover {
+  transform: rotate(90deg);
+}
+
+.step-content {
+  animation-duration: 0.5s;
+}
+
+/* Form animations */
+.form-field {
+  transition: all 0.3s ease;
+  transform-origin: top left;
+}
+
+.form-field:focus-within {
+  transform: scale(1.02);
+}
+
+/* Card animations */
+ion-card {
+  transition: all 0.3s ease;
+}
+
+ion-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading animation */
+.loading-container {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Slide transitions */
+.slide-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease;
+}
+
+.slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-exit-active {
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: all 0.3s ease;
+}
+
+/* Form field animations */
+.ion-item-sliding {
+  transition: all 0.3s ease;
+}
+
+.ion-item-sliding:active {
+  transform: scale(0.98);
+}
+
+/* Rose theme specific styles */
+.custom-item.item-has-focus {
+  border-color: #f43f5e;
+  --highlight-color: #f43f5e;
+}
+
+.custom-item ion-label {
+  color: #374151;
+}
+
+.custom-item.item-has-focus ion-label {
+  color: #f43f5e;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  background: #ffffff;
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
+  margin: 24px -16px -24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.step-navigation ion-button {
+  --padding-start: 24px;
+  --padding-end: 24px;
+  --border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.step-navigation ion-button[fill="clear"] {
+  --color: #6b7280;
+}
+
+.step-navigation ion-button[fill="solid"] {
+  --background: #f43f5e;
+  --color: #ffffff;
+  --background-hover: #e11d48;
+  --background-activated: #e11d48;
+  --box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.step-progress {
+  height: 4px;
+  --buffer-background: #ffe4e6;
+  --progress-background: #f43f5e;
+  border-radius: 2px;
+  margin: 24px 16px;
+  box-shadow: none;
+}
+
+.step-title {
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-align: center;
+  margin: 24px 0 16px;
+}
+
+ion-select::part(icon) {
+  color: #f43f5e;
+}
+
+.location-pill {
+  --background: #fff1f2;
+  --color: #e11d48;
+  --border-radius: 9999px;
+  font-size: 0.875rem;
+  margin: 4px;
+}
+
+.location-pill ion-icon {
+  color: #f43f5e;
+}
+
+.custom-select {
+  --placeholder-color: #6b7280;
+}
+
+.custom-input::placeholder {
+  color: #6b7280;
+}
+
+.form-fields-list {
+  background: transparent !important;
+  padding: 16px !important;
+}
+
+/* Portfolio item animations */
+.portfolio-item {
+  animation: fadeInUp 0.5s ease;
+}
+
+.portfolio-item-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.portfolio-item-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.portfolio-item-exit {
+  opacity: 1;
+}
+
+.portfolio-item-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Success animation */
+@keyframes success-animation {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-icon {
+  animation: success-animation 0.5s ease-out forwards;
+}
+
+/* Error shake animation */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.error-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Progress bar animation */
+.progress-bar-animated {
+  transition: width 0.6s ease;
+}
+
+/* Button ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple:after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform .5s, opacity 1s;
+}

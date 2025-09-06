@@ -26,7 +26,9 @@ export const Auth = () => {
       });
     } else {
       // Use regular Auth0 redirect for web
-      loginWithRedirect();
+      loginWithRedirect({
+        appState: { returnTo: '/' }
+      });
     }
   };
 
@@ -42,9 +44,15 @@ export const Auth = () => {
         url: logoutUrl,
         windowName: '_self'
       });
+      // After mobile logout, redirect to home
+      window.location.hash = '/home';
     } else {
-      // Use regular Auth0 logout for web
-      logout({ logoutParams: { returnTo: window.location.origin } });
+      // Use regular Auth0 logout for web with home page redirect
+      logout({ 
+        logoutParams: { 
+          returnTo: `${window.location.origin}/home`
+        } 
+      });
     }
   };
 

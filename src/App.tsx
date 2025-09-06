@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { useTransition } from "react";
-import { Auth0Provider } from "@auth0/auth0-react";
+import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { Navigation } from "./components/Navigation";
 import { ChatBot } from "./components/ChatBot";
 import { Cart } from "./components/Cart";
@@ -11,6 +14,8 @@ import { Auth } from "./pages/Auth/Auth";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { Dashboard } from "./pages/Dashboard/Dashboard";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ProfileLayout } from "./pages/Profile/ProfileLayout";
 import { Orders } from "./pages/Orders/Orders";
 import { Addresses } from "./pages/Profile/Addresses/Addresses";
@@ -24,93 +29,266 @@ const routerFutureConfig = {
   v7_relativeSplatPath: true,
 };
 
-function App() {
-  const [isPending] = useTransition();
+// Auth0 callback handler component that uses proper Capacitor integration
+function Auth0CallbackHandler() {
+  const { handleRedirectCallback, isAuthenticated, isLoading } = useAuth0();
 
-  // Cross-platform auth configuration
-  const getAuthConfig = () => {
-    const baseConfig = {
-      audience: config.authorizationParams.audience,
-      scope: "openid profile email",
+  useEffect(() => {
+    // Handle the 'appUrlOpen' event and call `handleRedirectCallback` - Official Auth0 approach
+    const setupListener = async () => {
+      const listener = await CapApp.addListener('appUrlOpen', async ({ url }) => {
+        // Handle logout callback
+        if (url.includes('com.texweb.app://logout')) {
+          // Clear any stored auth data
+          sessionStorage.removeItem('auth0_last_processed_code');
+          localStorage.removeItem('auth0.is.authenticated');
+          
+          // Clear all Auth0 related data
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('auth0') || key.startsWith('@@auth0spajs@@')) {
+              localStorage.removeItem(key);
+            }
+          });
+          Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('auth0') || key.startsWith('@@auth0spajs@@')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+          
+          // Navigate to home page after logout
+          setTimeout(() => {
+            window.location.hash = '/';
+            // Force page reload to ensure clean state
+            window.location.reload();
+          }, 500);
+          
+          // Close the browser (no-op on Android)
+          try {
+            await Browser.close();
+          } catch (error) {
+            // Browser close expected to fail on Android
+          }
+          return;
+        }
+        
+        // Handle authentication callback
+        if (url.includes('state') && (url.includes('code') || url.includes('error'))) {
+          // Prevent code reuse by checking if we've already processed this code
+          const urlParams = new URLSearchParams(url.split('?')[1] || '');
+          const code = urlParams.get('code');
+          const lastProcessedCode = sessionStorage.getItem('auth0_last_processed_code');
+          
+          if (code && code === lastProcessedCode) {
+            return;
+          }
+          
+          // Store the code to prevent reuse
+          if (code) {
+            sessionStorage.setItem('auth0_last_processed_code', code);
+          }
+          
+          try {
+            await handleRedirectCallback(url);
+            
+            // Navigate to profile after successful authentication
+            setTimeout(() => {
+              window.location.hash = '/profile';
+            }, 1000);
+          } catch (error) {
+            // Check if this is a CORS-related error
+            if (error instanceof Error && (
+                error.message.includes('Failed to fetch') ||
+                error.message.includes('CORS') ||
+                error.message.includes('Network request failed')
+            )) {
+              // Even with CORS error, the authorization code was valid
+              setTimeout(() => {
+                window.location.hash = '/profile';
+              }, 2000);
+            } else if (error instanceof Error && error.message.includes('Invalid authorization code')) {
+              // Code was already used, but auth might still be valid
+              setTimeout(() => {
+                window.location.hash = '/profile';
+              }, 2000);
+            } else {
+              // Other errors - redirect to auth page
+              setTimeout(() => {
+                window.location.hash = '/auth?error=callback_failed';
+              }, 2000);
+            }
+          }
+        }
+        
+        // Close the browser (no-op on Android)
+        try {
+          await Browser.close();
+        } catch (error) {
+          // Browser close expected to fail on Android
+        }
+      });
+
+      // Return cleanup function
+      return () => {
+        listener.remove();
+      };
     };
 
+    let cleanup: (() => void) | null = null;
+    
     if (Capacitor.isNativePlatform()) {
-      // Mobile app configuration
-      return {
-        ...baseConfig,
-        redirect_uri: 'com.texweb.app://callback',
-      };
-    } else {
-      // Web configuration
-      return {
-        ...baseConfig,
-        redirect_uri: getRedirectUri(),
-      };
+      setupListener().then((cleanupFn) => {
+        cleanup = cleanupFn;
+      });
     }
-  };
 
-  // Cross-platform redirect handling
-  const handleRedirectCallback = (appState: any) => {
-    if (Capacitor.isNativePlatform()) {
-      // Mobile: Use React Router navigation
-      window.history.replaceState({}, '', appState?.returnTo || '/');
-    } else {
-      // Web: Use window.location
-      window.location.href = appState?.returnTo || window.location.pathname;
+    // Cleanup on component unmount
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [handleRedirectCallback]);
+
+  // Clear processed code when authentication succeeds
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      sessionStorage.removeItem('auth0_last_processed_code');
     }
-  };
+  }, [isAuthenticated, isLoading]);
+
+  return null; // This component doesn't render anything
+}
+
+function SafeApp() {
+  const [isPending] = useTransition();
+  const [isLoading, setIsLoading] = useState(true);
+  const [debuggerVisible, setDebuggerVisible] = useState(false);
+
+  useEffect(() => {
+    // Add a small delay to ensure everything is loaded
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading screen
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <Router future={routerFutureConfig}>
-      <Auth0Provider
-        domain={config.domain}
-        clientId={config.clientId}
-        authorizationParams={getAuthConfig()}
-        cacheLocation="localstorage"
-        onRedirectCallback={handleRedirectCallback}
-        useRefreshTokens={true}
-        useRefreshTokensFallback={false}
-      >
-        <CartProvider>
-          <AuthProvider>
+      <div style={{ paddingBottom: isPending ? '20px' : '0px' }}>
+        {isPending && (
+          <div className="fixed top-4 right-4 z-50">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
+          </div>
+        )}
+
+        <AuthProvider>
+          <CartProvider>
             <WishlistProvider>
-              <div className="min-h-screen bg-white">
+              <Auth0CallbackHandler />
+              
+              <div className="flex flex-col h-screen overflow-hidden">
                 <Navigation />
-                {isPending && (
-                  <div className="fixed top-0 left-0 w-full h-1">
-                    <div
-                      className="h-full bg-rose-600 animate-[loading_1s_ease-in-out_infinite]"
-                      style={{ width: "25%" }}
-                    />
-                  </div>
-                )}{" "}
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/profile" element={<ProfileLayout />}>
-                <Route path="wishlist" element={<Wishlist />} />
-                  <Route
-                    path="payments"
-                    element={<div>Payments Coming Soon</div>}
-                  />
-                  <Route path="addresses" element={<Addresses />} />
-                  <Route
-                    path="settings"
-                    element={<div>Settings Coming Soon</div>}
-                  />
-                </Route>
-              </Routes>
-              <Cart />
-              <ChatBot />{" "}
+                
+                {/* Debug toggle button - only show in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <button
+                    onClick={() => setDebuggerVisible(!debuggerVisible)}
+                    style={{
+                      position: 'fixed',
+                      bottom: '20px',
+                      right: '20px',
+                      zIndex: 1000,
+                      background: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '50px',
+                      height: '50px',
+                      fontSize: '20px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                    }}
+                    title="Toggle Auth Debugger"
+                  >
+                    🐛
+                  </button>
+                )}
+                
+                <div className="flex-1 overflow-auto">
+                  <Routes>
+                    <Route path="/" element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/auth" element={
+                      <ProtectedRoute>
+                        <Auth />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <ProfileLayout />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orders" element={
+                      <ProtectedRoute>
+                        <Orders />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/addresses" element={
+                      <ProtectedRoute>
+                        <Addresses />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/wishlist" element={
+                      <ProtectedRoute>
+                        <Wishlist />
+                      </ProtectedRoute>
+                    } />
+                  </Routes>
+
+                  <Cart />
+                  <ChatBot />
+                </div>
               </div>
             </WishlistProvider>
-          </AuthProvider>
-        </CartProvider>
-      </Auth0Provider>
+          </CartProvider>
+        </AuthProvider>
+      </div>
     </Router>
   );
 }
 
-export default App;
+export default function App() {
+  const auth0Config = {
+    domain: config.domain,
+    clientId: config.clientId,
+    authorizationParams: {
+      redirect_uri: Capacitor.isNativePlatform() 
+        ? `com.texweb.app://callback`
+        : getRedirectUri(),
+    },
+    // Enable cache for better performance
+    cacheLocation: 'localstorage' as const,
+    useRefreshTokens: true,
+  };
+
+  return (
+    <Auth0Provider {...auth0Config}>
+      <SafeApp />
+    </Auth0Provider>
+  );
+}

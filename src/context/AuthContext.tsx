@@ -3,14 +3,26 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { getLogoutUri } from '../utils/getRedirectUri';
 import { UserService } from '../services';
 
+export interface UserContext {
+  email: string;
+  sub?: string;
+  name?: string;
+  sector?: string;
+  phoneNumber?: string;
+  email_verified?: boolean;
+  isVerified?: boolean;
+  avatar?: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: unknown;
   loading: boolean;
   logout: () => void;
   loginWithRedirect: () => void;
   userCreated: boolean;
   creatingUser: boolean;
+  user: UserContext | null;
+  userContext: UserContext | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,13 +95,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: user.email,
           name: user.name || '',
           password: '',
-          phoneNumber: user.phone_number || '000-000-0000'
+          phone: user.phone_number || '000-000-0000',
+          avatar: user.picture || '',
+          isServiceProvider: true
         };
         
         console.log('👤 AuthContext: User data prepared:', {
           email: userData.email,
           name: userData.name,
-          phoneNumber: userData.phoneNumber
+          phone: userData.phone,
+          avatar: userData.avatar
         });
         
         // Check if user already exists, then create if needed
@@ -99,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // First, check if user already exists by email
           apiUser = await UserService.getUserByEmail(user.email);
           
-          if (apiUser) {
+          if (apiUser && apiUser.id) {
             console.log('✅ AuthContext: User already exists in API:', apiUser.id);
             // User already exists, store the mapping
             localStorage.setItem(`auth0_${user.sub}`, apiUser.id);
@@ -134,19 +149,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     createUserIfNeeded();
   }, [isAuthenticated, user, userCreated, creatingUser, authRefreshTrigger]);
 
-  const value = {
+  const userContextValue = isAuthenticated && user ? {
+    email: user.email as string,
+    sub: user.sub,
+    name: user.name,
+    phoneNumber: user.phone_number,
+    email_verified: user.email_verified,
+    isVerified: user.email_verified,
+    picture: user.picture
+  } : null;
+
+  const value: AuthContextType = {
     isAuthenticated,
-    user,
     loading: isLoading || creatingUser,
     logout: () => logout({ logoutParams: { returnTo: getLogoutUri() } }),
-    loginWithRedirect,
+    loginWithRedirect: () => {
+      console.log('🔐 AuthContext: Initiating login redirect');
+      loginWithRedirect({
+        appState: { returnTo: window.location.pathname }
+      });
+    },
     userCreated,
     creatingUser,
+    user: userContextValue,
+    userContext: userContextValue
   };
 
   console.log('🔐 AuthContext: Current auth state:', {
     isAuthenticated,
-    loading: isLoading || creatingUser,
+    loading: value.loading,
     userCreated,
     creatingUser,
     userSub: user?.sub,
@@ -161,5 +192,8 @@ export const useAuth = () => {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  return {
+    ...context,
+    user: context.userContext // For backward compatibility
+  };
 };

@@ -1,0 +1,296 @@
+{
+  "Technology": {
+    "description": "Digital and technical services for modern needs",
+    "services": [
+      {
+        "name": "Computer Repair",
+        "description": "Hardware and software troubleshooting and repair services"
+      },
+      {
+        "name": "Network Setup",
+        "description": "Home and office network installation and configuration"
+      },
+      {
+        "name": "Web Development",
+        "description": "Custom website and application development"
+      },
+      {
+        "name": "IT Consultation",
+        "description": "Professional IT advisory and support services"
+      }
+    ]
+  },
+  "electrician": {
+    "description": "Professional electrical installation and repair services",
+    "services": [
+      {
+        "name": "Wiring Installation",
+        "description": "New electrical wiring and circuit installation"
+      },
+      {
+        "name": "Electrical Repair",
+        "description": "Fixing electrical faults and malfunctions"
+      },
+      {
+        "name": "Light Fixture Installation",
+        "description": "Installation of various lighting solutions"
+      },
+      {
+        "name": "Emergency Services",
+        "description": "24/7 emergency electrical repairs"
+      }
+    ]
+  },
+  "plumber": {
+    "description": "Complete plumbing solutions for residential and commercial spaces",
+    "services": [
+      {
+        "name": "Pipe Installation",
+        "description": "New plumbing installation and pipe fitting"
+      },
+      {
+        "name": "Leak Repair",
+        "description": "Detection and repair of water leaks"
+      },
+      {
+        "name": "Drain Cleaning",
+        "description": "Professional drain and sewage cleaning services"
+      },
+      {
+        "name": "Fixture Installation",
+        "description": "Installation of sinks, toilets, and other fixtures"
+      }
+    ]
+  },
+  "carpenter": {
+    "description": "Expert woodworking and furniture services",
+    "services": [
+      {
+        "name": "Furniture Making",
+        "description": "Custom furniture design and creation"
+      },
+      {
+        "name": "Wood Repair",
+        "description": "Repair and restoration of wooden items"
+      },
+      {
+        "name": "Cabinet Installation",
+        "description": "Custom cabinet making and installation"
+      },
+      {
+        "name": "Door Services",
+        "description": "Door installation, repair, and maintenance"
+      }
+    ]
+  },
+  "mechanic": {
+    "description": "Professional vehicle repair and maintenance services",
+    "services": [
+      {
+        "name": "Engine Repair",
+        "description": "Complete engine diagnostics and repair"
+      },
+      {
+        "name": "Routine Maintenance",
+        "description": "Regular vehicle maintenance and servicing"
+      },
+      {
+        "name": "Brake Service",
+        "description": "Brake system repair and maintenance"
+      },
+      {
+        "name": "AC Service",
+        "description": "Vehicle air conditioning repair and maintenance"
+      }
+    ]
+  },
+  "tailor": {
+    "description": "Custom clothing and alteration services",
+    "services": [
+      {
+        "name": "Custom Clothing",
+        "description": "Made-to-measure clothing creation"
+      },
+      {
+        "name": "Alterations",
+        "description": "Clothing alterations and adjustments"
+      },
+      {
+        "name": "Repairs",
+        "description": "Clothing repair and mending"
+      },
+      {
+        "name": "Wedding Attire",
+        "description": "Custom wedding dress and formal wear services"
+      }
+    ]
+  },
+  "beautician": {
+    "description": "Professional beauty and cosmetic services",
+    "services": [
+      {
+        "name": "Hair Styling",
+        "description": "Professional haircuts and styling"
+      },
+      {
+        "name": "Makeup",
+        "description": "Professional makeup application"
+      },
+      {
+        "name": "Nail Care",
+        "description": "Manicure and pedicure services"
+      },
+      {
+        "name": "Facial Treatment",
+        "description": "Facial care and skin treatments"
+      }
+    ]
+  },
+  "cleaner": {
+    "description": "Professional cleaning and maintenance services",
+    "services": [
+      {
+        "name": "House Cleaning",
+        "description": "Complete home cleaning services"
+      },
+      {
+        "name": "Office Cleaning",
+        "description": "Commercial space cleaning"
+      },
+      {
+        "name": "Carpet Cleaning",
+        "description": "Deep carpet and upholstery cleaning"
+      },
+      {
+        "name": "Window Cleaning",
+        "description": "Professional window and glass cleaning"
+      }
+    ]
+  },
+  "painter": {
+    "description": "Professional painting services for interior and exterior",
+    "services": [
+      {
+        "name": "Interior Painting",
+        "description": "Indoor wall and ceiling painting"
+      },
+      {
+        "name": "Exterior Painting",
+        "description": "Outdoor surface painting"
+      },
+      {
+        "name": "Wallpaper Installation",
+        "description": "Wallpaper application and removal"
+      },
+      {
+        "name": "Decorative Painting",
+        "description": "Custom decorative paint finishes"
+      }
+    ]
+  },
+  "gardener": {
+    "description": "Professional landscaping and garden maintenance",
+    "services": [
+      {
+        "name": "Lawn Maintenance",
+        "description": "Regular lawn care and mowing"
+      },
+      {
+        "name": "Landscaping",
+        "description": "Garden design and landscaping services"
+      },
+      {
+        "name": "Tree Service",
+        "description": "Tree trimming and removal"
+      },
+      {
+        "name": "Plant Care",
+        "description": "Plant maintenance and disease control"
+      }
+    ]
+  },
+  "tutor": {
+    "description": "Educational and academic support services",
+    "services": [
+      {
+        "name": "Academic Tutoring",
+        "description": "Subject-specific academic support"
+      },
+      {
+        "name": "Test Preparation",
+        "description": "Exam preparation and study guidance"
+      },
+      {
+        "name": "Language Teaching",
+        "description": "Foreign language instruction"
+      },
+      {
+        "name": "Skills Training",
+        "description": "Practical skills and hobby instruction"
+      }
+    ]
+  },
+  "chef": {
+    "description": "Professional cooking and catering services",
+    "services": [
+      {
+        "name": "Personal Chef",
+        "description": "Private cooking services"
+      },
+      {
+        "name": "Event Catering",
+        "description": "Catering for events and parties"
+      },
+      {
+        "name": "Cooking Classes",
+        "description": "Private and group cooking instruction"
+      },
+      {
+        "name": "Meal Prep",
+        "description": "Weekly meal preparation services"
+      }
+    ]
+  },
+  "agency": {
+    "description": "Professional agency and consulting services",
+    "services": [
+      {
+        "name": "Recruitment",
+        "description": "Staffing and recruitment services"
+      },
+      {
+        "name": "Marketing",
+        "description": "Marketing and advertising services"
+      },
+      {
+        "name": "Consulting",
+        "description": "Business consulting and advisory"
+      },
+      {
+        "name": "Event Management",
+        "description": "Professional event planning and management"
+      }
+    ]
+  },
+  "other": {
+    "description": "Miscellaneous professional services",
+    "services": [
+      {
+        "name": "Pet Care",
+        "description": "Pet sitting and grooming services"
+      },
+      {
+        "name": "Moving Services",
+        "description": "Residential and commercial moving"
+      },
+      {
+        "name": "Photography",
+        "description": "Professional photography services"
+      },
+      {
+        "name": "Personal Assistant",
+        "description": "Personal assistance and errand services"
+      }
+    ]
+  }
+}

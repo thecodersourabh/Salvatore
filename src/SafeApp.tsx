@@ -14,6 +14,8 @@ import { Auth } from "./pages/Auth/Auth";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { Dashboard } from "./pages/Dashboard/Dashboard";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ProfileLayout } from "./pages/Profile/ProfileLayout";
 import { Orders } from "./pages/Orders/Orders";
 import { Addresses } from "./pages/Profile/Addresses/Addresses";
@@ -52,8 +54,6 @@ function Auth0CallbackHandler() {
               sessionStorage.removeItem(key);
             }
           });
-          
-          console.log('🧹 Auth data cleared, redirecting to home');
           
           // Navigate to home page after logout
           setTimeout(() => {
@@ -176,15 +176,8 @@ function SafeApp() {
   // Show loading screen
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        🚀 Initializing TexWeb...
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 border-t-transparent"></div>
       </div>
     );
   }
@@ -193,17 +186,8 @@ function SafeApp() {
     <Router future={routerFutureConfig}>
       <div style={{ paddingBottom: isPending ? '20px' : '0px' }}>
         {isPending && (
-          <div style={{ 
-            position: 'fixed', 
-            top: '10px', 
-            right: '10px', 
-            background: '#007bff', 
-            color: 'white', 
-            padding: '8px 12px', 
-            borderRadius: '4px',
-            zIndex: 1000 
-          }}>
-            Loading...
+          <div className="fixed top-4 right-4 z-50">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
           </div>
         )}
 
@@ -212,7 +196,7 @@ function SafeApp() {
             <WishlistProvider>
               <Auth0CallbackHandler />
               
-              <div style={{ position: 'relative' }}>
+              <div className="flex flex-col h-screen overflow-hidden">
                 <Navigation />
                 
                 {/* Debug toggle button - only show in development */}
@@ -240,18 +224,45 @@ function SafeApp() {
                   </button>
                 )}
                 
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/profile/*" element={<ProfileLayout />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/addresses" element={<Addresses />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                </Routes>
+                <div className="flex-1 overflow-auto">
+                  <Routes>
+                    <Route path="/" element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/auth" element={
+                      <ProtectedRoute>
+                        <Auth />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <ProfileLayout />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orders" element={
+                      <ProtectedRoute>
+                        <Orders />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/addresses" element={
+                      <ProtectedRoute>
+                        <Addresses />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/wishlist" element={
+                      <ProtectedRoute>
+                        <Wishlist />
+                      </ProtectedRoute>
+                    } />
+                  </Routes>
 
-                <Cart />
-                <ChatBot />
+                  <Cart />
+                  <ChatBot />
+                </div>
               </div>
             </WishlistProvider>
           </CartProvider>

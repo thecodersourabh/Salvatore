@@ -7,7 +7,7 @@ import { ProfilePanel } from "./ProfilePanel/ProfilePanel";
 
 export function Navigation() {
   const { setIsCartOpen, items } = useCart();
-  const { isAuthenticated, user, loginWithRedirect, loading } = useAuth();
+  const { isAuthenticated, userContext: user, loginWithRedirect, loading: loading } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
   // Log authentication state changes

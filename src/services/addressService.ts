@@ -1,5 +1,5 @@
 import { ApiService } from './api';
-import { Address, CreateAddressRequest, UpdateAddressRequest } from '../types/api';
+import { Address, CreateAddressRequest, UpdateAddressRequest } from '../types/user';
 
 export class AddressService {
   static async getUserAddresses(userId: string): Promise<Address[]> {

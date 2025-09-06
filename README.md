@@ -18,11 +18,3 @@ To set up the project locally, follow these steps:
    git clone https://github.com/thecodersourabh/TexWeb.git
 
 npx angular-cli-ghpages -d dist
-update the app using ionic capacitor app using same theme and layout with mobile app responsive
-I want this app name should be used for user dashboard and this users provide service on diff- diff sectors like electiction, tailor, pumber, machenic, angency of service provider
-
- remove those unused packages,files from your package.json file
-
- I want this app name should be used for user dashboard and this users provide service on diff- diff sectors like electiction, tailor, pumber, machenic, angency of service provider like salvatore
-
- this page profile

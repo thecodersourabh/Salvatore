@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.texweb.app',
-  appName: 'TexWeb',
+  appId: 'com.salvatore.app',
+  appName: 'Salvatore',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

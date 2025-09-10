@@ -1,11 +1,11 @@
 
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { StepProvider } from '../../context/StepContext';
 import { ProfileCompletion } from "./ProfileCompletion";
 
-// Simple profile completion calculation (expand as needed)
+// Profile completion calculation
 interface Auth0User {
   sub?: string;
   name?: string;
@@ -28,7 +28,7 @@ interface Auth0User {
   };
 }
 
-function getProfileCompletion(user: Auth0User | any) {
+function getProfileCompletion(user: Auth0User | any): number {
   if (!user) return 0;
   
   let completed = 0;
@@ -46,47 +46,21 @@ function getProfileCompletion(user: Auth0User | any) {
   if (hasPhone) completed += 20;
   if (isVerified) completed += 20;
   
-  // Create array of missing items
-  const missingItems = [];
-  if (!hasName) missingItems.push('name');
-  if (!hasVerifiedEmail) missingItems.push('verified email');
-  if (!hasSector) missingItems.push('sector');
-  if (!hasPhone) missingItems.push('phone number');
-  if (!isVerified) missingItems.push('service provider verification');
-
-  // Log detailed completion info
-  const completionDetails = {
-    completed,
-    missingForCompletion: missingItems,
-    checks: {
-      name: { value: hasName, source: user.name || user.given_name },
-      email: { value: hasVerifiedEmail, email: user.email, verified: user.email_verified },
-      sector: { value: hasSector, source: user.sector || user.serviceProviderProfile?.sector },
-      phone: { value: hasPhone, source: user.phoneNumber || user.serviceProviderProfile?.phoneNumber },
-      verified: { value: isVerified, source: user.serviceProviderProfile?.isVerified }
-    },
-    rawUser: { ...user }
-  };
-  
-  console.log('📊 ProfileLayout: Completion calculation: ' + JSON.stringify(completionDetails, null, 2));
-  
   return completed;
 }
 
 export const ProfileLayout = () => {
   const auth = useAuth();
 
-
   useEffect(() => {
-    console.log('🔍 ProfileLayout: Auth state:', auth);
-    console.log('🔍 ProfileLayout: User data:', auth.userContext);
+    // Calculate profile completion when auth state changes
     getProfileCompletion(auth.userContext);
   }, [auth, auth.userContext]);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-screen bg-gray-50">
       <StepProvider>
-          <ProfileCompletion />
+        <ProfileCompletion />
       </StepProvider>
       
       {/* Main content */}

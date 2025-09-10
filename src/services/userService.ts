@@ -17,7 +17,6 @@ export class UserService {
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
-    console.log(" UserService.getUserByEmail called with email:", email);
     try {
       const result = await ApiService.get<User>(
         `/api/v2/users/email/${encodeURIComponent(email)}`
@@ -26,10 +25,8 @@ export class UserService {
     } catch (error) {
       // Return null if user not found
       if (error instanceof Error && error.message.includes("404")) {
-        console.log("User not found (404), returning null");
         return null;
       }
-      console.error("UserService.getUserByEmail unexpected error:", error);
       throw error;
     }
   }

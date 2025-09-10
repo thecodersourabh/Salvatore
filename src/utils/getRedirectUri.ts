@@ -9,19 +9,19 @@ export const getRedirectUri = () => {
   // Handle web app
   const isDeployed = window.location.hostname === 'thecodersourabh.github.io';
   return isDeployed
-    ? 'https://thecodersourabh.github.io/TexWeb/'
+    ? 'https://thecodersourabh.github.io/Salvatore/'
     : 'http://localhost:4173';
 };
 
 export const getLogoutUri = () => {
   // Handle mobile app
   if (Capacitor.isNativePlatform()) {
-    return 'com.texweb.app://logout';
+    return 'com.salvatore.app://logout';
   }
   
   // Handle web app
   const isDeployed = window.location.hostname === 'thecodersourabh.github.io';
   return isDeployed
-    ? 'https://thecodersourabh.github.io/TexWeb/#/'
+    ? 'https://thecodersourabh.github.io/Salvatore/#/'
     : 'http://localhost:4173/#/';
 };

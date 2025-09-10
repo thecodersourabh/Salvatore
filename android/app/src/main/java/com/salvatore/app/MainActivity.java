@@ -1,4 +1,4 @@
-package com.texweb.app;
+package com.salvatore.app;
 
 import com.getcapacitor.BridgeActivity;
 

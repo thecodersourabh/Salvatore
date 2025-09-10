@@ -101,6 +101,38 @@ ion-content {
   .safe-right {
     padding-right: max(1rem, env(safe-area-inset-right));
   }
+
+  /* Mobile platform specific styles */
+  .pt-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Android specific navigation styling */
+.android-status-bar {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 24px));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 100%);
+}
+
+/* iOS specific navigation styling */
+.ios-status-bar {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 44px));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 100%);
+}
+
+/* Theme-aware mobile navigation */
+@media (prefers-color-scheme: dark) {
+  .android-status-bar {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 100%);
+  }
+  
+  .ios-status-bar {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%);
+  }
 }
 
 /* Print styles */

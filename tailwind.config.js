@@ -35,6 +35,7 @@ export default {
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
+        'safe': 'env(safe-area-inset-top)',
       },
       fontSize: {
         '2xs': '0.625rem',
@@ -65,5 +66,23 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.pt-safe': {
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        },
+        '.pb-safe': {
+          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+        },
+        '.pl-safe': {
+          paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+        },
+        '.pr-safe': {
+          paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        },
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 };

@@ -2,12 +2,14 @@ import { Link } from "react-router-dom";
 import { Scissors, Heart, ShoppingCart, User } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { usePlatform } from "../hooks/usePlatform";
 import { useState, useEffect } from "react";
 import { ProfilePanel } from "./ProfilePanel/ProfilePanel";
 
 export function Navigation() {
   const { setIsCartOpen, items } = useCart();
   const { isAuthenticated, userContext: user, loginWithRedirect, loading: loading } = useAuth();
+  const { isAndroid, isIOS, isNative } = usePlatform();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
   // Log authentication state changes
@@ -20,8 +22,16 @@ export function Navigation() {
     });
   }, [isAuthenticated, user, loading]);
 
+  // Dynamic classes for mobile safe area
+  const navClasses = `
+    bg-white border-b border-gray-100 px-4
+    ${isNative ? 'pt-safe pb-3' : 'py-3'}
+    ${isAndroid ? 'android-status-bar' : ''}
+    ${isIOS ? 'ios-status-bar' : ''}
+  `.trim().replace(/\s+/g, ' ');
+
   return (
-    <nav className="bg-white border-b border-gray-100 px-4 py-3">
+    <nav className={navClasses}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">

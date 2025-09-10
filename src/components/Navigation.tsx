@@ -35,9 +35,7 @@ export function Navigation() {
             <Link to="/about" className="text-gray-600 hover:text-gray-900">
               About
             </Link>
-            <Link to="/design" className="text-gray-600 hover:text-gray-900">
-              Create Own Design
-            </Link>
+            
           </div>
         </div>
         <div className="flex items-center space-x-6">

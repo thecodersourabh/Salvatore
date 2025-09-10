@@ -4,13 +4,13 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlatform } from "../hooks/usePlatform";
 import { useState, useEffect } from "react";
-import { ProfilePanel } from "./ProfilePanel/ProfilePanel";
+import { Sidebar } from "./Sidebar/Sidebar";
 
 export function Navigation() {
   const { setIsCartOpen, items } = useCart();
   const { isAuthenticated, userContext: user, loginWithRedirect, loading: loading } = useAuth();
   const { isAndroid, isIOS, isNative } = usePlatform();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Log authentication state changes
   useEffect(() => {
@@ -65,7 +65,7 @@ export function Navigation() {
           </button>
           {isAuthenticated ? (
             <button
-              onClick={() => setIsProfileOpen(true)}
+              onClick={() => setIsSidebarOpen(true)}
               className="flex items-center space-x-2 hover:opacity-75 transition-opacity"
             >
               <img
@@ -84,10 +84,10 @@ export function Navigation() {
             </button>
           )}
 
-          {/* Profile Panel */}
-          <ProfilePanel
-            isOpen={isProfileOpen}
-            onClose={() => setIsProfileOpen(false)}
+          {/* Sidebar */}
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
           />
         </div>
       </div>

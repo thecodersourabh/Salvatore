@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { useEffect } from "react";
+import { usePlatform } from "../../hooks/usePlatform";
 import { 
   User, 
   Package, 
@@ -15,27 +15,35 @@ import {
   ShoppingCart
 } from "lucide-react";
 
-interface ProfilePanelProps {
+interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
+interface UserProfile {
+  picture?: string;
+  name?: string;
+  email?: string;
+  // Add other properties as needed
+}
+
+export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { userContext: user, logout, isAuthenticated, loading: loading } = useAuth();
   const { setIsCartOpen } = useCart();
+  const { isNative } = usePlatform();
 
-  // Track profile panel state changes
-  useEffect(() => {
-    // Panel opened tracking for analytics if needed
-  }, [isOpen, isAuthenticated, loading, user]);
+  const { picture, name, email } = (user || {}) as UserProfile;
+
+  // Track sidebar state changes
+  
 
   const handleCartClick = () => {
-    onClose(); // Close profile panel
+    onClose(); // Close sidebar
     setIsCartOpen(true); // Open cart panel
   };
 
   const handleLogout = () => {
-    onClose(); // Close profile panel before logout
+    onClose(); // Close sidebar before logout
     logout(); // This will now use the configured logout URL from AuthContext
   };
 
@@ -87,8 +95,8 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
         onClick={onClose}
       />
 
-      {/* Side Panel */}
-      <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col">
+      {/* Sidebar */}
+      <div className={`relative w-full max-w-md bg-white h-full shadow-xl flex flex-col ${isNative ? 'pt-safe' : ''}`}>
         {/* Header */}        
         <div className="p-4 border-b flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -111,24 +119,24 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
             className="block p-4 border-b bg-gray-50 hover:bg-gray-100 transition-colors"
           >
             <div className="flex items-center">
-              {(user as any)?.picture && (
+              {picture && (
                 <img 
-                  src={(user as any).picture} 
-                  alt={(user as any).name || "Profile"} 
+                  src={picture} 
+                  alt={name || "Profile"} 
                   className="w-12 h-12 rounded-full border-2 border-rose-200"
                 />
               )}
               <div className="ml-4">
-                <h3 className="font-medium text-gray-900">{(user as any)?.name}</h3>
-                <p className="text-sm text-gray-600">{(user as any)?.email}</p>
+                <h3 className="font-medium text-gray-900">{name}</h3>
+                <p className="text-sm text-gray-600">{email}</p>
               </div>
             </div>
           </Link>          
           {/* Menu Items - Scrollable */}
           <nav className="flex-1 overflow-y-auto">
             <ul className="divide-y divide-gray-200">
-              {menuItems.map((item, index) => (
-                <li key={index}>
+              {menuItems.map((item) => (
+                <li key={item.label}>
                   {item.action ? (
                     <button
                       onClick={item.action}
@@ -153,7 +161,7 @@ export const ProfilePanel = ({ isOpen, onClose }: ProfilePanelProps) => {
           </nav>
 
           {/* Logout Button */}
-          <div className="border-t p-4">
+          <div className={`border-t p-4 ${isNative ? 'pb-safe' : ''}`}>
             <button
               onClick={handleLogout}
               className="flex items-center justify-center space-x-2 w-full px-4 py-2 text-white bg-rose-600 hover:bg-rose-700 rounded-md transition-colors"

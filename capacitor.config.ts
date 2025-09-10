@@ -20,6 +20,12 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
       splashFullScreen: true,
       splashImmersive: true
+    },
+    StatusBar: {
+      style: "LIGHT",
+      backgroundColor: "#e11d48",
+      overlaysWebView: false,
+      androidStatusBarColor: "#e11d48"
     }
   }
 };

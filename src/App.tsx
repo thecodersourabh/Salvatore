@@ -31,6 +31,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 // Utils and Config
 import * as config from "./auth_config.json";
 import { getRedirectUri } from "./utils/getRedirectUri";
+import { StatusBarManager } from "./utils/statusBar";
 import { 
   AUTH_CODE_SESSION_KEY, 
   REDIRECT_DELAYS, 
@@ -190,8 +191,20 @@ function MyApp() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    let timer: NodeJS.Timeout | undefined;
+    const initializeApp = async () => {
+      // Initialize status bar for mobile platforms
+      await StatusBarManager.initialize();
+      
+      timer = setTimeout(() => setIsLoading(false), 500);
+    };
+
+    initializeApp();
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, []);
 
   if (isLoading) {

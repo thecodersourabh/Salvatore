@@ -1,8 +1,10 @@
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { usePlatform } from '../hooks/usePlatform';
 
 export function Cart() {
   const { items, removeItem, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
+  const { isNative } = usePlatform();
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -17,7 +19,7 @@ export function Cart() {
       />
 
       {/* Cart panel */}
-      <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col">
+      <div className={`relative w-full max-w-md bg-white h-full shadow-xl flex flex-col ${isNative ? 'pt-safe' : ''}`}>
         <div className="p-4 border-b flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <ShoppingBag className="h-5 w-5" />
@@ -76,7 +78,7 @@ export function Cart() {
                 </div>
               ))}
             </div>
-            <div className="border-t p-4 space-y-4">
+            <div className={`border-t p-4 space-y-4 ${isNative ? 'pb-safe' : ''}`}>
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>

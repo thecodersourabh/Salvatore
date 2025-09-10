@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useStep } from '../../context/StepContext';
+import { useLocation } from '../../hooks/useLocation';
 import { camera } from 'ionicons/icons';
 import './ProfileCompletion.css';
 import {
@@ -34,11 +35,55 @@ export const ProfileCompletion = () => {
   const { user } = auth;
   const { currentStep, nextStep, previousStep, canGoNext, canGoPrevious, totalSteps } = useStep();
   const [loading, setLoading] = useState(true);
+  const { requestPermission, getCurrentLocation, getCurrentLocationWithAddress, permissionStatus, location, locationData, error: locationError } = useLocation();
 
   // Form state
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState<number | null>(null); // Track which location is being fetched
   
+  const handleGetCurrentLocation = async (locationIndex: number) => {
+    try {
+      setGettingLocation(locationIndex);
+      setError(null);
+      
+      // Request permission if not granted
+      if (!permissionStatus?.granted) {
+        await requestPermission();
+      }
+      
+      // Get current location with address
+      await getCurrentLocationWithAddress();
+      
+      if (locationData) {
+        // Update the specific location with coordinates and address
+        const newLocations = [...formData.serviceAreas.locations];
+        newLocations[locationIndex] = {
+          ...newLocations[locationIndex],
+          city: locationData.address?.city || '',
+          state: locationData.address?.state || '',
+          country: locationData.address?.country || '',
+          coordinates: {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+          }
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          serviceAreas: { ...prev.serviceAreas, locations: newLocations }
+        }));
+        
+        console.log('✅ Location updated with address:', locationData);
+      }
+    } catch (err) {
+      console.error('❌ Failed to get location:', err);
+      setError(`Failed to get location: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setGettingLocation(null);
+    }
+  };
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
     
@@ -765,7 +810,7 @@ export const ProfileCompletion = () => {
                             }}
                           />
                       </div>
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 items-end">
                           <IonInput
                             type="number"
                             label='Latitude'
@@ -806,6 +851,13 @@ export const ProfileCompletion = () => {
                               }));
                             }}
                           />
+                          <IonButton
+                            color="primary"
+                            disabled={gettingLocation === index}
+                            onClick={() => handleGetCurrentLocation(index)}
+                          >
+                            {gettingLocation === index ? 'Getting...' : ' Get Location'}
+                          </IonButton>
                         <IonButton
                           color="danger"
                           onClick={() => {

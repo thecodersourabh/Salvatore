@@ -12,7 +12,7 @@ export const Auth = () => {
   // Handle login with proper Capacitor integration
   const handleLogin = async () => {
     if (Capacitor.isNativePlatform()) {
-      // Use Browser plugin for mobile - Official Auth0 approach
+      // Use Browser plugin for mobile with in-app browsing
       const authUrl = `https://${config.domain}/authorize?` +
         `response_type=code&` +
         `client_id=${config.clientId}&` +
@@ -22,7 +22,8 @@ export const Auth = () => {
       
       await Browser.open({
         url: authUrl,
-        windowName: '_self'
+        windowName: '_blank', // Changed from '_self' to '_blank' to open in-app
+        toolbarColor: '#ffffff'
       });
     } else {
       // Use regular Auth0 redirect for web

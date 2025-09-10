@@ -27,7 +27,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.texweb.app" android:host="callback" />
+                <data android:scheme="com.salvatore.app" android:host="callback" />
             </intent-filter>
 
             <!-- Auth0 logout intent filter -->
@@ -35,7 +35,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.texweb.app" android:host="logout" />
+                <data android:scheme="com.salvatore.app" android:host="logout" />
             </intent-filter>
 
         </activity>

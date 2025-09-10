@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">TexWeb</string>
-    <string name="title_activity_main">TexWeb</string>
-    <string name="package_name">com.texweb.app</string>
-    <string name="custom_url_scheme">com.texweb.app</string>
+    <string name="app_name">Salvatore</string>
+    <string name="title_activity_main">Salvatore</string>
+    <string name="package_name">com.salvatore.app</string>
+    <string name="custom_url_scheme">com.salvatore.app</string>
 </resources>

@@ -16,7 +16,7 @@ export const Auth = () => {
       const authUrl = `https://${config.domain}/authorize?` +
         `response_type=code&` +
         `client_id=${config.clientId}&` +
-        `redirect_uri=${encodeURIComponent('com.texweb.app://callback')}&` +
+        `redirect_uri=${encodeURIComponent('com.salvatore.app://callback')}&` +
         `scope=openid%20profile%20email&` +
         `state=${Math.random().toString(36).substring(2)}`;
       
@@ -38,7 +38,7 @@ export const Auth = () => {
       // Use Browser plugin for mobile logout
       const logoutUrl = `https://${config.domain}/v2/logout?` +
         `client_id=${config.clientId}&` +
-        `returnTo=${encodeURIComponent('com.texweb.app://callback')}`;
+        `returnTo=${encodeURIComponent('com.salvatore.app://callback')}`;
       
       await Browser.open({
         url: logoutUrl,
@@ -111,7 +111,7 @@ export const Auth = () => {
       <div className="z-10 max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-2xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to TexWeb
+            Welcome to Salvatore
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Please sign in to continue

@@ -1,6 +1,6 @@
-# TexWeb
+# Salvatore
 
-TexWeb is a web-based project that leverages **TypeScript**, **JavaScript**, **HTML**, and **CSS** to deliver [a brief description of your project, e.g., "an intuitive platform for managing and rendering LaTeX documents online."].
+Salvatore is a web-based project that leverages **TypeScript**, **JavaScript**, **HTML**, and **CSS** to deliver a comprehensive platform for professional services management.
 
 ## Features
 

@@ -38,7 +38,7 @@ function Auth0CallbackHandler() {
     const setupListener = async () => {
       const listener = await CapApp.addListener('appUrlOpen', async ({ url }) => {
         // Handle logout callback
-        if (url.includes('com.texweb.app://logout')) {
+        if (url.includes('com.salvatore.app://logout')) {
           // Clear any stored auth data
           sessionStorage.removeItem('auth0_last_processed_code');
           localStorage.removeItem('auth0.is.authenticated');
@@ -159,7 +159,7 @@ function Auth0CallbackHandler() {
   return null; // This component doesn't render anything
 }
 
-function SafeApp() {
+function MyApp() {
   const [isPending] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
   const [debuggerVisible, setDebuggerVisible] = useState(false);
@@ -278,7 +278,7 @@ export default function App() {
     clientId: config.clientId,
     authorizationParams: {
       redirect_uri: Capacitor.isNativePlatform() 
-        ? `com.texweb.app://callback`
+        ? `com.salvatore.app://callback`
         : getRedirectUri(),
     },
     // Enable cache for better performance
@@ -288,7 +288,7 @@ export default function App() {
 
   return (
     <Auth0Provider {...auth0Config}>
-      <SafeApp />
+      <MyApp />
     </Auth0Provider>
   );
 }

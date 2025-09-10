@@ -48,3 +48,14 @@
 .profile-image-placeholder .image-upload-button {
   color: #666;
 }
+
+/* Prevent scrolling conflicts in profile components */
+.profile-completion-container {
+  overflow: visible;
+  height: auto;
+}
+
+.profile-completion-container ion-content {
+  --overflow: visible;
+  height: auto;
+}

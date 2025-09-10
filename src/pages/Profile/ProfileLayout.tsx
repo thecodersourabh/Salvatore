@@ -4,7 +4,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { StepProvider } from '../../context/StepContext';
 import { ProfileCompletion } from "./ProfileCompletion";
-import { ProfileUpdate } from "../../components/ProfileUpdate/ProfileUpdate";
 
 // Simple profile completion calculation (expand as needed)
 interface Auth0User {
@@ -85,13 +84,13 @@ export const ProfileLayout = () => {
   }, [auth, auth.userContext]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="w-full">
       <StepProvider>
           <ProfileCompletion />
       </StepProvider>
       
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      <div className="w-full">
         <Outlet />
       </div>
     </div>

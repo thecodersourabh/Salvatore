@@ -25,7 +25,6 @@ import {
   IonIcon
 } from '@ionic/react';
 import { UserService } from '../../services/userService';
-import { Service } from '../../utils/sectorServices';
 import { ServiceSector } from '../../types/user';
 
 

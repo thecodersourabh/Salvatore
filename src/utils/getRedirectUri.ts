@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 export const getRedirectUri = () => {
   // Handle mobile app
   if (Capacitor.isNativePlatform()) {
-    return 'com.texweb.app://callback';
+    return 'com.salvatore.app://callback';
   }
   
   // Handle web app

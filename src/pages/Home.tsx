@@ -95,15 +95,15 @@ export const Home = () => {
         </div>
         
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
+        {/* <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
           <div className="flex flex-col items-center space-y-2">
             <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
               <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
             </div>
             <span className="text-xs font-medium">Scroll to explore</span>
           </div>
-        </div>
-      </div>
+        </div>*/}
+      </div> 
 
       {/* Features Section */}
       <div className="bg-gradient-to-b from-white to-gray-50 py-20 lg:py-24">

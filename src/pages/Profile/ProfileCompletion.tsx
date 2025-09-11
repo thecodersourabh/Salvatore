@@ -7,18 +7,9 @@ import { camera } from 'ionicons/icons';
 import './ProfileCompletion.css';
 import {
   IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonText,
   IonSpinner,
   IonAlert,
-  IonItem,
-  IonLabel,
   IonInput,
   IonSelect,
   IonSelectOption,
@@ -33,9 +24,9 @@ export const ProfileCompletion = () => {
   const navigate = useNavigate();
   const auth = useAuth();
   const { user } = auth;
-  const { currentStep, nextStep, previousStep, canGoNext, canGoPrevious, totalSteps } = useStep();
-  const [loading, setLoading] = useState(true);
-  const { requestPermission, getCurrentLocation, getCurrentLocationWithAddress, permissionStatus, location, locationData, error: locationError } = useLocation();
+  const { currentStep, nextStep, previousStep, canGoNext, canGoPrevious } = useStep();
+  const [, setLoading] = useState(true);
+  const { requestPermission, getCurrentLocationWithAddress, permissionStatus, locationData } = useLocation();
 
   // Form state
   const [error, setError] = useState<string | null>(null);
@@ -262,11 +253,31 @@ export const ProfileCompletion = () => {
         }
       }));
     }
-  }, [currentStep, formData.serviceAreas.locations.length]);
+    
+    // Initialize skills step with a default skill if empty
+    if (currentStep === 1 && formData.skills.length === 0) {
+      console.log('🔧 Initializing skills step with default skill');
+      setFormData(prev => ({
+        ...prev,
+        skills: [
+          {
+            name: '',
+            level: 'beginner',
+            yearsOfExperience: 0
+          }
+        ]
+      }));
+    }
+  }, [currentStep, formData.serviceAreas.locations.length, formData.skills.length]);
 
   useEffect(() => {
-    console.log('Form data updated:', formData);
-  }, [formData]);
+    console.log('📊 Form data updated:', {
+      step: currentStep,
+      skillsCount: formData.skills.length,
+      skills: formData.skills,
+      locationsCount: formData.serviceAreas.locations.length
+    });
+  }, [formData, currentStep]);
 
   useEffect(() => {
     console.log('Error state changed:', error);
@@ -307,15 +318,18 @@ export const ProfileCompletion = () => {
 
         case 1:
           console.log('Validating skills step');
+          console.log('Current skills data:', formData.skills);
           if (formData.skills.length === 0) {
+            console.log('❌ Validation failed: No skills added');
             setError('Please add at least one skill');
             return false;
           }
           if (formData.skills.some(skill => !skill.name?.trim())) {
+            console.log('❌ Validation failed: Empty skill names found');
             setError('Please fill in all skill names');
             return false;
           }
-          console.log('Skills validation passed');
+          console.log('✅ Skills validation passed');
           return true;
 
         case 2:
@@ -393,15 +407,18 @@ export const ProfileCompletion = () => {
         case 0:
           dataToUpdate = {
             displayName: formData.name,
+            userName: formData.userName,
             sector: formData.sector as ServiceSector,
             phone: formData.phoneNumber,
             avatar: formData.avatar
           };
+          console.log('📤 Submitting basic info data:', dataToUpdate);
           break;
         case 1:
           dataToUpdate = {
             skills: formData.skills
           };
+          console.log('📤 Submitting skills data:', formData.skills);
           break;
         case 2:
           dataToUpdate = {
@@ -417,6 +434,7 @@ export const ProfileCompletion = () => {
           // On final step, send all data
           dataToUpdate = {
             displayName: formData.name,
+            userName: formData.userName,
             sector: formData.sector as ServiceSector,
             phone: formData.phoneNumber,
             avatar: formData.avatar,
@@ -425,6 +443,7 @@ export const ProfileCompletion = () => {
             serviceAreas: formData.serviceAreas,
             pricing: formData.pricing
           };
+          console.log('📤 Submitting complete profile data:', dataToUpdate);
           break;
       }
 
@@ -551,96 +570,134 @@ export const ProfileCompletion = () => {
 
               {/* Step Content */}
               {currentStep === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    {user.avatar ? (
-                      <div className="profile-image-container">
-                        <img
-                          src={user.avatar}
-                          alt="Profile"
-                          className="profile-image animate__animated animate__fadeIn"
-                        />
-                        <div className="profile-image-overlay">
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Profile Picture */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Profile Picture</h4>
+                    
+                    <div className="flex justify-center">
+                      {user.avatar ? (
+                        <div className="profile-image-container">
+                          <img
+                            src={user.avatar}
+                            alt="Profile"
+                            className="profile-image animate__animated animate__fadeIn"
+                          />
+                          <div className="profile-image-overlay">
+                            <IonButton 
+                              fill="clear" 
+                              onClick={() => document.getElementById('imageUpload')?.click()}
+                              className="image-upload-button"
+                            >
+                              <IonIcon slot="icon-only" icon={camera} />
+                            </IonButton>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="profile-image-placeholder">
                           <IonButton 
                             fill="clear" 
                             onClick={() => document.getElementById('imageUpload')?.click()}
                             className="image-upload-button"
                           >
-                            <IonIcon slot="icon-only" icon={camera} />
+                            <IonIcon slot="start" icon={camera} />
+                            <IonText color="medium">Upload Profile Picture</IonText>
                           </IonButton>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="profile-image-placeholder">
-                        <IonButton 
-                          fill="clear" 
-                          onClick={() => document.getElementById('imageUpload')?.click()}
-                          className="image-upload-button"
-                        >
-                          <IonIcon slot="start" icon={camera} />
-                          <IonText color="medium">Upload Profile Picture</IonText>
-                        </IonButton>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      id="imageUpload"
-                      hidden
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
+                      )}
+                      <input
+                        type="file"
+                        id="imageUpload"
+                        hidden
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                      />
+                    </div>
                   </div>
-                  <IonInput
-                    value={formData.name}
-                    label="Name"
-                    labelPlacement="floating"
-                    onIonChange={e => setFormData(prev => ({ ...prev, name: e.detail.value! }))}
-                      placeholder="Enter your name"
-                      required
-                    />
-                  <IonInput
-                    value={formData.name}
-                    label="User Name"
-                    labelPlacement="floating"
-                    onIonChange={e => setFormData(prev => ({ ...prev, userName: e.detail.value! }))}
-                      placeholder="Enter your user name"
-                      required
-                    />
-                    <IonSelect
-                      value={formData.sector}
-                      label="Service Sector"
-                      labelPlacement="floating"
-                      onIonChange={e => setFormData(prev => ({ ...prev, sector: e.detail.value }))}
-                      placeholder="Select your sector"
-                    >
-                      {sectors.map(sector => (
-                        <IonSelectOption key={sector.id} value={sector.id}>
-                          {sector.icon} {sector.name}
-                        </IonSelectOption>
-                      ))}
-                    </IonSelect>
-                  
-                    <IonInput
-                      type="tel"
-                      label="Phone Number"
-                      labelPlacement="floating"
-                      value={formData.phoneNumber}
-                      onIonChange={e => setFormData(prev => ({ ...prev, phoneNumber: e.detail.value! }))}
-                      placeholder="Enter your phone number"
-                      required
-                    />
+
+                  {/* Personal Information */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <IonInput
+                        value={formData.name}
+                        label="Name"
+                        labelPlacement="floating"
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({ ...prev, name: e.detail.value! }))}
+                        placeholder="Enter your name"
+                        required
+                      />
+                      
+                      <IonInput
+                        value={formData.userName}
+                        label="User Name"
+                        labelPlacement="floating"
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({ ...prev, userName: e.detail.value! }))}
+                        placeholder="Enter your user name"
+                        required
+                      />
+                      
+                      <IonSelect
+                        value={formData.sector}
+                        label="Service Sector"
+                        labelPlacement="floating"
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({ ...prev, sector: e.detail.value }))}
+                        placeholder="Select your sector"
+                      >
+                        {sectors.map(sector => (
+                          <IonSelectOption key={sector.id} value={sector.id}>
+                            {sector.icon} {sector.name}
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    
+                      <IonInput
+                        type="tel"
+                        label="Phone Number"
+                        labelPlacement="floating"
+                        value={formData.phoneNumber}
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({ ...prev, phoneNumber: e.detail.value! }))}
+                        placeholder="Enter your phone number"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
               {currentStep === 1 && (
-                <div className="space-y-4">
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Skills List */}
                   {formData.skills.map((skill, index) => (
-                    <div key={index} className="flex gap-4 items-end">
-                     
+                    <div key={index} className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                      {/* Skill Header */}
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-gray-700">Skill {index + 1}</h4>
+                        <IonButton
+                          size="small"
+                          color="danger"
+                          fill="outline"
+                          onClick={() => {
+                            const newSkills = formData.skills.filter((_, i) => i !== index);
+                            setFormData(prev => ({ ...prev, skills: newSkills }));
+                          }}
+                        >
+                          Remove
+                        </IonButton>
+                      </div>
+
+                      {/* Skill Fields - Stack on mobile, grid on larger screens */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         <IonInput
                           value={skill.name}
                           label="Skill Name"
                           labelPlacement="floating"
+                          className="w-full sm:col-span-2 lg:col-span-1"
                           onIonChange={e => {
                             const newSkills = [...formData.skills];
                             newSkills[index] = { ...skill, name: e.detail.value! };
@@ -648,10 +705,12 @@ export const ProfileCompletion = () => {
                           }}
                           placeholder="e.g., Plumbing, Electrical, etc."
                         />
+                        
                         <IonSelect
                           value={skill.level}
                           label="Level"
                           labelPlacement="floating"
+                          className="w-full"
                           onIonChange={e => {
                             const newSkills = [...formData.skills];
                             newSkills[index] = { ...skill, level: e.detail.value };
@@ -663,11 +722,13 @@ export const ProfileCompletion = () => {
                           <IonSelectOption value="advanced">Advanced</IonSelectOption>
                           <IonSelectOption value="expert">Expert</IonSelectOption>
                         </IonSelect>
+                        
                         <IonInput
                           type="number"
                           label="Years of Experience"
                           labelPlacement="floating"
                           value={skill.yearsOfExperience}
+                          className="w-full"
                           onIonChange={e => {
                             const newSkills = [...formData.skills];
                             newSkills[index] = { ...skill, yearsOfExperience: parseInt(e.detail.value!) || 0 };
@@ -675,66 +736,76 @@ export const ProfileCompletion = () => {
                           }}
                           min="0"
                         />
-                      <IonButton
-                        color="danger"
-                        onClick={() => {
-                          const newSkills = formData.skills.filter((_, i) => i !== index);
-                          setFormData(prev => ({ ...prev, skills: newSkills }));
-                        }}
-                      >
-                        Remove
-                      </IonButton>
+                      </div>
                     </div>
                   ))}
+                  
+                  {/* Add Skill Button */}
                   <IonButton
                     expand="block"
+                    fill="outline"
+                    size="default"
                     onClick={() => {
                       setFormData(prev => ({
                         ...prev,
                         skills: [...prev.skills, { name: '', level: 'beginner', yearsOfExperience: 0 }]
                       }));
                     }}
+                    className="mt-4"
                   >
-                    Add Skill
+                    + Add Another Skill
                   </IonButton>
                 </div>
               )}
 
               {currentStep === 2 && (
-                <div className="space-y-4">
-                  
-                    <IonSelect
-                      value={formData.availability.weekdays}
-                      label="Available on Weekdays"
-                      labelPlacement="floating"
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        availability: { ...prev.availability, weekdays: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value={true}>Yes</IonSelectOption>
-                      <IonSelectOption value={false}>No</IonSelectOption>
-                    </IonSelect>
-                 
-                    <IonSelect
-                      value={formData.availability.weekends}
-                      label="Available on Weekends"
-                      labelPlacement="floating"
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        availability: { ...prev.availability, weekends: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value={true}>Yes</IonSelectOption>
-                      <IonSelectOption value={false}>No</IonSelectOption>
-                    </IonSelect>
-                  
-                    <div className="flex gap-4">
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Availability Options */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Working Days</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <IonSelect
+                        value={formData.availability.weekdays}
+                        label="Available on Weekdays"
+                        labelPlacement="floating"
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          availability: { ...prev.availability, weekdays: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value={true}>Yes</IonSelectOption>
+                        <IonSelectOption value={false}>No</IonSelectOption>
+                      </IonSelect>
+                   
+                      <IonSelect
+                        value={formData.availability.weekends}
+                        label="Available on Weekends"
+                        labelPlacement="floating"
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          availability: { ...prev.availability, weekends: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value={true}>Yes</IonSelectOption>
+                        <IonSelectOption value={false}>No</IonSelectOption>
+                      </IonSelect>
+                    </div>
+                  </div>
+
+                  {/* Working Hours */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Working Hours</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <IonInput
                         type="time"
                         label="Start Time"
                         labelPlacement="floating"
                         value={formData.availability.hours.start}
+                        className="w-full"
                         onIonChange={e => setFormData(prev => ({
                           ...prev,
                           availability: {
@@ -743,11 +814,13 @@ export const ProfileCompletion = () => {
                           }
                         }))}
                       />
+                      
                       <IonInput
                         type="time"
                         label="End Time"
                         labelPlacement="floating"
                         value={formData.availability.hours.end}
+                        className="w-full"
                         onIonChange={e => setFormData(prev => ({
                           ...prev,
                           availability: {
@@ -757,65 +830,91 @@ export const ProfileCompletion = () => {
                         }))}
                       />
                     </div>
+                  </div>
                 </div>
               )}
 
               {currentStep === 3 && (
-                <div className="space-y-6">
-                  {/* Add Location Button at the top */}
-                  {/* Add Location Button removed to avoid duplication */}
-
+                <div className="space-y-4 sm:space-y-6">
                   {/* Location List */}
                   {formData.serviceAreas.locations.map((location, index) => (
-                    <div key={index} className="space-y-4 p-4 border rounded-lg bg-white">
-                      <div className="flex gap-4">
-                          <IonInput
-                            value={location.city}
-                            label='City'
-                            labelPlacement='floating'
-                            onIonChange={e => {
-                              const newLocations = [...formData.serviceAreas.locations];
-                              newLocations[index] = { ...location, city: e.detail.value! };
-                              setFormData(prev => ({
-                                ...prev,
-                                serviceAreas: { ...prev.serviceAreas, locations: newLocations }
-                              }));
-                            }}
-                          />
-                        
-                          <IonInput
-                            value={location.state}
-                            label='State'
-                            labelPlacement='floating'
-                            onIonChange={e => {
-                              const newLocations = [...formData.serviceAreas.locations];
-                              newLocations[index] = { ...location, state: e.detail.value! };
-                              setFormData(prev => ({
-                                ...prev,
-                                serviceAreas: { ...prev.serviceAreas, locations: newLocations }
-                              }));
-                            }}
-                          />
-                          <IonInput
-                            value={location.country}
-                            label='Country'
-                            labelPlacement='floating'
-                            onIonChange={e => {
-                              const newLocations = [...formData.serviceAreas.locations];
-                              newLocations[index] = { ...location, country: e.detail.value! };
-                              setFormData(prev => ({
-                                ...prev,
-                                serviceAreas: { ...prev.serviceAreas, locations: newLocations }
-                              }));
-                            }}
-                          />
+                    <div key={index} className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                      {/* Location Header */}
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-gray-700">Location {index + 1}</h4>
+                        <IonButton
+                          size="small"
+                          color="danger"
+                          fill="outline"
+                          onClick={() => {
+                            const newLocations = formData.serviceAreas.locations.filter((_, i) => i !== index);
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceAreas: { ...prev.serviceAreas, locations: newLocations }
+                            }));
+                          }}
+                        >
+                          Remove
+                        </IonButton>
                       </div>
-                      <div className="flex gap-4 items-end">
+
+                      {/* Address Fields - Stack on mobile, grid on larger screens */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                        <IonInput
+                          value={location.city}
+                          label='City'
+                          labelPlacement='floating'
+                          className="w-full"
+                          onIonChange={e => {
+                            const newLocations = [...formData.serviceAreas.locations];
+                            newLocations[index] = { ...location, city: e.detail.value! };
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceAreas: { ...prev.serviceAreas, locations: newLocations }
+                            }));
+                          }}
+                        />
+                        
+                        <IonInput
+                          value={location.state}
+                          label='State'
+                          labelPlacement='floating'
+                          className="w-full"
+                          onIonChange={e => {
+                            const newLocations = [...formData.serviceAreas.locations];
+                            newLocations[index] = { ...location, state: e.detail.value! };
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceAreas: { ...prev.serviceAreas, locations: newLocations }
+                            }));
+                          }}
+                        />
+                        
+                        <IonInput
+                          value={location.country}
+                          label='Country'
+                          labelPlacement='floating'
+                          className="w-full sm:col-span-2 lg:col-span-1"
+                          onIonChange={e => {
+                            const newLocations = [...formData.serviceAreas.locations];
+                            newLocations[index] = { ...location, country: e.detail.value! };
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceAreas: { ...prev.serviceAreas, locations: newLocations }
+                            }));
+                          }}
+                        />
+                      </div>
+
+                      {/* Coordinates and Location Button */}
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <IonInput
                             type="number"
                             label='Latitude'
                             labelPlacement='floating'
                             value={location.coordinates.latitude}
+                            className="w-full"
                             onIonChange={e => {
                               const newLocations = [...formData.serviceAreas.locations];
                               newLocations[index] = {
@@ -831,11 +930,13 @@ export const ProfileCompletion = () => {
                               }));
                             }}
                           />
+                          
                           <IonInput
                             type="number"
                             label='Longitude'
                             labelPlacement='floating'
                             value={location.coordinates.longitude}
+                            className="w-full"
                             onIonChange={e => {
                               const newLocations = [...formData.serviceAreas.locations];
                               newLocations[index] = {
@@ -851,30 +952,27 @@ export const ProfileCompletion = () => {
                               }));
                             }}
                           />
-                          <IonButton
-                            color="primary"
-                            disabled={gettingLocation === index}
-                            onClick={() => handleGetCurrentLocation(index)}
-                          >
-                            {gettingLocation === index ? 'Getting...' : ' Get Location'}
-                          </IonButton>
+                        </div>
+                        
                         <IonButton
-                          color="danger"
-                          onClick={() => {
-                            const newLocations = formData.serviceAreas.locations.filter((_, i) => i !== index);
-                            setFormData(prev => ({
-                              ...prev,
-                              serviceAreas: { ...prev.serviceAreas, locations: newLocations }
-                            }));
-                          }}
+                          expand="block"
+                          size="default"
+                          color="primary"
+                          disabled={gettingLocation === index}
+                          onClick={() => handleGetCurrentLocation(index)}
+                          className="w-full"
                         >
-                          Remove
+                          {gettingLocation === index ? 'Getting Location...' : 'Get Current Location'}
                         </IonButton>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Add Location Button */}
                   <IonButton
                     expand="block"
+                    fill="outline"
+                    size="default"
                     onClick={() => {
                       setFormData(prev => ({
                         ...prev,
@@ -892,64 +990,88 @@ export const ProfileCompletion = () => {
                         }
                       }));
                     }}
+                    className="mt-4"
                   >
-                    Add Location
+                    + Add Another Location
                   </IonButton>
-                    <IonSelect
-                      value={formData.serviceAreas.serviceAtHome}
-                      label='Service at Home'
-                      labelPlacement='floating'
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        serviceAreas: { ...prev.serviceAreas, serviceAtHome: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value={true}>Yes</IonSelectOption>
-                      <IonSelectOption value={false}>No</IonSelectOption>
-                    </IonSelect>
-                  
-                    <IonSelect
-                      value={formData.serviceAreas.serviceAtWorkshop}
-                      label='Service at Workshop'
-                      labelPlacement='floating'
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        serviceAreas: { ...prev.serviceAreas, serviceAtWorkshop: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value={true}>Yes</IonSelectOption>
-                      <IonSelectOption value={false}>No</IonSelectOption>
-                    </IonSelect>
-                  
-                    <IonInput
-                      type="number"
-                      label='Service Radius'
-                      labelPlacement='floating'
-                      value={formData.serviceAreas.radius}
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        serviceAreas: { ...prev.serviceAreas, radius: parseInt(e.detail.value!) || 0 }
-                      }))}
-                    />
-                    <IonSelect
-                      value={formData.serviceAreas.unit}
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        serviceAreas: { ...prev.serviceAreas, unit: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value="km">Kilometers</IonSelectOption>
-                      <IonSelectOption value="mi">Miles</IonSelectOption>
-                    </IonSelect>
+
+                  {/* Service Options - Stack on mobile */}
+                  <div className="space-y-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Service Options</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <IonSelect
+                        value={formData.serviceAreas.serviceAtHome}
+                        label='Service at Home'
+                        labelPlacement='floating'
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          serviceAreas: { ...prev.serviceAreas, serviceAtHome: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value={true}>Yes</IonSelectOption>
+                        <IonSelectOption value={false}>No</IonSelectOption>
+                      </IonSelect>
+                    
+                      <IonSelect
+                        value={formData.serviceAreas.serviceAtWorkshop}
+                        label='Service at Workshop'
+                        labelPlacement='floating'
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          serviceAreas: { ...prev.serviceAreas, serviceAtWorkshop: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value={true}>Yes</IonSelectOption>
+                        <IonSelectOption value={false}>No</IonSelectOption>
+                      </IonSelect>
+                    </div>
+
+                    {/* Service Radius */}
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <IonInput
+                        type="number"
+                        label='Service Radius'
+                        labelPlacement='floating'
+                        value={formData.serviceAreas.radius}
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          serviceAreas: { ...prev.serviceAreas, radius: parseInt(e.detail.value!) || 0 }
+                        }))}
+                      />
+                      
+                      <IonSelect
+                        value={formData.serviceAreas.unit}
+                        label='Unit'
+                        labelPlacement='floating'
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          serviceAreas: { ...prev.serviceAreas, unit: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value="km">Kilometers</IonSelectOption>
+                        <IonSelectOption value="mi">Miles</IonSelectOption>
+                      </IonSelect>
+                    </div>
                   </div>
+                </div>
               )}
 
               {currentStep === 4 && (
-                <div className="space-y-4">
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Pricing Model */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Pricing Model</h4>
+                    
                     <IonSelect
                       value={formData.pricing.model}
                       label='Pricing Model'
                       labelPlacement='floating'
+                      className="w-full"
                       onIonChange={e => setFormData(prev => ({
                         ...prev,
                         pricing: { ...prev.pricing, model: e.detail.value }
@@ -959,49 +1081,80 @@ export const ProfileCompletion = () => {
                       <IonSelectOption value="fixed">Fixed Rate</IonSelectOption>
                       <IonSelectOption value="project">Project Based</IonSelectOption>
                     </IonSelect>
-                  
-                    <IonInput
-                      type="number"
-                      label='Base Rate'
-                      labelPlacement='floating'
-                      value={formData.pricing.baseRate}
-                      onIonChange={e => {
-                        const value = e.detail.value;
-                        const baseRate = value ? parseFloat(value) : 0;
-                        console.log('Base rate changed:', { rawValue: value, parsedValue: baseRate });
-                        setFormData(prev => ({
+                  </div>
+
+                  {/* Rates and Charges */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Rates & Charges</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <IonInput
+                        type="number"
+                        label='Base Rate'
+                        labelPlacement='floating'
+                        value={formData.pricing.baseRate}
+                        className="w-full"
+                        onIonChange={e => {
+                          const value = e.detail.value;
+                          const baseRate = value ? parseFloat(value) : 0;
+                          console.log('Base rate changed:', { rawValue: value, parsedValue: baseRate });
+                          setFormData(prev => ({
+                            ...prev,
+                            pricing: { ...prev.pricing, baseRate: baseRate }
+                          }));
+                        }}
+                      />
+                      
+                      <IonSelect
+                        value={formData.pricing.currency}
+                        label='Currency'
+                        labelPlacement='floating'
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
                           ...prev,
-                          pricing: { ...prev.pricing, baseRate: baseRate }
-                        }));
-                      }}
-                    />
-                    
-                    <IonInput
-                      type="number"
-                      label='Minimum Charge'
-                      labelPlacement='floating'
-                      value={formData.pricing.minimumCharge}
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        pricing: { ...prev.pricing, minimumCharge: parseFloat(e.detail.value!) || 0 }
-                      }))}
-                    />
-                    
-                    <IonInput
-                      type="number"
-                      label='Travel Fee'
-                      labelPlacement='floating'
-                      value={formData.pricing.travelFee}
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        pricing: { ...prev.pricing, travelFee: parseFloat(e.detail.value!) || 0 }
-                      }))}
-                    />
+                          pricing: { ...prev.pricing, currency: e.detail.value }
+                        }))}
+                      >
+                        <IonSelectOption value="IND">IND</IonSelectOption>
+                        <IonSelectOption value="USD">USD</IonSelectOption>
+                        <IonSelectOption value="GBP">GBP</IonSelectOption>
+                      </IonSelect>
+                      
+                      <IonInput
+                        type="number"
+                        label='Minimum Charge'
+                        labelPlacement='floating'
+                        value={formData.pricing.minimumCharge}
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          pricing: { ...prev.pricing, minimumCharge: parseFloat(e.detail.value!) || 0 }
+                        }))}
+                      />
+                      
+                      <IonInput
+                        type="number"
+                        label='Travel Fee'
+                        labelPlacement='floating'
+                        value={formData.pricing.travelFee}
+                        className="w-full"
+                        onIonChange={e => setFormData(prev => ({
+                          ...prev,
+                          pricing: { ...prev.pricing, travelFee: parseFloat(e.detail.value!) || 0 }
+                        }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Service Packages */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Service Packages</h4>
                     
                     <IonInput
                       label='Service Packages (comma separated)'
                       labelPlacement='floating'
                       value={(formData.pricing.servicePackages || []).join(', ')}
+                      className="w-full"
                       onIonChange={e => setFormData(prev => ({
                         ...prev,
                         pricing: { 
@@ -1013,20 +1166,7 @@ export const ProfileCompletion = () => {
                       }))}
                       placeholder="e.g., Basic, Premium, Deluxe"
                     />
-                                       
-                    <IonSelect
-                      value={formData.pricing.currency}
-                      label='Currency'
-                      labelPlacement='floating'
-                      onIonChange={e => setFormData(prev => ({
-                        ...prev,
-                        pricing: { ...prev.pricing, currency: e.detail.value }
-                      }))}
-                    >
-                      <IonSelectOption value="IND">IND</IonSelectOption>
-                      <IonSelectOption value="USD">USD</IonSelectOption>
-                      <IonSelectOption value="GBP">GBP</IonSelectOption>
-                    </IonSelect>
+                  </div>
                 </div>
               )}
 

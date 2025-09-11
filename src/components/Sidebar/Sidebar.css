@@ -1,0 +1,169 @@
+/* Sidebar Mobile-First Responsive Styles */
+
+/* Ensure full coverage on mobile */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease-in-out;
+  overflow: hidden;
+  z-index: 60;
+}
+
+/* Desktop and tablet styles */
+@media (min-width: 640px) {
+  .sidebar-overlay {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .sidebar-container {
+    position: relative;
+    width: 28rem;
+    height: 100vh;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    max-width: 28rem;
+    box-shadow: -8px 0 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Mobile-optimized touch targets */
+.sidebar-menu-item {
+  min-height: 56px; /* Ensure 56px touch target on mobile */
+  transition: background-color 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .sidebar-menu-item {
+    min-height: 48px; /* Smaller on desktop */
+  }
+}
+
+/* Enhanced button styling for mobile */
+.sidebar-button {
+  min-height: 48px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .sidebar-button {
+    min-height: 40px;
+    border-radius: 6px;
+  }
+}
+
+/* Profile section mobile optimization */
+.sidebar-profile {
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-profile:hover {
+  background-color: rgba(249, 250, 251, 1);
+}
+
+/* Icon sizing responsive */
+.sidebar-icon-mobile {
+  width: 24px;
+  height: 24px;
+}
+
+@media (min-width: 640px) {
+  .sidebar-icon-mobile {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Close button enhancement */
+.sidebar-close-btn {
+  position: relative;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+  background-color: rgba(243, 244, 246, 1);
+  transform: scale(1.05);
+}
+
+@media (min-width: 640px) {
+  .sidebar-close-btn {
+    padding: 4px;
+  }
+}
+
+/* Smooth scrolling for menu */
+.sidebar-nav {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area support for mobile apps */
+.sidebar-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.sidebar-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Animation for sidebar entrance */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-container {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Focus styles for accessibility */
+.sidebar-focusable:focus {
+  outline: 2px solid #e11d48;
+  outline-offset: 2px;
+}
+
+/* Active menu item styling */
+.sidebar-menu-item.active {
+  background-color: rgba(253, 242, 248, 1);
+  border-right: 3px solid #e11d48;
+}
+
+.sidebar-menu-item.active .sidebar-icon-mobile {
+  color: #e11d48;
+}
+
+.sidebar-menu-item.active span {
+  color: #e11d48;
+  font-weight: 600;
+}

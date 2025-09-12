@@ -17,6 +17,7 @@ import {
   IonIcon
 } from '@ionic/react';
 import { UserService } from '../../services/userService';
+import { ImageService } from '../../services/imageService';
 import { ServiceSector } from '../../types/user';
 
 
@@ -32,6 +33,8 @@ export const ProfileCompletion = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [gettingLocation, setGettingLocation] = useState<number | null>(null); // Track which location is being fetched
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [userImages, setUserImages] = useState<any[]>([]);
   
   const handleGetCurrentLocation = async (locationIndex: number) => {
     try {
@@ -79,21 +82,118 @@ export const ProfileCompletion = () => {
     if (!event.target.files || event.target.files.length === 0) return;
     
     const file = event.target.files[0];
-    try {
-      // Create a FileReader to read the image file
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // Update the form data with the base64 string
-        setFormData(prev => ({
-          ...prev,
-          avatar: reader.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Error uploading image:', err);
-      setError('Failed to upload image. Please try again.');
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
     }
+    
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError('Image size must be less than 5MB');
+      return;
+    }
+    
+    if (!user?.email) {
+      setError('User email not found. Please log in again.');
+      return;
+    }
+    
+    try {
+      setUploadingImage(true);
+      setError(null);
+      console.log('🖼️ Starting image upload:', file.name);
+      
+      // Use username or email as the identifier
+      const username = formData.userName || user.email.split('@')[0];
+      
+      // Upload image to S3
+      const s3Key = await ImageService.uploadImage({
+        username,
+        file,
+        folder: 'profile'
+      });
+      
+      console.log('✅ Image uploaded successfully:', s3Key);
+      
+      // Get CDN URL for immediate display
+      const cdnUrl = ImageService.getCdnUrl(s3Key);
+      
+      // Update form data with CDN URL
+      setFormData(prev => ({
+        ...prev,
+        avatar: cdnUrl || s3Key
+      }));
+      
+      // Refresh user images list
+      await loadUserImages(username);
+      
+      console.log('✅ Image upload completed and form updated');
+      
+    } catch (err) {
+      console.error('❌ Image upload failed:', err);
+      setError(`Failed to upload image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      
+      // Fallback to base64 if upload fails
+      try {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            avatar: reader.result as string
+          }));
+        };
+        reader.readAsDataURL(file);
+        console.log('📷 Using base64 fallback for image');
+      } catch (fallbackErr) {
+        console.error('❌ Base64 fallback also failed:', fallbackErr);
+      }
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Load user images from server
+  const loadUserImages = async (username?: string) => {
+    if (!username && !user?.email) return;
+    
+    try {
+      const userIdentifier = username || formData.userName || user!.email.split('@')[0];
+      const response = await ImageService.listImages(userIdentifier, 'profile');
+      const images = response.files || response.images || [];
+      setUserImages(images);
+      console.log('📋 Loaded user images:', images.length);
+    } catch (err) {
+      console.error('❌ Failed to load user images:', err);
+      // Don't show error to user for this, it's not critical
+    }
+  };
+
+  // Delete an image
+  const handleDeleteImage = async (imageKey: string) => {
+    try {
+      await ImageService.deleteImage(imageKey);
+      console.log('🗑️ Image deleted successfully:', imageKey);
+      
+      // Remove from local state
+      setUserImages(prev => prev.filter(img => img.key !== imageKey));
+      
+      // If this was the current avatar, clear it
+      if (formData.avatar && (formData.avatar.includes(imageKey) || formData.avatar === ImageService.getCdnUrl(imageKey))) {
+        setFormData(prev => ({ ...prev, avatar: '' }));
+      }
+    } catch (err) {
+      console.error('❌ Failed to delete image:', err);
+      setError(`Failed to delete image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  // Select an existing image as avatar
+  const handleSelectImage = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, avatar: imageUrl }));
+    console.log('🖼️ Selected image as avatar:', imageUrl);
   };
 
   type Skill = {
@@ -286,6 +386,14 @@ export const ProfileCompletion = () => {
   useEffect(() => {
     console.log('Saving state changed:', saving);
   }, [saving]);
+
+  // Load user images when username or email changes
+  useEffect(() => {
+    if (user?.email && (formData.userName || user.email)) {
+      const username = formData.userName || user.email.split('@')[0];
+      loadUserImages(username);
+    }
+  }, [user?.email, formData.userName]);
 
   const validateStep = () => {
     console.log('=== validateStep START ===');
@@ -576,10 +684,10 @@ export const ProfileCompletion = () => {
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Profile Picture</h4>
                     
                     <div className="flex justify-center">
-                      {user.avatar ? (
+                      {formData.avatar ? (
                         <div className="profile-image-container">
                           <img
-                            src={user.avatar}
+                            src={formData.avatar}
                             alt="Profile"
                             className="profile-image animate__animated animate__fadeIn"
                           />
@@ -588,8 +696,13 @@ export const ProfileCompletion = () => {
                               fill="clear" 
                               onClick={() => document.getElementById('imageUpload')?.click()}
                               className="image-upload-button"
+                              disabled={uploadingImage}
                             >
-                              <IonIcon slot="icon-only" icon={camera} />
+                              {uploadingImage ? (
+                                <IonSpinner />
+                              ) : (
+                                <IonIcon slot="icon-only" icon={camera} />
+                              )}
                             </IonButton>
                           </div>
                         </div>
@@ -599,9 +712,19 @@ export const ProfileCompletion = () => {
                             fill="clear" 
                             onClick={() => document.getElementById('imageUpload')?.click()}
                             className="image-upload-button"
+                            disabled={uploadingImage}
                           >
-                            <IonIcon slot="start" icon={camera} />
-                            <IonText color="medium">Upload Profile Picture</IonText>
+                            {uploadingImage ? (
+                              <>
+                                <IonSpinner slot="start" />
+                                <IonText color="medium">Uploading...</IonText>
+                              </>
+                            ) : (
+                              <>
+                                <IonIcon slot="start" icon={camera} />
+                                <IonText color="medium">Upload Profile Picture</IonText>
+                              </>
+                            )}
                           </IonButton>
                         </div>
                       )}
@@ -611,8 +734,60 @@ export const ProfileCompletion = () => {
                         hidden
                         accept="image/*"
                         onChange={handleImageUpload}
+                        disabled={uploadingImage}
                       />
                     </div>
+                    
+                    {/* Upload progress and existing images */}
+                    {uploadingImage && (
+                      <div className="text-center">
+                        <IonText color="medium">
+                          <small>Uploading image to server...</small>
+                        </IonText>
+                      </div>
+                    )}
+                    
+                    {userImages.length > 0 && (
+                      <div className="mt-4">
+                        <h5 className="text-xs font-medium text-gray-600 mb-2">Your Images</h5>
+                        <div className="grid grid-cols-3 gap-2">
+                          {userImages.slice(0, 6).map((image, index) => (
+                            <div key={index} className="relative group">
+                              <img 
+                                src={image.url || image.cdnUrl} 
+                                alt={`User image ${index + 1}`}
+                                className={`w-full h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity ${
+                                  formData.avatar === (image.url || image.cdnUrl) ? 'ring-2 ring-blue-500' : ''
+                                }`}
+                                onClick={() => handleSelectImage(image.url || image.cdnUrl)}
+                              />
+                              {/* Delete button - only show on hover */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteImage(image.key);
+                                }}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Delete image"
+                              >
+                                ×
+                              </button>
+                              {/* Selected indicator */}
+                              {formData.avatar === (image.url || image.cdnUrl) && (
+                                <div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {userImages.length > 6 && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            +{userImages.length - 6} more images
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Personal Information */}

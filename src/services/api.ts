@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-lambda-function-url.com'; // Replace with your actual Lambda Function URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, any>;

@@ -34,7 +34,12 @@ export const ProfileCompletion = () => {
   const [saving, setSaving] = useState(false);
   const [gettingLocation, setGettingLocation] = useState<number | null>(null); // Track which location is being fetched
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [userImages, setUserImages] = useState<any[]>([]);
+  const [userImages, setUserImages] = useState<Array<{
+    key: string;
+    url: string;
+    size?: number;
+    lastModified?: string;
+  }>>([]);
   
   const handleGetCurrentLocation = async (locationIndex: number) => {
     try {
@@ -118,13 +123,10 @@ export const ProfileCompletion = () => {
       
       console.log('✅ Image uploaded successfully:', s3Key);
       
-      // Get CDN URL for immediate display
-      const cdnUrl = ImageService.getCdnUrl(s3Key);
-      
-      // Update form data with CDN URL
+      // Update form data with the S3 key - getCdnUrl will be used for display
       setFormData(prev => ({
         ...prev,
-        avatar: cdnUrl || s3Key
+        avatar: s3Key
       }));
       
       // Refresh user images list
@@ -136,8 +138,9 @@ export const ProfileCompletion = () => {
       console.error('❌ Image upload failed:', err);
       setError(`Failed to upload image: ${err instanceof Error ? err.message : 'Unknown error'}`);
       
-      // Fallback to base64 if upload fails
+      // Try to fetch the file directly from CDN if possible
       try {
+        // Just use base64 encoding as fallback
         const reader = new FileReader();
         reader.onloadend = () => {
           setFormData(prev => ({
@@ -162,8 +165,22 @@ export const ProfileCompletion = () => {
     try {
       const userIdentifier = username || formData.userName || user!.email.split('@')[0];
       const response = await ImageService.listImages(userIdentifier, 'profile');
-      const images = response.files || response.images || [];
+      
+      // Use images directly from the response, they already have the right URL format
+      const images = response.images || [];
       setUserImages(images);
+      
+      // If the current avatar is a key, find and set its URL
+      if (formData.avatar && !formData.avatar.startsWith('http')) {
+        const avatarImage = images.find(img => img.key === formData.avatar);
+        if (avatarImage) {
+          setFormData(prev => ({
+            ...prev,
+            avatar: avatarImage.key // Store the key, we'll use it to look up the URL when displaying
+          }));
+        }
+      }
+      
       console.log('📋 Loaded user images:', images.length);
     } catch (err) {
       console.error('❌ Failed to load user images:', err);
@@ -181,7 +198,7 @@ export const ProfileCompletion = () => {
       setUserImages(prev => prev.filter(img => img.key !== imageKey));
       
       // If this was the current avatar, clear it
-      if (formData.avatar && (formData.avatar.includes(imageKey) || formData.avatar === ImageService.getCdnUrl(imageKey))) {
+      if (formData.avatar && (formData.avatar.includes(imageKey) || formData.avatar === ImageService.getImageUrl(imageKey))) {
         setFormData(prev => ({ ...prev, avatar: '' }));
       }
     } catch (err) {
@@ -191,9 +208,10 @@ export const ProfileCompletion = () => {
   };
 
   // Select an existing image as avatar
-  const handleSelectImage = (imageUrl: string) => {
-    setFormData(prev => ({ ...prev, avatar: imageUrl }));
-    console.log('🖼️ Selected image as avatar:', imageUrl);
+  const handleSelectImage = (key: string) => {
+    // Store the image key in formData
+    setFormData(prev => ({ ...prev, avatar: key }));
+    console.log('🖼️ Selected image as avatar:', key);
   };
 
   type Skill = {
@@ -692,7 +710,7 @@ export const ProfileCompletion = () => {
                         {userImages.length > 0 ? (
                           <>
                             <img
-                              src={formData.avatar || (userImages[0].url || userImages[0].cdnUrl)}
+                              src={formData.avatar ? userImages.find(img => img.key === formData.avatar)?.url || ImageService.getImageUrl(formData.avatar) : ''}
                               alt="Profile"
                               className="profile-image animate__animated animate__fadeIn"
                             />
@@ -702,11 +720,11 @@ export const ProfileCompletion = () => {
                                   <div
                                     key={index}
                                     className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-200 ${
-                                      formData.avatar === (image.url || image.cdnUrl)
+                                      formData.avatar === image.key
                                         ? 'bg-white'
                                         : 'bg-white/50 hover:bg-white/75'
                                     }`}
-                                    onClick={() => handleSelectImage(image.url || image.cdnUrl)}
+                                    onClick={() => handleSelectImage(image.key)}
                                   />
                                 ))}
                               </div>
@@ -728,7 +746,7 @@ export const ProfileCompletion = () => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       const currentImage = userImages.find(
-                                        img => (img.url || img.cdnUrl) === formData.avatar
+                                        img => img.key === formData.avatar
                                       );
                                       if (currentImage) {
                                         handleDeleteImage(currentImage.key);

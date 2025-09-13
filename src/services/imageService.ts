@@ -1,5 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_CDN_BASE_URL;
-
+const CDN_URL = import.meta.env.VITE_CDN_URL;
 export interface PresignedUrlResponse {
   success: boolean;
   url: string;
@@ -184,14 +184,31 @@ export class ImageService {
   }
 
   /**
-   * Get CDN URL for an image
+   * Get CDN URL for displaying an image
    */
-  static getCdnUrl(key: string): string {
-    const cdnBaseUrl = import.meta.env.VITE_CDN_BASE_URL;
-    if (!cdnBaseUrl) {
-      console.warn('CDN base URL not configured');
-      return '';
+  static getImageUrl(key: string): string {
+    if (!key) return '';
+    return `${CDN_URL}/${key}`;
+  }
+
+  /**
+   * Fetch file content from CDN
+   * @param key - The S3 key of the file to fetch
+   * @returns Promise<Blob> - The file content as a Blob
+   */
+  static async fetchFileFromCdn(key: string): Promise<Blob> {
+    if (!key) throw new Error('Key is required');
+    if (!CDN_URL) throw new Error('CDN_URL is not configured');
+
+    try {
+      const response = await fetch(`${CDN_URL}/${key}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+      return await response.blob();
+    } catch (error) {
+      console.error('Error fetching file from CDN:', error);
+      throw error;
     }
-    return `${cdnBaseUrl}/${key}`;
   }
 }

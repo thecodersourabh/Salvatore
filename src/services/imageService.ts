@@ -142,31 +142,40 @@ export class ImageService {
   }
 
   /**
-   * Delete image
+   * Delete image from S3
+   * @param key - The full S3 key path of the image to delete
    */
   static async deleteImage(key: string): Promise<void> {
     try {
       if (!API_BASE_URL) {
         throw new Error('API_BASE_URL is not configured. Please check your environment variables.');
       }
+
+      if (!key) {
+        throw new Error('Image key is required');
+      }
       
       const response = await fetch(`${API_BASE_URL}/upload/delete`, {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ key })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Delete failed: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const result = await response.json();
+      let errorMessage = 'Failed to delete image';
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete image');
+      try {
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          errorMessage = data.error || errorMessage;
+          throw new Error(errorMessage);
+        }
+      } catch (parseError) {
+        if (!response.ok) {
+          throw new Error(errorMessage);
+        }
+        throw parseError;
       }
     } catch (error) {
       console.error('Error deleting image:', error);

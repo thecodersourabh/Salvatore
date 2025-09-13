@@ -33,8 +33,8 @@ export function ChatBot() {
           <MessageCircle className="h-6 w-6" />
         </button>
       ) : (
-        <div className="bg-white rounded-lg shadow-xl w-[360px] h-[480px] flex flex-col">
-          <div className="p-4 bg-rose-600 text-white rounded-t-lg flex justify-between items-center">
+        <div className="bg-white rounded-lg shadow-xl w-[360px] h-[480px] flex flex-col sm:w-[360px] sm:h-[480px] max-sm:fixed max-sm:w-full max-sm:h-full max-sm:inset-0 max-sm:rounded-none">
+          <div className="p-4 bg-rose-600 text-white rounded-t-lg flex justify-between items-center max-sm:rounded-none">
             <div className="flex items-center space-x-2">
               <MessageCircle className="h-5 w-5" />
               <span className="font-semibold">Design Assistant</span>

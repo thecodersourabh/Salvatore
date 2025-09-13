@@ -99,10 +99,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* Sidebar */}
       <div className={`sidebar-container bg-white h-full shadow-xl flex flex-col ${isNative ? 'sidebar-safe-top' : ''}`}>
         {/* Header */}        
-        <div className="p-4 sm:p-6 border-b flex justify-between items-center">
+        <div className="p-3 sm:p-4 border-b flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <User className="sidebar-icon-mobile text-rose-600" />
-            <h2 className="text-xl sm:text-lg font-semibold text-gray-900">My Profile</h2>
+            <h2 className="text-lg sm:text-base font-semibold text-gray-900">My Profile</h2>
           </div>
           <button 
             onClick={onClose}
@@ -117,19 +117,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <Link 
             to="/profile" 
             onClick={onClose}
-            className="sidebar-profile block p-4 sm:p-6 border-b bg-gray-50 hover:bg-gray-100 transition-colors sidebar-focusable"
+            className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 transition-colors sidebar-focusable"
           >
             <div className="flex items-center">
               {picture && (
                 <img 
                   src={picture} 
                   alt={name || "Profile"} 
-                  className="w-14 h-14 sm:w-12 sm:h-12 rounded-full border-2 border-rose-200"
+                  className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200"
                 />
               )}
-              <div className="ml-4">
-                <h3 className="font-medium text-gray-900 text-base sm:text-sm">{name}</h3>
-                <p className="text-sm sm:text-xs text-gray-600">{email}</p>
+              <div className="ml-3">
+                <h3 className="font-medium text-gray-900 text-sm leading-tight">{name}</h3>
+                <p className="text-xs text-gray-600 mt-0.5">{email}</p>
               </div>
             </div>
           </Link>          

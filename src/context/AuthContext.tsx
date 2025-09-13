@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Handle user creation when authenticated
   useEffect(() => {
     const createUserIfNeeded = async () => {
-      console.log('🔐 AuthContext: Checking if user creation is needed...', {
+      console.log('AuthContext: Checking if user creation is needed...', {
         isAuthenticated,
         userSub: user?.sub,
         userEmail: user?.email,
@@ -66,12 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (!isAuthenticated) {
-        console.log('ℹ️ AuthContext: User not authenticated, skipping user creation');
+        console.log('AuthContext: User not authenticated, skipping user creation');
         return;
       }
       
       if (!user?.sub || !user?.email) {
-        console.log('⚠️ AuthContext: Missing user sub or email', {
+        console.log('AuthContext: Missing user sub or email', {
           sub: user?.sub,
           email: user?.email
         });
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (userCreated || creatingUser) {
-        console.log('ℹ️ AuthContext: User creation already completed or in progress', {
+        console.log('AuthContext: User creation already completed or in progress', {
           userCreated,
           creatingUser
         });
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
-        console.log('🔄 AuthContext: Starting user creation process...');
+        console.log('AuthContext: Starting user creation process...');
         setCreatingUser(true);
         
         // Extract user details from Auth0 token

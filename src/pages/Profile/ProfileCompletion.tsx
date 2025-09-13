@@ -679,19 +679,72 @@ export const ProfileCompletion = () => {
               {/* Step Content */}
               {currentStep === 0 && (
                 <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                  </div>
                   {/* Profile Picture */}
-                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                  <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Profile Picture</h4>
                     
-                    <div className="flex justify-center">
-                      {formData.avatar ? (
-                        <div className="profile-image-container">
-                          <img
-                            src={formData.avatar}
-                            alt="Profile"
-                            className="profile-image animate__animated animate__fadeIn"
-                          />
-                          <div className="profile-image-overlay">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="profile-image-container">
+                        {userImages.length > 0 ? (
+                          <>
+                            <img
+                              src={formData.avatar || (userImages[0].url || userImages[0].cdnUrl)}
+                              alt="Profile"
+                              className="profile-image animate__animated animate__fadeIn"
+                            />
+                            <div className="profile-image-overlay">
+                              <div className="flex items-center space-x-2">
+                                {userImages.map((image, index) => (
+                                  <div
+                                    key={index}
+                                    className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-200 ${
+                                      formData.avatar === (image.url || image.cdnUrl)
+                                        ? 'bg-white'
+                                        : 'bg-white/50 hover:bg-white/75'
+                                    }`}
+                                    onClick={() => handleSelectImage(image.url || image.cdnUrl)}
+                                  />
+                                ))}
+                              </div>
+                              <div className="absolute bottom-2 right-2 flex space-x-2">
+                                <IonButton 
+                                  fill="clear" 
+                                  onClick={() => document.getElementById('imageUpload')?.click()}
+                                  className="image-upload-button"
+                                  disabled={uploadingImage}
+                                >
+                                  {uploadingImage ? (
+                                    <IonSpinner />
+                                  ) : (
+                                    <IonIcon slot="icon-only" icon={camera} size="small" />
+                                  )}
+                                </IonButton>
+                                {formData.avatar && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const currentImage = userImages.find(
+                                        img => (img.url || img.cdnUrl) === formData.avatar
+                                      );
+                                      if (currentImage) {
+                                        handleDeleteImage(currentImage.key);
+                                      }
+                                    }}
+                                    className="bg-red-500/75 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
+                                    title="Delete current image"
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="profile-image-placeholder">
                             <IonButton 
                               fill="clear" 
                               onClick={() => document.getElementById('imageUpload')?.click()}
@@ -699,35 +752,21 @@ export const ProfileCompletion = () => {
                               disabled={uploadingImage}
                             >
                               {uploadingImage ? (
-                                <IonSpinner />
+                                <>
+                                  <IonSpinner slot="start" />
+                                  <IonText color="medium">Uploading...</IonText>
+                                </>
                               ) : (
-                                <IonIcon slot="icon-only" icon={camera} />
+                                <>
+                                  <IonIcon slot="start" icon={camera} />
+                                  <IonText color="medium">Upload Profile Picture</IonText>
+                                </>
                               )}
                             </IonButton>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="profile-image-placeholder">
-                          <IonButton 
-                            fill="clear" 
-                            onClick={() => document.getElementById('imageUpload')?.click()}
-                            className="image-upload-button"
-                            disabled={uploadingImage}
-                          >
-                            {uploadingImage ? (
-                              <>
-                                <IonSpinner slot="start" />
-                                <IonText color="medium">Uploading...</IonText>
-                              </>
-                            ) : (
-                              <>
-                                <IonIcon slot="start" icon={camera} />
-                                <IonText color="medium">Upload Profile Picture</IonText>
-                              </>
-                            )}
-                          </IonButton>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      
                       <input
                         type="file"
                         id="imageUpload"
@@ -736,62 +775,20 @@ export const ProfileCompletion = () => {
                         onChange={handleImageUpload}
                         disabled={uploadingImage}
                       />
-                    </div>
-                    
-                    {/* Upload progress and existing images */}
-                    {uploadingImage && (
-                      <div className="text-center">
-                        <IonText color="medium">
-                          <small>Uploading image to server...</small>
-                        </IonText>
-                      </div>
-                    )}
-                    
-                    {userImages.length > 0 && (
-                      <div className="mt-4">
-                        <h5 className="text-xs font-medium text-gray-600 mb-2">Your Images</h5>
-                        <div className="grid grid-cols-3 gap-2">
-                          {userImages.slice(0, 6).map((image, index) => (
-                            <div key={index} className="relative group">
-                              <img 
-                                src={image.url || image.cdnUrl} 
-                                alt={`User image ${index + 1}`}
-                                className={`w-full h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity ${
-                                  formData.avatar === (image.url || image.cdnUrl) ? 'ring-2 ring-blue-500' : ''
-                                }`}
-                                onClick={() => handleSelectImage(image.url || image.cdnUrl)}
-                              />
-                              {/* Delete button - only show on hover */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteImage(image.key);
-                                }}
-                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Delete image"
-                              >
-                                ×
-                              </button>
-                              {/* Selected indicator */}
-                              {formData.avatar === (image.url || image.cdnUrl) && (
-                                <div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                                  ✓
-                                </div>
-                              )}
-                            </div>
-                          ))}
+
+                      {/* Upload progress indicator */}
+                      {uploadingImage && (
+                        <div className="text-center">
+                          <IonText color="medium">
+                            <small>Uploading image to server...</small>
+                          </IonText>
                         </div>
-                        {userImages.length > 6 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            +{userImages.length - 6} more images
-                          </p>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Personal Information */}
-                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                  <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h4>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -847,9 +844,13 @@ export const ProfileCompletion = () => {
 
               {currentStep === 1 && (
                 <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                  </div>
                   {/* Skills List */}
                   {formData.skills.map((skill, index) => (
-                    <div key={index} className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <div key={index} className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                       {/* Skill Header */}
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-medium text-gray-700">Skill {index + 1}</h4>
@@ -935,8 +936,12 @@ export const ProfileCompletion = () => {
 
               {currentStep === 2 && (
                 <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                  </div>
                   {/* Availability Options */}
-                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                  <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Working Days</h4>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1011,6 +1016,10 @@ export const ProfileCompletion = () => {
 
               {currentStep === 3 && (
                 <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                  </div>
                   {/* Location List */}
                   {formData.serviceAreas.locations.map((location, index) => (
                     <div key={index} className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -1238,6 +1247,10 @@ export const ProfileCompletion = () => {
 
               {currentStep === 4 && (
                 <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                  </div>
                   {/* Pricing Model */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Pricing Model</h4>
@@ -1357,7 +1370,7 @@ export const ProfileCompletion = () => {
               )}
 
               {/* Navigation Buttons */}
-              <div className="ion-padding">
+              <div className="ion-padding pb-8">
                 <div className="navigation-buttons space-y-4">
                   {/* Navigation actions */}
                   <div className="flex gap-4">

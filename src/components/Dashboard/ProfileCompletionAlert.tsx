@@ -1,24 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { UserCircle } from 'lucide-react';
-
-import { useEffect, useState } from 'react';
 import { User } from '../../types/user';
-import { UserService } from '../../services/userService';
 
-interface BasicUser {
-  email?: string;
-  serviceProviderProfile?: any;
-  profileCompletion?: number;
-}
-
-interface ProfileCompletionAlertProps {
+interface IProfileCompletionAlertProps {
   onClose: () => void;
   completion?: number;
   profile?: User | null;
 }
 
-export const ProfileCompletionAlert = ({ onClose, completion, profile }: ProfileCompletionAlertProps) => {
+export const ProfileCompletionAlert = ({ onClose, completion, profile }: IProfileCompletionAlertProps) => {
   const navigate = useNavigate();
 
   const handleStartProfileSetup = () => {

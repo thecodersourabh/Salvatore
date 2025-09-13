@@ -1,28 +1,45 @@
 .profile-image-container {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 120px;
+  height: 120px;
   margin: 0 auto;
   border-radius: 50%;
   overflow: hidden;
+  border: 2px solid #f43f5e;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.profile-image-container:hover {
+  transform: scale(1.02);
+  border-color: #e11d48;
 }
 
 .profile-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
 .profile-image-overlay {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 8px;
+  bottom: 0;
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
   display: flex;
-  justify-content: center;
-  transition: opacity 0.3s;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .profile-image-container:hover .profile-image-overlay {
@@ -30,23 +47,44 @@
 }
 
 .profile-image-placeholder {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  border: 2px dashed #ccc;
+  border: 2px dashed #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
   cursor: pointer;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+}
+
+.profile-image-placeholder:hover {
+  border-color: #f43f5e;
+  background-color: #fff1f2;
+  transform: scale(1.02);
 }
 
 .image-upload-button {
-  color: white;
+  --background: transparent;
+  --background-hover: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+.image-upload-button ion-icon {
+  font-size: 1.2rem;
 }
 
 .profile-image-placeholder .image-upload-button {
-  color: #666;
+  --color: #666;
+}
+
+/* Dot indicators */
+.profile-image-overlay .flex.items-center.space-x-2 {
+  margin-bottom: 1rem;
 }
 
 /* Prevent scrolling conflicts in profile components */
@@ -62,6 +100,13 @@
 
 /* Mobile-first responsive improvements */
 @media (max-width: 768px) {
+  /* Profile image responsive adjustments */
+  .profile-image-container,
+  .profile-image-placeholder {
+    width: 100px;
+    height: 100px;
+  }
+
   /* Ensure proper spacing on mobile */
   .space-y-4 > * + * {
     margin-top: 1rem;
@@ -98,6 +143,19 @@
   
   .grid-cols-1 {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-image-container,
+  .profile-image-placeholder {
+    width: 90px;
+    height: 90px;
+    border-width: 2px;
+  }
+
+  .grid-cols-3 {
+    gap: 8px;
   }
 }
 

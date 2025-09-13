@@ -710,7 +710,7 @@ export const ProfileCompletion = () => {
                         {userImages.length > 0 ? (
                           <>
                             <img
-                              src={formData.avatar ? userImages.find(img => img.key === formData.avatar)?.url || ImageService.getImageUrl(formData.avatar) : ''}
+                              src={formData.avatar ? userImages.find(img => img.key === formData.avatar)?.url : (userImages[0]?.url || '')}
                               alt="Profile"
                               className="profile-image animate__animated animate__fadeIn"
                             />

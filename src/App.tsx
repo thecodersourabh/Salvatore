@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router } from "react-router-dom";
 import { useTransition } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { Capacitor } from '@capacitor/core';
@@ -10,18 +10,8 @@ import { Browser } from '@capacitor/browser';
 import { Navigation } from "./components/Navigation";
 import { ChatBot } from "./components/ChatBot";
 import { Cart } from "./components/Cart";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 import { MobileSplashScreen } from "./components/MobileSplashScreen";
-
-// Pages
-import { About } from "./pages/About";
-import { Home } from "./pages/Home";
-import { Auth } from "./pages/Auth/Auth";
-import { Dashboard } from "./pages/Dashboard/Dashboard";
-import { ProfileLayout } from "./pages/Profile/ProfileLayout";
-import { Orders } from "./pages/Orders/Orders";
-import { Addresses } from "./pages/Profile/Addresses/Addresses";
-import { Wishlist } from "./pages/Profile/Wishlist/Wishlist";
+import { AppRoutes } from "./routes/AppRoutes";
 
 // Context
 import { CartProvider } from "./context/CartContext";
@@ -224,40 +214,7 @@ function MyApp() {
               <div className="flex flex-col h-full">
                 <Navigation />
                 <main className="flex-1 overflow-auto bg-gray-50">
-                  <Routes>
-                    <Route path="/" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/auth" element={
-                      <ProtectedRoute>
-                        <Auth />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                      <ProtectedRoute>
-                        <ProfileLayout />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orders" element={
-                      <ProtectedRoute>
-                        <Orders />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/addresses" element={
-                      <ProtectedRoute>
-                        <Addresses />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/wishlist" element={
-                      <ProtectedRoute>
-                        <Wishlist />
-                      </ProtectedRoute>
-                    } />
-                  </Routes>
+                  <AppRoutes />
                 </main>
                 
                 {/* Floating components */}

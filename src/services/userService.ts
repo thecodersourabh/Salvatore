@@ -16,6 +16,26 @@ export class UserService {
     }
   }
 
+  static async getUserByUsername(username: string): Promise<User | null> {
+    try {
+      // Using the v2 API endpoint to match other methods
+      const result = await ApiService.get<User>(`/api/v2/users/username/${encodeURIComponent(username)}`);
+      return result;
+    } catch (error) {
+      // Return null for 404 errors (user not found)
+      if (error instanceof Error && error.message.includes("404")) {
+        console.log("User not found:", username);
+        return null;
+      }
+      console.error("UserService.getUserByUsername failed:", {
+        error,
+        username,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return null;
+    }
+  }
+
   static async getUserByEmail(email: string): Promise<User | null> {
     try {
       const result = await ApiService.get<User>(

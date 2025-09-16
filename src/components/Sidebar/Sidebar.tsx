@@ -50,6 +50,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const menuItems = [
     {
+      icon: User,
+      label: "My Profile",
+      link: user?.email ? `/profile/${user.email.split('@')[0]}` : '/profile'
+    },
+    {
       icon: ShoppingCart,
       label: "Shopping Cart",
       action: handleCartClick

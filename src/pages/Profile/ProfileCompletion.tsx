@@ -531,12 +531,25 @@ export const ProfileCompletion = () => {
       // Only send the relevant data based on the current step
       switch (currentStep) {
         case 0:
+          // Ensure avatar is a valid URL before sending
+          let avatarUrl = formData.avatar;
+          if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+            // Find the image URL from userImages
+            const avatarImage = userImages.find(img => img.key === avatarUrl);
+            if (avatarImage?.url) {
+              avatarUrl = avatarImage.url;
+            } else {
+              // Fallback to getting URL from ImageService
+              avatarUrl = ImageService.getImageUrl(avatarUrl);
+            }
+          }
+
           dataToUpdate = {
             displayName: formData.name,
             userName: formData.userName,
             sector: formData.sector as ServiceSector,
             phone: formData.phoneNumber,
-            avatar: formData.avatar
+            avatar: avatarUrl
           };
           console.log('📤 Submitting basic info data:', dataToUpdate);
           break;
@@ -558,12 +571,23 @@ export const ProfileCompletion = () => {
           break;
         case 4:
           // On final step, send all data
+          // Ensure avatar is a valid URL
+          let finalAvatarUrl = formData.avatar;
+          if (finalAvatarUrl && !finalAvatarUrl.startsWith('http') && !finalAvatarUrl.startsWith('data:')) {
+            const avatarImage = userImages.find(img => img.key === finalAvatarUrl);
+            if (avatarImage?.url) {
+              finalAvatarUrl = avatarImage.url;
+            } else {
+              finalAvatarUrl = ImageService.getImageUrl(finalAvatarUrl);
+            }
+          }
+
           dataToUpdate = {
             displayName: formData.name,
             userName: formData.userName,
             sector: formData.sector as ServiceSector,
             phone: formData.phoneNumber,
-            avatar: formData.avatar,
+            avatar: finalAvatarUrl,
             skills: formData.skills,
             availability: formData.availability,
             serviceAreas: formData.serviceAreas,

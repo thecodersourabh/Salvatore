@@ -40,6 +40,9 @@ export const ProfileCompletion = () => {
     size?: number;
     lastModified?: string;
   }>>([]);
+  const [uploadingDocument, setUploadingDocument] = useState<DocumentType | null>(null);
+  const [verificationInProgress, setVerificationInProgress] = useState<boolean>(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   
   const handleGetCurrentLocation = async (locationIndex: number) => {
     try {
@@ -158,6 +161,73 @@ export const ProfileCompletion = () => {
     }
   };
 
+  // Handle document upload
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>, docType: DocumentType) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    
+    const file = event.target.files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      setError('Please upload a valid image or PDF file');
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    if (!user?.email) {
+      setError('User email not found. Please log in again.');
+      return;
+    }
+
+    try {
+      setUploadingDocument(docType);
+      setError(null);
+      
+      // Use username or email as the identifier
+      const username = formData.userName || user.email.split('@')[0];
+      
+      // Upload document using ImageService
+      const s3Key = await ImageService.uploadImage({
+        username,
+        file,
+        folder: `documents`
+      });
+      
+      // Get CDN URL for the document
+      const documentUrl = ImageService.getImageUrl(s3Key);
+      
+      // Update form data with document information
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          [docType]: {
+            key: s3Key,
+            url: documentUrl,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            uploadedAt: new Date().toISOString()
+          }
+        }
+      }));
+      
+      console.log(`✅ ${docType} document uploaded successfully:`, s3Key);
+      
+    } catch (err) {
+      console.error(`❌ ${docType} document upload failed:`, err);
+      setError(`Failed to upload ${docType} document: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setUploadingDocument(null);
+    }
+  };
+
   // Load user images from server
   const loadUserImages = async (username?: string) => {
     if (!username && !user?.email) return;
@@ -230,12 +300,26 @@ export const ProfileCompletion = () => {
     };
   };
 
+  type DocumentType = 'aadhaar' | 'pan' | 'professional';
+
+  type Document = {
+    key: string;
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadedAt: string;
+  };
+
   type FormDataType = {
     name: string;
     userName: string;
     sector: string;
     phoneNumber: string;
     avatar: string;
+    documents: {
+      [key in DocumentType]?: Document;
+    };
     skills: Skill[];
     availability: {
       weekdays: boolean;
@@ -269,6 +353,9 @@ export const ProfileCompletion = () => {
     sector: user?.sector || '',
     phoneNumber: user?.phoneNumber || '',
     avatar: user?.avatar || '',
+    
+    // Documents
+    documents: {},
 
     // Skills
     skills: [],
@@ -500,6 +587,21 @@ export const ProfileCompletion = () => {
           console.log('✅ Pricing validation passed');
           return true;
 
+        case 5:
+          console.log('Validating documents step');
+          if (!formData.documents.aadhaar) {
+            console.log('❌ Validation failed: Aadhaar document missing');
+            setError('Please upload your Aadhaar card');
+            return false;
+          }
+          if (!formData.documents.pan) {
+            console.log('❌ Validation failed: PAN document missing');
+            setError('Please upload your PAN card');
+            return false;
+          }
+          console.log('✅ Document validation passed');
+          return true;
+
         default:
           console.log('Unknown step:', currentStep);
           return false;
@@ -570,7 +672,16 @@ export const ProfileCompletion = () => {
           };
           break;
         case 4:
-          // On final step, send all data
+          if (isPartialSave) {
+            dataToUpdate = {
+              pricing: formData.pricing
+            };
+            console.log('📤 Submitting pricing data:', dataToUpdate);
+          }
+          break;
+
+        case 5:
+          // Final step with document verification, send all data
           // Ensure avatar is a valid URL
           let finalAvatarUrl = formData.avatar;
           if (finalAvatarUrl && !finalAvatarUrl.startsWith('http') && !finalAvatarUrl.startsWith('data:')) {
@@ -602,7 +713,7 @@ export const ProfileCompletion = () => {
 
       if (updatedProfile) {
         console.log('✅ Profile updated successfully');
-        if (!isPartialSave && currentStep === 4) {
+        if (!isPartialSave && currentStep === 5) {
           navigate('/');
         }
         return true;
@@ -646,13 +757,13 @@ export const ProfileCompletion = () => {
         {/* Header */}
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold text-gray-800">Complete Your Profile</h2>
-          <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+          <p className="text-sm text-gray-600">Step {currentStep + 1} of 6</p>
         </div>
 
       <div className="space-y-4">
               {/* Step Progress */}
               <div className="flex justify-between items-center mb-8 px-1 sm:px-2 md:px-4 overflow-x-auto">
-                {['Basic Info', 'Skills', 'Availability', 'Service Areas', 'Pricing'].map((step, index) => {
+                {['Basic Info', 'Skills', 'Availability', 'Service Areas', 'Pricing', 'Document Verification'].map((step, index) => {
                   // Calculate step state
                   const isComplete = index < currentStep;
                   const isCurrent = index === currentStep;
@@ -681,9 +792,12 @@ export const ProfileCompletion = () => {
                       }
                     } else if (index > currentStep) {
                       // Going forwards
-                      for (let i = currentStep; i < index; i++) {
-                        nextStep();
+                      if (index > currentStep + 1) {
+                        // Prevent skipping more than one step at a time
+                        setError('Please complete steps in order');
+                        return;
                       }
+                      nextStep();
                     }
                   };
                   
@@ -888,7 +1002,7 @@ export const ProfileCompletion = () => {
                 <div className="space-y-4 sm:space-y-6">
                   {/* Step indicator */}
                   <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 6</p>
                   </div>
                   {/* Skills List */}
                   {formData.skills.map((skill, index) => (
@@ -1400,6 +1514,172 @@ export const ProfileCompletion = () => {
                 </div>
               )}
 
+              {currentStep === 5 && (
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Step indicator */}
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 6</p>
+                  </div>
+                  
+                  {/* Document Upload Section */}
+                  <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Document Verification</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Aadhaar Card Upload */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Aadhaar Card {formData.documents.aadhaar && '✓'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => handleDocumentUpload(e, 'aadhaar')}
+                            className="block w-full text-sm text-gray-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-full file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-violet-50 file:text-violet-700
+                              hover:file:bg-violet-100"
+                            disabled={uploadingDocument === 'aadhaar'}
+                          />
+                          {uploadingDocument === 'aadhaar' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                              <IonSpinner name="crescent" />
+                            </div>
+                          )}
+                        </div>
+                        {formData.documents.aadhaar && (
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>{formData.documents.aadhaar.name}</span>
+                            <IonButton
+                              fill="clear"
+                              color="danger"
+                              size="small"
+                              onClick={() => {
+                                if (formData.documents.aadhaar?.key) {
+                                  ImageService.deleteImage(formData.documents.aadhaar.key);
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    documents: {
+                                      ...prev.documents,
+                                      aadhaar: undefined
+                                    }
+                                  }));
+                                }
+                              }}
+                            >
+                              Remove
+                            </IonButton>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* PAN Card Upload */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          PAN Card {formData.documents.pan && '✓'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => handleDocumentUpload(e, 'pan')}
+                            className="block w-full text-sm text-gray-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-full file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-violet-50 file:text-violet-700
+                              hover:file:bg-violet-100"
+                            disabled={uploadingDocument === 'pan'}
+                          />
+                          {uploadingDocument === 'pan' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                              <IonSpinner name="crescent" />
+                            </div>
+                          )}
+                        </div>
+                        {formData.documents.pan && (
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>{formData.documents.pan.name}</span>
+                            <IonButton
+                              fill="clear"
+                              color="danger"
+                              size="small"
+                              onClick={() => {
+                                if (formData.documents.pan?.key) {
+                                  ImageService.deleteImage(formData.documents.pan.key);
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    documents: {
+                                      ...prev.documents,
+                                      pan: undefined
+                                    }
+                                  }));
+                                }
+                              }}
+                            >
+                              Remove
+                            </IonButton>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Professional Certificate */}
+                    <div className="mt-4 space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Professional Certificate (Optional) {formData.documents.professional && '✓'}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => handleDocumentUpload(e, 'professional')}
+                          className="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-violet-50 file:text-violet-700
+                            hover:file:bg-violet-100"
+                          disabled={uploadingDocument === 'professional'}
+                        />
+                        {uploadingDocument === 'professional' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                            <IonSpinner name="crescent" />
+                          </div>
+                        )}
+                      </div>
+                      {formData.documents.professional && (
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{formData.documents.professional.name}</span>
+                          <IonButton
+                            fill="clear"
+                            color="danger"
+                            size="small"
+                            onClick={() => {
+                              if (formData.documents.professional?.key) {
+                                ImageService.deleteImage(formData.documents.professional.key);
+                                setFormData(prev => ({
+                                  ...prev,
+                                  documents: {
+                                    ...prev.documents,
+                                    professional: undefined
+                                  }
+                                }));
+                              }
+                            }}
+                          >
+                            Remove
+                          </IonButton>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <IonAlert
@@ -1446,13 +1726,13 @@ export const ProfileCompletion = () => {
                         }
 
                         // Save current step data
-                        const saved = await handleSubmit(currentStep !== 4);
+                        const saved = await handleSubmit(currentStep !== 5);
                         if (!saved) {
                           console.log('❌ Failed to save step data');
                           return;
                         }
                         
-                        if (currentStep === 4) {
+                        if (currentStep === 5) {
                           console.log('🎯 Final step - form completed');
                         } else {
                           console.log('➡️ Moving to next step');
@@ -1465,7 +1745,7 @@ export const ProfileCompletion = () => {
                         <div className="flex items-center gap-2">
                           <IonSpinner name="crescent" /> Saving...
                         </div>
-                      ) : currentStep === 4 ? (
+                      ) : currentStep === 5 ? (
                         'Complete Profile'
                       ) : (
                         'Next'
@@ -1475,7 +1755,7 @@ export const ProfileCompletion = () => {
                   
                   {/* Step indicator */}
                   <div className="text-center text-sm text-gray-600">
-                    Step {currentStep + 1} of 5
+                    Step {currentStep + 1} of 6
                   </div>
                 </div>
           </div>

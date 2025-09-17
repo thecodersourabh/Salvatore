@@ -33,7 +33,8 @@ export const PROFILE_STEPS = {
   AVAILABILITY: 2,
   SERVICE_AREAS: 3,
   PRICING: 4,
-  TOTAL: 5,
+  DOCUMENTS: 5,
+  TOTAL: 6
 } as const;
 
 export const STEP_LABELS = [
@@ -41,7 +42,8 @@ export const STEP_LABELS = [
   'Skills',
   'Availability', 
   'Service Areas',
-  'Pricing'
+  'Pricing',
+  'Documents'
 ] as const;
 
 // Responsive breakpoints (matching Tailwind)

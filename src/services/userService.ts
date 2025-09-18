@@ -84,24 +84,35 @@ export class UserService {
               }))
             }
           : undefined,
-          preferences: profile.preferences
-            ? {
-                notificationSettings: {
-                  email: profile.preferences.notificationSettings.email,
-                  push: profile.preferences.notificationSettings.push,
-                  sms: profile.preferences.notificationSettings.sms,
-                },
-                visibility: {
-                  public: profile.preferences.visibility.public,
-                  searchable: profile.preferences.visibility.searchable,
-                },
-              }
-            : undefined,
-        pricing: profile.pricing
+        preferences: profile.preferences
+          ? {
+              notificationSettings: {
+                email: profile.preferences.notificationSettings.email,
+                push: profile.preferences.notificationSettings.push,
+                sms: profile.preferences.notificationSettings.sms,
+              },
+              visibility: {
+                public: profile.preferences.visibility.public,
+                searchable: profile.preferences.visibility.searchable,
+              },
+            }
+          : undefined,
+        pricing: profile.pricing && 'model' in profile.pricing
           ? {
               model: profile.pricing.model,
-              baseRate: profile.pricing.baseRate,
-              currency: profile.pricing.currency,
+              baseRate: profile.pricing.baseRate || 0,
+              currency: profile.pricing.currency || 'INR',
+              minimumCharge: profile.pricing.minimumCharge || 0,
+              travelFee: profile.pricing.travelFee || 0,
+              servicePackages: profile.pricing.servicePackages || []
+            }
+          : undefined,
+        documents: profile.documents
+          ? {
+              aadhaar: profile.documents.aadhaar,
+              pan: profile.documents.pan,
+              professional: profile.documents.professional,
+              others: profile.documents.others
             }
           : undefined,
       };

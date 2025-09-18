@@ -14,6 +14,27 @@ export type ServiceSector =
   | "agency"
   | "other";
 
+export type DocumentType = 'aadhaar' | 'pan' | 'professional';
+
+export interface Document {
+  key: string;
+  url?: string;
+  name: string;
+  type: string;
+  size: number;
+  verified: boolean;
+  verifiedAt: string | null;
+  verifiedBy: string | null;
+  uploadedAt: string;
+}
+
+export interface Documents {
+  aadhaar?: Document;
+  pan?: Document;
+  others?: Document[];
+  professional?: Document[];
+}
+
 export interface User {
   id?: string;
   auth0Id?: string;
@@ -97,6 +118,12 @@ export interface User {
     expiryDate: string;
     verificationUrl: string;
   }>;
+  documents?: {
+  aadhaar?: Document;
+  pan?: Document;
+  others?: Document[];
+  professional?: Document[];
+};
   portfolio?: Array<{
     id: string;
     title: string;

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useStep } from '../../context/StepContext';
 import { useLocation } from '../../hooks/useLocation';
+import { useImageGallery } from '../../hooks/useImageGallery';
 import { camera } from 'ionicons/icons';
 import './ProfileCompletion.css';
+import { VerificationBadge } from '../../components/ui/VerificationBadge';
 import {
   IonContent,
   IonText,
@@ -19,6 +21,42 @@ import {
 import { UserService } from '../../services/userService';
 import { ImageService } from '../../services/imageService';
 import { ServiceSector } from '../../types/user';
+
+interface DocumentPreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  document: { url: string; name: string; type: string } | null;
+}
+
+import { Modal } from '../../components/ui/Modal';
+
+const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ isOpen, onClose, document }) => {
+  return (
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose}
+      title={document?.name}
+    >
+      <div className="document-preview-wrapper">
+        {document?.type === 'application/pdf' ? (
+          <iframe
+            src={document?.url}
+            className="pdf-viewer"
+            title={document?.name}
+          />
+        ) : (
+          <div className="image-container">
+            <img
+              src={document?.url}
+              alt={document?.name}
+              className="preview-image"
+            />
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
 
 
 export const ProfileCompletion = () => {
@@ -41,8 +79,70 @@ export const ProfileCompletion = () => {
     lastModified?: string;
   }>>([]);
   const [uploadingDocument, setUploadingDocument] = useState<DocumentType | null>(null);
-  const [verificationInProgress, setVerificationInProgress] = useState<boolean>(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [formData, setFormData] = useState<FormDataType>({
+    // Basic Info
+    name: user?.name || '',
+    userName: '',
+    sector: user?.sector || '',
+    phoneNumber: user?.phoneNumber || '',
+    avatar: user?.avatar || '',
+    
+    // Documents
+    documents: {
+      professional: []
+    },
+    // Skills
+    skills: [],
+    // Availability
+    availability: {
+      weekdays: true,
+      weekends: false,
+      hours: {
+        start: '09:00',
+        end: '17:00'
+      }
+    },
+    // Service Areas
+    serviceAreas: {
+      locations: [],
+      serviceAtHome: true,
+      serviceAtWorkshop: false,
+      radius: 50,
+      unit: 'km'
+    },
+    // Pricing
+    pricing: {
+      model: 'hourly',
+      baseRate: 0,
+      currency: 'USD',
+      minimumCharge: 0,
+      travelFee: 0,
+      servicePackages: []
+    }
+  });
+  
+  // Use the image gallery hook after formData is initialized
+  const { 
+    currentImage, 
+    imageStatus, 
+    isTransitioning,
+    selectImage 
+  } = useImageGallery({ 
+    images: userImages,
+    initialImage: formData.avatar,
+    autoSwitchInterval: 3000
+  });
+
+  // Update form data when current image changes
+  useEffect(() => {
+    if (currentImage) {
+      setFormData(prev => ({
+        ...prev,
+        avatar: currentImage.key
+      }));
+    }
+  }, [currentImage]);
   
   const handleGetCurrentLocation = async (locationIndex: number) => {
     try {
@@ -199,24 +299,44 @@ export const ProfileCompletion = () => {
         folder: `documents`
       });
       
+      // Wait a moment for S3 consistency
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Get CDN URL for the document
       const documentUrl = ImageService.getImageUrl(s3Key);
       
       // Update form data with document information
+      const documentInfo = {
+        key: s3Key,
+        url: documentUrl,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        verified: false,
+        verifiedAt: null,
+        verifiedBy: null,
+        uploadedAt: new Date().toISOString()
+      };
+      
       setFormData(prev => ({
         ...prev,
         documents: {
           ...prev.documents,
-          [docType]: {
-            key: s3Key,
-            url: documentUrl,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            uploadedAt: new Date().toISOString()
-          }
+          [docType]: docType === 'professional' 
+            ? [...(prev.documents.professional || []), documentInfo]
+            : documentInfo
         }
       }));
+      
+      // Verify the URL is accessible
+      try {
+        const response = await fetch(documentUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          console.warn(`Document URL not yet accessible: ${documentUrl}`);
+        }
+      } catch (err) {
+        console.warn('Could not verify document URL:', err);
+      }
       
       console.log(`✅ ${docType} document uploaded successfully:`, s3Key);
       
@@ -261,27 +381,34 @@ export const ProfileCompletion = () => {
   // Delete an image
   const handleDeleteImage = async (imageKey: string) => {
     try {
+      console.log('🗑️ Attempting to delete image:', imageKey);
+      
+      // Remove from local state first for immediate UI feedback
+      setUserImages(prev => prev.filter(img => img.key !== imageKey));
+      
+      // Clear the avatar if this was the current one
+      if (formData.avatar && (
+        formData.avatar.includes(imageKey) || 
+        formData.avatar === ImageService.getImageUrl(imageKey) ||
+        formData.avatar === imageKey
+      )) {
+        console.log('🖼️ Clearing avatar as it was deleted');
+        setFormData(prev => ({ ...prev, avatar: '' }));
+      }
+
+      // Actually delete the image
       await ImageService.deleteImage(imageKey);
       console.log('🗑️ Image deleted successfully:', imageKey);
       
-      // Remove from local state
-      setUserImages(prev => prev.filter(img => img.key !== imageKey));
+      // Save the profile update to persist avatar change
+      await handleSubmit(true);
       
-      // If this was the current avatar, clear it
-      if (formData.avatar && (formData.avatar.includes(imageKey) || formData.avatar === ImageService.getImageUrl(imageKey))) {
-        setFormData(prev => ({ ...prev, avatar: '' }));
-      }
     } catch (err) {
       console.error('❌ Failed to delete image:', err);
       setError(`Failed to delete image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      // Reload images in case deletion failed
+      loadUserImages(user?.email?.split('@')[0]);
     }
-  };
-
-  // Select an existing image as avatar
-  const handleSelectImage = (key: string) => {
-    // Store the image key in formData
-    setFormData(prev => ({ ...prev, avatar: key }));
-    console.log('🖼️ Selected image as avatar:', key);
   };
 
   type Skill = {
@@ -308,7 +435,18 @@ export const ProfileCompletion = () => {
     name: string;
     type: string;
     size: number;
+    verified: boolean;
+    verifiedAt: string | null;
+    verifiedBy: string | null;
     uploadedAt: string;
+  };
+
+
+  type Documents = {
+    aadhaar?: Document;
+    pan?: Document;
+    others?: Document[];
+    professional?: Document[];
   };
 
   type FormDataType = {
@@ -317,9 +455,7 @@ export const ProfileCompletion = () => {
     sector: string;
     phoneNumber: string;
     avatar: string;
-    documents: {
-      [key in DocumentType]?: Document;
-    };
+    documents: Documents;
     skills: Skill[];
     availability: {
       weekdays: boolean;
@@ -346,48 +482,7 @@ export const ProfileCompletion = () => {
     };
   };
 
-  const [formData, setFormData] = useState<FormDataType>({
-    // Basic Info
-    name: user?.name || '',
-    userName:  '',
-    sector: user?.sector || '',
-    phoneNumber: user?.phoneNumber || '',
-    avatar: user?.avatar || '',
-    
-    // Documents
-    documents: {},
 
-    // Skills
-    skills: [],
-    // Availability
-    availability: {
-      weekdays: true,
-      weekends: false,
-      hours: {
-        start: '09:00',
-        end: '17:00'
-      }
-    },
-    
-    // Service Areas
-    serviceAreas: {
-      locations: [],
-      serviceAtHome: true,
-      serviceAtWorkshop: false,
-      radius: 50,
-      unit: 'km'
-    },
-    
-    // Pricing
-    pricing: {
-      model: 'hourly',
-      baseRate: 0,
-      currency: 'USD',
-      minimumCharge: 0,
-      travelFee: 0,
-      servicePackages: []
-    }
-  });
 
    // Debug renders
   useEffect(() => {
@@ -423,7 +518,27 @@ export const ProfileCompletion = () => {
               serviceAtHome: userData.preferences?.serviceAtHome ?? prev.serviceAreas.serviceAtHome,
               serviceAtWorkshop: userData.preferences?.serviceAtWorkshop ?? prev.serviceAreas.serviceAtWorkshop,
             },
-            pricing: userData.pricing || prev.pricing // Keep default pricing as it's not in the User type
+            pricing: userData.pricing || prev.pricing, // Keep default pricing as it's not in the User type
+            documents: {
+              ...prev.documents,
+              aadhaar: userData.documents?.aadhaar ? {
+                ...userData.documents.aadhaar,
+                url: ImageService.getImageUrl(userData.documents.aadhaar.key)
+              } : undefined,
+              pan: userData.documents?.pan ? {
+                ...userData.documents.pan,
+                url: ImageService.getImageUrl(userData.documents.pan.key)
+              } : undefined,
+              professional: Array.isArray(userData.documents?.professional) 
+                ? userData.documents.professional.map(doc => ({
+                    ...doc,
+                    url: ImageService.getImageUrl(doc.key),
+                    verified: doc.verified || false,
+                    verifiedAt: doc.verifiedAt || null,
+                    verifiedBy: doc.verifiedBy || null
+                  } as Document))
+                : []
+            }
           }));
           console.log('Loaded user data:', userData);
         }
@@ -459,9 +574,9 @@ export const ProfileCompletion = () => {
       }));
     }
     
-    // Initialize skills step with a default skill if empty
+    // Initialize skills step with a default skill only when entering the step for the first time
     if (currentStep === 1 && formData.skills.length === 0) {
-      console.log('🔧 Initializing skills step with default skill');
+      console.log('🔧 Adding default skill template');
       setFormData(prev => ({
         ...prev,
         skills: [
@@ -473,7 +588,7 @@ export const ProfileCompletion = () => {
         ]
       }));
     }
-  }, [currentStep, formData.serviceAreas.locations.length, formData.skills.length]);
+  }, [currentStep]); // Only run when step changes
 
   useEffect(() => {
     console.log('📊 Form data updated:', {
@@ -532,16 +647,31 @@ export const ProfileCompletion = () => {
         case 1:
           console.log('Validating skills step');
           console.log('Current skills data:', formData.skills);
-          if (formData.skills.length === 0) {
-            console.log('❌ Validation failed: No skills added');
-            setError('Please add at least one skill');
+          
+          const validSkills = formData.skills.filter(skill => skill.name.trim());
+          if (validSkills.length === 0) {
+            console.log('❌ Validation failed: No valid skills found');
+            setError('Please add at least one skill with a name');
             return false;
           }
-          if (formData.skills.some(skill => !skill.name?.trim())) {
-            console.log('❌ Validation failed: Empty skill names found');
-            setError('Please fill in all skill names');
+
+          const invalidSkills = validSkills.some(skill => {
+            if (!skill.level) {
+              setError('Please select a skill level for all skills');
+              return true;
+            }
+            if (typeof skill.yearsOfExperience !== 'number') {
+              setError('Please enter years of experience for all skills');
+              return true;
+            }
+            return false;
+          });
+
+          if (invalidSkills) {
+            console.log('❌ Validation failed: Invalid skill data found');
             return false;
           }
+
           console.log('✅ Skills validation passed');
           return true;
 
@@ -599,6 +729,7 @@ export const ProfileCompletion = () => {
             setError('Please upload your PAN card');
             return false;
           }
+          // Professional documents are optional, no validation needed
           console.log('✅ Document validation passed');
           return true;
 
@@ -656,10 +787,21 @@ export const ProfileCompletion = () => {
           console.log('📤 Submitting basic info data:', dataToUpdate);
           break;
         case 1:
+          // Filter out empty skills and format the data
+          const validSkills = formData.skills.filter(skill => skill.name.trim());
+          if (validSkills.length === 0) {
+            setError('Please add at least one skill');
+            setSaving(false);
+            return false;
+          }
           dataToUpdate = {
-            skills: formData.skills
+            skills: validSkills.map(skill => ({
+              name: skill.name.trim(),
+              level: skill.level || 'beginner',
+              yearsOfExperience: parseInt(String(skill.yearsOfExperience)) || 0
+            }))
           };
-          console.log('📤 Submitting skills data:', formData.skills);
+          console.log('📤 Submitting skills data:', dataToUpdate.skills);
           break;
         case 2:
           dataToUpdate = {
@@ -702,7 +844,8 @@ export const ProfileCompletion = () => {
             skills: formData.skills,
             availability: formData.availability,
             serviceAreas: formData.serviceAreas,
-            pricing: formData.pricing
+            pricing: formData.pricing,
+            documents: formData.documents
           };
           console.log('📤 Submitting complete profile data:', dataToUpdate);
           break;
@@ -792,12 +935,9 @@ export const ProfileCompletion = () => {
                       }
                     } else if (index > currentStep) {
                       // Going forwards
-                      if (index > currentStep + 1) {
-                        // Prevent skipping more than one step at a time
-                        setError('Please complete steps in order');
-                        return;
+                      for (let i = currentStep; i < index; i++) {
+                        nextStep();
                       }
-                      nextStep();
                     }
                   };
                   
@@ -844,32 +984,46 @@ export const ProfileCompletion = () => {
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Profile Picture</h4>
                     
                     <div className="flex flex-col items-center justify-center space-y-4">
-                      <div className="profile-image-container">
+                      <div 
+                        className={`profile-image-container ${isTransitioning ? 'transitioning' : ''}`}
+                        data-images={imageStatus}
+                        onClick={() => document.getElementById('imageUpload')?.click()}
+                      >
                         {userImages.length > 0 ? (
                           <>
                             <img
-                              src={formData.avatar ? userImages.find(img => img.key === formData.avatar)?.url : (userImages[0]?.url || '')}
+                              src={currentImage?.url || ''}
                               alt="Profile"
-                              className="profile-image animate__animated animate__fadeIn"
+                              className={`profile-image animate__fadeIn ${isTransitioning ? 'fade-out' : 'fade-in'}`}
+                              data-auto-switch="true"
                             />
-                            <div className="profile-image-overlay">
+                            <div 
+                              className="profile-image-overlay"
+                              onClick={(e) => e.stopPropagation()} // Prevent click on overlay from triggering file input
+                            >
                               <div className="flex items-center space-x-2">
                                 {userImages.map((image, index) => (
                                   <div
                                     key={index}
                                     className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-200 ${
-                                      formData.avatar === image.key
+                                      (formData.avatar === image.key || formData.avatar === image.url)
                                         ? 'bg-white'
                                         : 'bg-white/50 hover:bg-white/75'
                                     }`}
-                                    onClick={() => handleSelectImage(image.key)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      selectImage(image.key);
+                                    }}
                                   />
                                 ))}
                               </div>
                               <div className="absolute bottom-2 right-2 flex space-x-2">
                                 <IonButton 
                                   fill="clear" 
-                                  onClick={() => document.getElementById('imageUpload')?.click()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    document.getElementById('imageUpload')?.click();
+                                  }}
                                   className="image-upload-button"
                                   disabled={uploadingImage}
                                 >
@@ -883,14 +1037,19 @@ export const ProfileCompletion = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      e.preventDefault();
                                       const currentImage = userImages.find(
-                                        img => img.key === formData.avatar
+                                        img => img.key === formData.avatar || img.url === formData.avatar
                                       );
                                       if (currentImage) {
                                         handleDeleteImage(currentImage.key);
+                                      } else if (formData.avatar) {
+                                        // If we can't find the image in userImages but have an avatar, try to delete it
+                                        const key = formData.avatar.split('/').pop() || formData.avatar;
+                                        handleDeleteImage(key);
                                       }
                                     }}
-                                    className="bg-red-500/75 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
+                                    className="bg-red-500/75 hover:bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl transition-colors"
                                     title="Delete current image"
                                   >
                                     ×
@@ -1528,9 +1687,19 @@ export const ProfileCompletion = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Aadhaar Card Upload */}
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Aadhaar Card {formData.documents.aadhaar && '✓'}
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Aadhaar Card
+                          </label>
+                          {formData.documents.aadhaar && (
+                            <VerificationBadge
+                              isVerified={formData.documents.aadhaar.verified}
+                              verifiedAt={formData.documents.aadhaar.verifiedAt}
+                              verifiedBy={formData.documents.aadhaar.verifiedBy}
+                              showTooltip={true}
+                            />
+                          )}
+                        </div>
                         <div className="relative">
                           <input
                             type="file"
@@ -1552,7 +1721,14 @@ export const ProfileCompletion = () => {
                         </div>
                         {formData.documents.aadhaar && (
                           <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>{formData.documents.aadhaar.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{formData.documents.aadhaar.name}</span>
+                              {formData.documents.aadhaar.verified === false && (
+                                <div className="flex items-center gap-1 text-gray-400">
+                                  <span>Pending Verification</span>
+                                </div>
+                              )}
+                            </div>
                             <IonButton
                               fill="clear"
                               color="danger"
@@ -1572,15 +1748,43 @@ export const ProfileCompletion = () => {
                             >
                               Remove
                             </IonButton>
+                            {formData.documents.aadhaar?.url && (
+                              <IonButton
+                                fill="clear"
+                                color="primary"
+                                size="small"
+                                onClick={() => {
+                                  const docInfo = formData.documents.aadhaar!;
+                                  console.log('Opening document:', docInfo);
+                                  setSelectedImage({
+                                    url: docInfo.url || ImageService.getImageUrl(docInfo.key),
+                                    name: docInfo.name,
+                                    type: docInfo.type
+                                  });
+                                }}
+                              >
+                                View
+                              </IonButton>
+                            )}
                           </div>
                         )}
                       </div>
 
                       {/* PAN Card Upload */}
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          PAN Card {formData.documents.pan && '✓'}
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            PAN Card
+                          </label>
+                          {formData.documents.pan && (
+                            <VerificationBadge
+                              isVerified={formData.documents.pan.verified}
+                              verifiedAt={formData.documents.pan.verifiedAt}
+                              verifiedBy={formData.documents.pan.verifiedBy}
+                              showTooltip={true}
+                            />
+                          )}
+                        </div>
                         <div className="relative">
                           <input
                             type="file"
@@ -1602,7 +1806,14 @@ export const ProfileCompletion = () => {
                         </div>
                         {formData.documents.pan && (
                           <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>{formData.documents.pan.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{formData.documents.pan.name}</span>
+                              {formData.documents.pan.verified === false && (
+                                <div className="flex items-center gap-1 text-gray-400">
+                                  <span>Pending Verification</span>
+                                </div>
+                              )}
+                            </div>
                             <IonButton
                               fill="clear"
                               color="danger"
@@ -1622,16 +1833,50 @@ export const ProfileCompletion = () => {
                             >
                               Remove
                             </IonButton>
+                            {formData.documents.pan?.url && (
+                              <IonButton
+                                fill="clear"
+                                color="primary"
+                                size="small"
+                                onClick={() => {
+                                  const docInfo = formData.documents.pan!;
+                                  console.log('Opening document:', docInfo);
+                                  setSelectedImage({
+                                    url: docInfo.url || ImageService.getImageUrl(docInfo.key),
+                                    name: docInfo.name,
+                                    type: docInfo.type
+                                  });
+                                }}
+                              >
+                                View
+                              </IonButton>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Professional Certificate */}
-                    <div className="mt-4 space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Professional Certificate (Optional) {formData.documents.professional && '✓'}
-                      </label>
+                    {/* Professional Certificates */}
+                    <div className="mt-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Professional Certificates (Optional) {formData.documents.professional && formData.documents.professional.length > 0 && `(${formData.documents.professional.length})`}
+                        </label>
+                        {formData.documents.professional && formData.documents.professional.length > 0 && (
+                          <div className="flex gap-2">
+                            {formData.documents.professional.map((doc) => (
+                              <VerificationBadge
+                                key={doc.key}
+                                isVerified={doc.verified}
+                                verifiedAt={doc.verifiedAt}
+                                verifiedBy={doc.verifiedBy}
+                                showTooltip={true}
+                                className="scale-75"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="relative">
                         <input
                           type="file"
@@ -1651,35 +1896,67 @@ export const ProfileCompletion = () => {
                           </div>
                         )}
                       </div>
-                      {formData.documents.professional && (
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{formData.documents.professional.name}</span>
-                          <IonButton
-                            fill="clear"
-                            color="danger"
-                            size="small"
-                            onClick={() => {
-                              if (formData.documents.professional?.key) {
-                                ImageService.deleteImage(formData.documents.professional.key);
-                                setFormData(prev => ({
-                                  ...prev,
-                                  documents: {
-                                    ...prev.documents,
-                                    professional: undefined
-                                  }
-                                }));
-                              }
-                            }}
-                          >
-                            Remove
-                          </IonButton>
-                        </div>
-                      )}
+                      
+                      {/* List of uploaded professional certificates */}
+                      <div className="space-y-2">
+                        {formData.documents.professional?.map((doc, index) => (
+                          <div key={doc.key} className="flex items-center justify-between text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="flex-1 truncate pr-2">{doc.name}</span>
+                              {doc.verified === false && (
+                                <div className="flex items-center gap-1 text-gray-400">
+                                  <span>Pending Verification</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <IonButton
+                                fill="clear"
+                                color="primary"
+                                size="small"
+                                onClick={() => {
+                                  setSelectedImage({
+                                    url: doc.url || ImageService.getImageUrl(doc.key),
+                                    name: doc.name,
+                                    type: doc.type
+                                  });
+                                }}
+                              >
+                                View
+                              </IonButton>
+                              <IonButton
+                                fill="clear"
+                                color="danger"
+                                size="small"
+                                onClick={() => {
+                                  ImageService.deleteImage(doc.key);
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    documents: {
+                                      ...prev.documents,
+                                      professional: prev.documents.professional?.filter((_, i) => i !== index)
+                                    }
+                                  }));
+                                }}
+                              >
+                                Remove
+                              </IonButton>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* Image/Document Preview Modal */}
+              <DocumentPreviewModal 
+                isOpen={!!selectedImage}
+                onClose={() => setSelectedImage(null)}
+                document={selectedImage}
+              />
+              
               {/* Error Alert */}
               {error && (
                 <IonAlert

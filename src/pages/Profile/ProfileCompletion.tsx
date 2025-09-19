@@ -1189,9 +1189,9 @@ export const ProfileCompletion = () => {
                           label="Skill Name"
                           labelPlacement="floating"
                           className="w-full sm:col-span-2 lg:col-span-1"
-                          onIonChange={e => {
+                          onIonInput={e => {
                             const newSkills = [...formData.skills];
-                            newSkills[index] = { ...skill, name: e.detail.value! };
+                            newSkills[index] = { ...skill, name: (e.target as HTMLIonInputElement).value?.toString() || '' };
                             setFormData(prev => ({ ...prev, skills: newSkills }));
                           }}
                           placeholder="e.g., Plumbing, Electrical, etc."

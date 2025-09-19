@@ -51,22 +51,28 @@ function getProfileCompletion(user: Auth0User | any): number {
 
 export const ProfileLayout = () => {
   const auth = useAuth();
+  const profileCompletion = getProfileCompletion(auth.userContext);
 
   useEffect(() => {
-    // Calculate profile completion when auth state changes
+    // Re-calculate profile completion when auth state changes
     getProfileCompletion(auth.userContext);
-  }, [auth, auth.userContext]);
+  }, [auth.userContext]);
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
       <StepProvider>
-        <ProfileCompletion />
+        {/* Show ProfileCompletion if profile is incomplete */}
+        {profileCompletion < 100 && (
+          <div className="w-full">
+            <ProfileCompletion />
+          </div>
+        )}
+        
+        {/* Main content */}
+        <div className={`w-full ${profileCompletion < 100 ? 'mt-6' : ''}`}>
+          <Outlet />
+        </div>
       </StepProvider>
-      
-      {/* Main content */}
-      <div className="w-full">
-        <Outlet />
-      </div>
     </div>
   );
 };

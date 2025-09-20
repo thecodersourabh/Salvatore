@@ -375,11 +375,11 @@ export const ProfileView = () => {
                           </div>
                           <div className="mt-3">
                             <button
-                              onClick={() => navigate('/profile/complete')}
+                              onClick={() => navigate('/profile')}
                               className="text-sm font-medium text-yellow-800 hover:text-yellow-900"
                             >
                               <div 
-                                onClick={() => navigate('/profile/completion')}
+                                onClick={() => navigate('/profile')}
                                 className="flex items-center space-x-1 cursor-pointer"
                               >
                                 <span>Complete Now</span>

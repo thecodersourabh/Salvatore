@@ -65,11 +65,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       link: "/orders"
     },
     {
-      icon: ShoppingBag,
-      label: "My Designs",
-      link: "/profile/my-designs"
-    },
-    {
       icon: Heart,
       label: "Wishlist",
       link: "/wishlist"

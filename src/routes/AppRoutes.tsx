@@ -8,7 +8,6 @@ import { Auth } from "../pages/Auth/Auth";
 import { Dashboard } from "../pages/Dashboard/Dashboard";
 import { ProfileLayout } from "../pages/Profile/ProfileLayout";
 import { ProfileView } from "../pages/Profile/ProfileView";
-import { ProfileCompletion } from "../pages/Profile/ProfileCompletion";
 import { Orders } from "../pages/Orders/Orders";
 import { Addresses } from "../pages/Profile/Addresses/Addresses";
 import { Wishlist } from "../pages/Profile/Wishlist/Wishlist";
@@ -32,15 +31,27 @@ export const AppRoutes = () => {
         <ProtectedRoute>
           <ProfileLayout />
         </ProtectedRoute>
-      }>
-        {/* Nested routes under profile */}
-        <Route index element={<ProfileCompletion />} />
-        <Route path=":username" element={<ProfileView />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="addresses" element={<Addresses />} />
-        <Route path="profile" element={<ProfileCompletion />} />
-        <Route path="wishlist" element={<Wishlist />} />
-      </Route>
+      } />
+      <Route path="/profile/:username" element={
+        <ProtectedRoute>
+          <ProfileView />
+        </ProtectedRoute>
+      } />
+      <Route path="/orders" element={
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      } />
+      <Route path="/addresses" element={
+        <ProtectedRoute>
+          <Addresses />
+        </ProtectedRoute>
+      } />
+      <Route path="/wishlist" element={
+        <ProtectedRoute>
+          <Wishlist />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 };

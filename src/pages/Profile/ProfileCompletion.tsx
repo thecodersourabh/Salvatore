@@ -975,10 +975,7 @@ export const ProfileCompletion = () => {
               {/* Step Content */}
               {currentStep === 0 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
-                  </div>
+              
                   {/* Profile Picture */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Profile Picture</h4>
@@ -1159,10 +1156,7 @@ export const ProfileCompletion = () => {
 
               {currentStep === 1 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 6</p>
-                  </div>
+                  
                   {/* Skills List */}
                   {formData.skills.map((skill, index) => (
                     <div key={index} className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
@@ -1251,10 +1245,7 @@ export const ProfileCompletion = () => {
 
               {currentStep === 2 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
-                  </div>
+                 
                   {/* Availability Options */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Working Days</h4>
@@ -1331,10 +1322,7 @@ export const ProfileCompletion = () => {
 
               {currentStep === 3 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
-                  </div>
+                  
                   {/* Location List */}
                   {formData.serviceAreas.locations.map((location, index) => (
                     <div key={index} className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -1562,10 +1550,7 @@ export const ProfileCompletion = () => {
 
               {currentStep === 4 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 5</p>
-                  </div>
+                
                   {/* Pricing Model */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Pricing Model</h4>
@@ -1675,10 +1660,6 @@ export const ProfileCompletion = () => {
 
               {currentStep === 5 && (
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Step indicator */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">Step {currentStep + 1} of 6</p>
-                  </div>
                   
                   {/* Document Upload Section */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -1969,7 +1950,7 @@ export const ProfileCompletion = () => {
               )}
 
               {/* Navigation Buttons */}
-              <div className="ion-padding pb-8">
+              <div className="ion-padding pb-16">
                 <div className="navigation-buttons space-y-4">
                   {/* Navigation actions */}
                   <div className="flex gap-4">
@@ -2030,10 +2011,6 @@ export const ProfileCompletion = () => {
                     </IonButton>
                   </div>
                   
-                  {/* Step indicator */}
-                  <div className="text-center text-sm text-gray-600">
-                    Step {currentStep + 1} of 6
-                  </div>
                 </div>
           </div>
           

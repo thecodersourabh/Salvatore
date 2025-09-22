@@ -2,7 +2,7 @@ import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { usePlatform } from '../hooks/usePlatform';
 
-export function Cart() {
+export const Cart = () => {
   const { items, removeItem, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 

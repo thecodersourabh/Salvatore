@@ -78,6 +78,48 @@ export const ProfileCompletion = () => {
     size?: number;
     lastModified?: string;
   }>>([]);
+  const [unsavedData, setUnsavedData] = useState<FormDataType | null>(null);
+  const [savedData, setSavedData] = useState<FormDataType>({
+    // Basic Info
+    name: user?.name || '',
+    userName: '',
+    sector: user?.sector || '',
+    phoneNumber: user?.phoneNumber || '',
+    avatar: user?.avatar || '',
+    
+    // Documents
+    documents: {
+      professional: []
+    },
+    // Skills
+    skills: [],
+    // Availability
+    availability: {
+      weekdays: true,
+      weekends: false,
+      hours: {
+        start: '09:00',
+        end: '17:00'
+      }
+    },
+    // Service Areas
+    serviceAreas: {
+      locations: [],
+      serviceAtHome: true,
+      serviceAtWorkshop: false,
+      radius: 50,
+      unit: 'km'
+    },
+    // Pricing
+    pricing: {
+      model: 'hourly',
+      baseRate: 0,
+      currency: 'USD',
+      minimumCharge: 0,
+      travelFee: 0,
+      servicePackages: []
+    }
+  });
   const [uploadingDocument, setUploadingDocument] = useState<DocumentType | null>(null);
   const [selectedImage, setSelectedImage] = useState<{ url: string; name: string; type: string } | null>(null);
   const [formData, setFormData] = useState<FormDataType>({
@@ -130,7 +172,7 @@ export const ProfileCompletion = () => {
     selectImage 
   } = useImageGallery({ 
     images: userImages,
-    initialImage: formData.avatar,
+    initialImage: (unsavedData || savedData).avatar,
     autoSwitchInterval: 3000
   });
 
@@ -353,7 +395,7 @@ export const ProfileCompletion = () => {
     if (!username && !user?.email) return;
     
     try {
-      const userIdentifier = username || formData.userName || user!.email.split('@')[0];
+      const userIdentifier = username || (unsavedData || savedData).userName || user!.email.split('@')[0];
       const response = await ImageService.listImages(userIdentifier, 'profile');
       
       // Use images directly from the response, they already have the right URL format
@@ -744,6 +786,24 @@ export const ProfileCompletion = () => {
     }
   };
 
+  // Helper function to update unsaved data
+  const updateField = (field: keyof FormDataType, value: any) => {
+    setUnsavedData(prev => ({
+      ...(prev || savedData),
+      [field]: value
+    }));
+  };
+
+  // Helper function to commit unsaved changes
+  const commitChanges = () => {
+    if (unsavedData) {
+      setSavedData(unsavedData);
+      setUnsavedData(null);
+      return true;
+    }
+    return false;
+  };
+
   const handleSubmit = async (isPartialSave: boolean = false) => {
     if (!user?.email) {
       setError('User email not found. Please log in again.');
@@ -754,7 +814,9 @@ export const ProfileCompletion = () => {
       console.log('❌ Final validation failed');
       return false;
     }
-
+    // Always save using the active data (unsaved changes if they exist)
+    const dataToSave = unsavedData || savedData;
+    
     setSaving(true);
     setError(null);
 
@@ -778,10 +840,10 @@ export const ProfileCompletion = () => {
           }
 
           dataToUpdate = {
-            displayName: formData.name,
-            userName: formData.userName,
-            sector: formData.sector as ServiceSector,
-            phone: formData.phoneNumber,
+            displayName: dataToSave.name,
+            userName: dataToSave.userName,
+            sector: dataToSave.sector as ServiceSector,
+            phone: dataToSave.phoneNumber,
             avatar: avatarUrl
           };
           console.log('📤 Submitting basic info data:', dataToUpdate);
@@ -920,12 +982,20 @@ export const ProfileCompletion = () => {
                         console.log('❌ Current step validation failed');
                         return;
                       }
+
+                      // First commit any unsaved changes
+                      commitChanges();
+
+                      // Then save to the server
                       const saved = await handleSubmit(true);
                       if (!saved) {
                         setError('Failed to save current step data. Please try again.');
                         return;
                       }
                     }
+                    
+                    // Reset unsaved changes before moving to new step
+                    setUnsavedData(null);
                     
                     // Navigate to the selected step
                     if (index < currentStep) {
@@ -1105,11 +1175,11 @@ export const ProfileCompletion = () => {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <IonInput
-                        value={formData.name}
+                        value={(unsavedData || savedData).name}
                         label="Name"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({ ...prev, name: e.detail.value! }))}
+                        onIonChange={e => updateField('name', e.detail.value!)}
                         placeholder="Enter your name"
                         required
                       />
@@ -1983,12 +2053,18 @@ export const ProfileCompletion = () => {
                           return;
                         }
 
-                        // Save current step data
+                        // First commit any unsaved changes
+                        commitChanges();
+
+                        // Then save current step data
                         const saved = await handleSubmit(currentStep !== 5);
                         if (!saved) {
                           console.log('❌ Failed to save step data');
                           return;
                         }
+
+                        // Reset unsaved changes before moving to next step
+                        setUnsavedData(null);
                         
                         if (currentStep === 5) {
                           console.log('🎯 Final step - form completed');

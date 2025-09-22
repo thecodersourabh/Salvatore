@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 
-export function ChatBot() {
+export const ChatBot = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState([
     { text: "Hi! I'm here to help with your fabric design questions. How can I assist you today?", isBot: true }
@@ -37,7 +37,7 @@ export function ChatBot() {
           <div className="p-4 bg-rose-600 text-white rounded-t-lg flex justify-between items-center max-sm:rounded-none">
             <div className="flex items-center space-x-2">
               <MessageCircle className="h-5 w-5" />
-              <span className="font-semibold">Design Assistant</span>
+              <span className="font-semibold">Chat Assistant</span>
             </div>
             <button
               onClick={() => setIsChatOpen(false)}

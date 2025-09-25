@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
-import { getAllSectorServices, Service } from "../../utils/sectorServices";
+import { getAllSectorServices } from "../../utils/sectorServices";
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
+import { AddressBar } from "../../components/AddressBar";
 
 interface ServiceItem {
   id: number;
@@ -50,13 +51,22 @@ const iconMap: Record<ServiceSector, any> = {
 };
 
 export const Dashboard = () => {
-  const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User }) | null };
+  const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(true);
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
 
- useEffect(() => {
+  // Get userId from localStorage when user changes
+  useEffect(() => {
+    if (user?.sub) {
+      const mappedId = localStorage.getItem(`auth0_${user.sub}`);
+      setUserId(mappedId);
+    }
+  }, [user?.sub]);
+
+  useEffect(() => {
     const loadProfile = async () => {
       if (user?.email) {
         try {
@@ -154,6 +164,8 @@ export const Dashboard = () => {
 
   return (
     <div className="bg-gray-50">
+      {/* Address Bar */}
+      {userId && <AddressBar userId={userId} />}
       {/* Profile Completion Alert */}
       {showProfileAlert && user && profileCompletion !== 100 && (
         <ProfileCompletionAlert onClose={() => setShowProfileAlert(false)} completion={profileCompletion} profile={user} />

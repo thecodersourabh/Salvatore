@@ -12,10 +12,6 @@ export interface SectorServices {
   services: Service[];
 }
 
-type SectorServicesData = {
-  [K in ServiceSector]: SectorServices;
-};
-
 /**
  * Get all available sector names
  */
@@ -45,7 +41,7 @@ const normalizeSectorName = (sector: string): ServiceSector => {
  */
 export const getSectorServices = (sector: ServiceSector | string): SectorServices => {
   const normalizedSector = normalizeSectorName(sector);
-  return (sectorServicesData as SectorServicesData)[normalizedSector] || {
+  return (sectorServicesData as any)[normalizedSector] || {
     description: 'Services not found',
     services: []
   };
@@ -54,8 +50,8 @@ export const getSectorServices = (sector: ServiceSector | string): SectorService
 /**
  * Get all services across all sectors
  */
-export const getAllSectorServices = (): SectorServicesData => {
-  return sectorServicesData as SectorServicesData;
+export const getAllSectorServices = (): Record<string, SectorServices> => {
+  return sectorServicesData as Record<string, SectorServices>;
 };
 
 /**

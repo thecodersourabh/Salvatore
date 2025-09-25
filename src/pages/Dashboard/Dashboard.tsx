@@ -10,6 +10,8 @@ import {
   Calendar,
   Plus
 } from "lucide-react";
+import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
+import { ErrorType } from "../../services/apiErrorHandler";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
 import { getAllSectorServices } from "../../utils/sectorServices";
@@ -59,6 +61,7 @@ export const Dashboard = () => {
   const [showProfileAlert, setShowProfileAlert] = useState(true);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [networkError, setNetworkError] = useState<{ type: ErrorType; message: string } | null>(null);
 
   // Get userId from localStorage when user changes
   useEffect(() => {
@@ -83,8 +86,13 @@ export const Dashboard = () => {
           if (userProfile?.availability) completed += 20;
 
           setProfileCompletion(completed);
+          setNetworkError(null);
         } catch (error) {
           console.error('Error loading profile:', error);
+          setNetworkError({
+            type: ErrorType.NETWORK,
+            message: 'Unable to load your profile. Please check your internet connection.'
+          });
         }
       }
     };
@@ -105,14 +113,8 @@ export const Dashboard = () => {
           const sectorServices = getAllSectorServices();
           const userSector = profile.sector;
           const sectorData = sectorServices[userSector as ServiceSector];
-          console.log('User Sector:', userSector);
-          console.log('Sector Services Data:', sectorServices);
-
           if (sectorData) {
-            console.log('Sector Data:', sectorData);
-            console.log('Sector Services:', sectorData.services);
             const serviceCards = sectorData.services.map((service, index) => {
-              console.log(`Service ${service.name} skills:`, service.skills);
               return {
                 id: index + 1,
                 title: service.name,
@@ -130,8 +132,13 @@ export const Dashboard = () => {
             setServices(serviceCards);
           }
         }
+        setNetworkError(null);
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        setNetworkError({
+          type: ErrorType.NETWORK,
+          message: 'Unable to load your services. Please check your internet connection.'
+        });
       } finally {
         setLoading(false);
       }
@@ -168,6 +175,19 @@ export const Dashboard = () => {
     <div className="bg-gray-50">
       {/* Address Bar - only shown on mobile apps */}
       {userId && isNative && <AddressBar userId={userId} />}
+      {/* Network Error Message */}
+      {networkError && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <NetworkErrorMessage
+            error={networkError}
+            onRetry={() => {
+              setLoading(true);
+              setNetworkError(null);
+              window.location.reload();
+            }}
+          />
+        </div>
+      )}
       {/* Profile Completion Alert */}
       {showProfileAlert && user && profileCompletion !== 100 && (
         <ProfileCompletionAlert onClose={() => setShowProfileAlert(false)} completion={profileCompletion} profile={user} />

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
-import { getAllSectorServices } from "../../utils/sectorServices";
+import { getAllSectorServices, Service } from "../../utils/sectorServices";
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
 
@@ -29,6 +29,7 @@ interface ServiceItem {
     name: string;
     description: string;
   }>;
+  skills?: string[];
 }
 
 const iconMap: Record<ServiceSector, any> = {
@@ -91,20 +92,28 @@ export const Dashboard = () => {
         if (profile?.sector) {
           const sectorServices = getAllSectorServices();
           const userSector = profile.sector;
-          const sectorData = sectorServices[userSector];
+          const sectorData = sectorServices[userSector as ServiceSector];
+          console.log('User Sector:', userSector);
+          console.log('Sector Services Data:', sectorServices);
 
           if (sectorData) {
-            const serviceCards = sectorData.services.map((service, index) => ({
-              id: index + 1,
-              title: service.name,
-              description: service.description,
-              icon: iconMap[userSector] || Building2,
-              category: userSector,
-              rating: profile.stats?.rating ?? 4.5,
-              totalJobs: profile.stats?.completedJobs ?? 10,
-              isActive: true,
-              services: [service]
-            }));
+            console.log('Sector Data:', sectorData);
+            console.log('Sector Services:', sectorData.services);
+            const serviceCards = sectorData.services.map((service, index) => {
+              console.log(`Service ${service.name} skills:`, service.skills);
+              return {
+                id: index + 1,
+                title: service.name,
+                description: service.description,
+                icon: iconMap[userSector] || Building2,
+                category: userSector,
+                rating: profile.stats?.rating ?? 4.5,
+                totalJobs: profile.stats?.completedJobs ?? 10,
+                isActive: true,
+                services: [service],
+                skills: service.skills || []
+              };
+            });
             
             setServices(serviceCards);
           }
@@ -242,6 +251,7 @@ export const Dashboard = () => {
                 isActive={service.isActive}
                 onToggle={() => toggleServiceStatus(service.id)}
                 services={service.services}
+                skills={service.skills}
               />
             ))}
           </div>

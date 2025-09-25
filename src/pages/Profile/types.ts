@@ -38,3 +38,74 @@ export type ModalState = {
   saving: boolean;
   error: string | null;
 };
+
+export type Skill = {
+    name: string;
+    level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    yearsOfExperience: number;
+  };
+
+export type Location = {
+    city: string;
+    state: string;
+    country: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+
+  export type DocumentType = 'aadhaar' | 'pan' | 'professional';
+
+  export type Document = {
+    key: string;
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+    verified: boolean;
+    verifiedAt: string | null;
+    verifiedBy: string | null;
+    uploadedAt: string;
+  };
+
+
+  export type Documents = {
+    aadhaar?: Document;
+    pan?: Document;
+    others?: Document[];
+    professional?: Document[];
+  };
+
+  export type FormDataType = {
+    name: string;
+    userName: string;
+    sector: string;
+    phoneNumber: string;
+    avatar: string;
+    documents: Documents;
+    skills: Skill[];
+    availability: {
+      weekdays: boolean;
+      weekends: boolean;
+      hours: {
+        start: string;
+        end: string;
+      };
+    };
+    serviceAreas: {
+      locations: Location[];
+      serviceAtHome: boolean;
+      serviceAtWorkshop: boolean;
+      radius: number;
+      unit: 'km' | 'mi';
+    };
+    pricing: {
+      model: 'hourly' | 'fixed' | 'project';
+      baseRate: number;
+      currency: string;
+      minimumCharge: number;
+      travelFee: number;
+      servicePackages: string[];
+    };
+  };

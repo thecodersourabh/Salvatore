@@ -10,4 +10,10 @@ Provide project context and coding guidelines that AI should follow when generat
 5. Check if any warning or build issue then fix it before accepting and checkin
 6. Check if lazy loading can be applied then apply it.
 7. Check if any code can be reused from exiting code base then reuse it.
-8. If you are adding any new library then check if we already have that library or not if we have then reuse it.
+
+9. When adding or updating service skills in any config or feature, ensure skills are:
+	- Detailed and practical for real-world use
+	- Useful for both service providers and users searching for services
+	- Suitable for tag-based search and matching (e.g., Plumbing, C#, Petcare)
+	- Sector specific (e.g., Healthcare, IT, Home Services)
+	- Covering granular, daily-life tasks and specialties

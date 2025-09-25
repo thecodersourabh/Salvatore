@@ -1,6 +1,7 @@
 import React from 'react';
 import { RESPONSIVE_CONTAINERS, RESPONSIVE_SPACING } from '../../utils/responsive';
 export * from './VerificationBadge';
+export * from './NetworkErrorMessage';
 
 // Loading spinner component
 interface LoadingSpinnerProps {

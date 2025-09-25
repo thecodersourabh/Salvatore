@@ -15,6 +15,7 @@ interface ServiceCardProps {
   isActive: boolean;
   onToggle: () => void;
   services: ServiceItem[];
+  skills?: string[];
 }
 
 export function ServiceCard({ 
@@ -26,8 +27,10 @@ export function ServiceCard({
   totalJobs, 
   isActive,
   onToggle,
-  services
+  services,
+  skills = []
 }: ServiceCardProps) {
+  console.log(`ServiceCard ${title} received skills:`, skills);
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
@@ -54,8 +57,42 @@ export function ServiceCard({
       </div>
       
       <p className="text-gray-600 text-sm mb-4">{description}</p>
-
       
+      {skills && skills.length > 0 && (
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-2 relative group">
+            {skills.slice(0, 4).map((skill, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 text-xs font-medium bg-gray-50 text-gray-600 rounded-full border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-200 transform hover:scale-105"
+              >
+                {skill}
+              </span>
+            ))}
+            {skills.length > 4 && (
+              <div className="relative inline-block">
+                <span
+                  className="px-2 py-1 text-xs font-medium bg-gray-50 text-gray-600 rounded-full border border-gray-200 cursor-pointer hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-200"
+                >
+                  +{skills.length - 4}
+                </span>
+                <div className="absolute left-0 top-full mt-2 p-2 bg-white rounded-lg shadow-lg border border-gray-100 hidden group-hover:block z-10 w-48">
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                    {skills.slice(4).map((skill, index) => (
+                      <span
+                        key={index + 4}
+                        className="px-2 py-1 text-xs font-medium bg-gray-50 text-gray-600 rounded-full border border-gray-200"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <div className="flex items-center justify-between text-xs border-t pt-3">
         <div className="flex items-center space-x-3">

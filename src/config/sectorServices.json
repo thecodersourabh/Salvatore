@@ -5,291 +5,472 @@
       {
         "name": "Computer Repair",
         "description": "Hardware and software troubleshooting and repair services"
+        ,"skills": ["Motherboard replacement", "RAM upgrade", "SSD installation", "Windows troubleshooting", "MacOS troubleshooting", "Virus removal", "BIOS update", "Printer setup", "Printer services", "Laptop screen replacement", "Data recovery", "Keyboard repair", "Hardware repair", "Software repair", "Virus removal service", "Data backup"]
       },
       {
         "name": "Network Setup",
         "description": "Home and office network installation and configuration"
+        ,"skills": ["Router configuration", "LAN/WAN setup", "Firewall setup", "Ethernet cabling", "WiFi optimization", "VPN setup", "Network security", "Mesh network setup", "Port forwarding", "WiFi setup", "Network installation", "Firewall configuration", "VPN installation"]
       },
       {
         "name": "Web Development",
         "description": "Custom website and application development"
+        ,"skills": ["Angular", "React", "TypeScript", "Node.js", "HTML", "CSS", "JavaScript", "Vue.js", "API integration", "Responsive design", "WordPress", "Shopify", "SEO", "Web development", "Frontend development", "Backend development", "E-commerce"]
+      },
+      {
+        "name": "Smart Home Automation",
+        "description": "Home automation and IoT device setup"
+        ,"skills": ["Smart device installation", "Home automation", "IoT setup", "Voice assistant setup", "Smart thermostat", "Security camera setup", "Smart door locks", "Home theater setup", "Smart lighting control"]
       },
       {
         "name": "IT Consultation",
         "description": "Professional IT advisory and support services"
+        ,"skills": ["Cloud migration", "IT strategy", "Solution architecture", "Project management", "Security audit", "Digital transformation", "IT budgeting", "Vendor management", "IT consulting", "Cloud services", "Cybersecurity"]
       }
     ]
   },
-  "electrician": {
+  "Electrician": {
     "description": "Professional electrical installation and repair services",
     "services": [
       {
         "name": "Wiring Installation",
         "description": "New electrical wiring and circuit installation"
+        ,"skills": ["Wiring", "Circuit design", "Electrical codes", "Conduit installation", "Multimeter usage", "Safety compliance", "Smart home wiring", "Panel upgrade"]
       },
       {
         "name": "Electrical Repair",
         "description": "Fixing electrical faults and malfunctions"
+        ,"skills": ["Troubleshooting", "Component replacement", "Short circuit repair", "Fuse replacement", "Testing", "Safety protocols", "Socket repair", "Switch replacement", "Electrical repair", "Power troubleshooting"]
       },
       {
         "name": "Light Fixture Installation",
         "description": "Installation of various lighting solutions"
+        ,"skills": ["LED installation", "Chandelier mounting", "Smart lighting setup", "Wiring", "Lighting design", "Electrical safety", "Dimmer switch install", "Outdoor lighting", "Track lighting", "Recessed lighting"]
+      },
+      {
+        "name": "Solar Panel Installation",
+        "description": "Solar energy system installation and maintenance"
+        ,"skills": ["Solar panel mounting", "Inverter installation", "Grid connection", "Battery systems", "Solar assessment", "Permit handling", "Net metering setup", "Solar maintenance"]
       },
       {
         "name": "Emergency Services",
         "description": "24/7 emergency electrical repairs"
+        ,"skills": ["Rapid response", "Fault diagnosis", "Power restoration", "Generator setup", "Repair under pressure", "Safety", "Temporary wiring", "Emergency repair", "Power outage", "Generator service"]
       }
     ]
   },
-  "plumber": {
+  "Plumber": {
     "description": "Complete plumbing solutions for residential and commercial spaces",
     "services": [
       {
         "name": "Pipe Installation",
         "description": "New plumbing installation and pipe fitting"
+        ,"skills": ["PVC pipe installation", "Copper pipe soldering", "Blueprint reading", "Pipe threading", "Water pressure testing", "PEX installation", "Water meter setup", "Plumbing installation", "Pipe fitting", "Water line installation"]
       },
       {
         "name": "Leak Repair",
         "description": "Detection and repair of water leaks"
+        ,"skills": ["Leak detection", "Thermal imaging", "Sealant application", "Pipe replacement", "Water pressure testing", "Moisture meter", "Wall leak repair", "Water leak repair", "Pipe leak fix", "Emergency leak repair"]
       },
       {
         "name": "Drain Cleaning",
         "description": "Professional drain and sewage cleaning services"
+        ,"skills": ["Drain snaking", "Hydro jetting", "Chemical usage", "Blockage removal", "Sewage safety", "Grease trap cleaning", "Rooter service", "Drain cleaning", "Sewer cleaning", "Clogged drain"]
       },
       {
         "name": "Fixture Installation",
         "description": "Installation of sinks, toilets, and other fixtures"
+        ,"skills": ["Sink installation", "Toilet installation", "Plumbing connections", "Sealant application", "Testing", "Bidet install", "Faucet replacement", "Fixture installation", "Bathroom fixtures", "Kitchen fixtures"]
+      },
+      {
+        "name": "Water Heater Services",
+        "description": "Water heater installation, repair, and maintenance"
+        ,"skills": ["Water heater installation", "Tankless water heater", "Gas water heater", "Electric water heater", "Water heater repair", "Hot water system", "Water heater maintenance", "Boiler services"]
       }
     ]
   },
-  "carpenter": {
+  "Carpenter": {
     "description": "Expert woodworking and furniture services",
     "services": [
       {
         "name": "Furniture Making",
         "description": "Custom furniture design and creation"
+        ,"skills": ["Woodworking", "Furniture design", "CNC operation", "Finishing", "Tool operation", "Upholstery", "Custom joinery", "Custom furniture", "Wood furniture", "Handmade furniture"]
       },
       {
         "name": "Wood Repair",
         "description": "Repair and restoration of wooden items"
+        ,"skills": ["Wood filling", "Sanding", "Varnishing", "Painting", "Joinery", "Scratch repair", "Water damage fix", "Wood restoration", "Furniture repair", "Antique restoration"]
       },
       {
         "name": "Cabinet Installation",
         "description": "Custom cabinet making and installation"
+        ,"skills": ["Cabinet assembly", "Wall mounting", "Measurement", "Finishing", "Hinge installation", "Soft-close install", "Custom shelving", "Kitchen cabinets", "Bathroom vanity", "Modular storage"]
+      },
+      {
+        "name": "Home Office Setup",
+        "description": "Custom workspace and home office furniture"
+        ,"skills": ["Desk building", "Built-in shelves", "Storage solutions", "Ergonomic design", "Cable management", "Standing desk", "Home office furniture", "Custom workspace"]
       },
       {
         "name": "Door Services",
         "description": "Door installation, repair, and maintenance"
+        ,"skills": ["Door hanging", "Lock fitting", "Door alignment", "Adjustment", "Repair", "Smart lock install", "Weatherstripping", "Door installation", "Security doors", "Sliding doors"]
       }
     ]
   },
-  "mechanic": {
+  "Mechanic": {
     "description": "Professional vehicle repair and maintenance services",
     "services": [
       {
         "name": "Engine Repair",
         "description": "Complete engine diagnostics and repair"
+        ,"skills": ["OBD diagnostics", "Engine disassembly", "Timing belt replacement", "Component replacement", "Testing", "Oil leak fix", "Coolant system", "Engine repair", "Auto diagnostics", "Car engine service"]
       },
       {
         "name": "Routine Maintenance",
         "description": "Regular vehicle maintenance and servicing"
+        ,"skills": ["Oil change", "Filter replacement", "Tire rotation", "Inspection", "Fluid top-up", "Battery check", "Wiper replacement", "Car maintenance", "Vehicle service", "Auto tune-up"]
       },
       {
         "name": "Brake Service",
         "description": "Brake system repair and maintenance"
+        ,"skills": ["Brake pad replacement", "Rotor resurfacing", "ABS troubleshooting", "Hydraulic testing", "Adjustment", "Brake fluid change", "Caliper repair", "Brake repair", "Brake service", "ABS repair"]
       },
       {
         "name": "AC Service",
         "description": "Vehicle air conditioning repair and maintenance"
+        ,"skills": ["Refrigerant handling", "Compressor repair", "Leak detection", "Condenser cleaning", "System testing", "AC recharge", "Cabin filter replace", "Car AC repair", "AC maintenance", "Cooling system"]
+      },
+      {
+        "name": "Electric Vehicle Service",
+        "description": "Electric and hybrid vehicle maintenance and repair"
+        ,"skills": ["EV battery service", "Charging system repair", "Electric motor service", "Hybrid maintenance", "High voltage systems", "Tesla service", "EV diagnostics", "Battery replacement"]
       }
     ]
   },
-  "tailor": {
+  "Tailor": {
     "description": "Custom clothing and alteration services",
     "services": [
       {
         "name": "Custom Clothing",
         "description": "Made-to-measure clothing creation"
+        ,"skills": ["Pattern making", "Sewing machine operation", "Fitting", "Fabric selection", "Embroidery", "Alteration", "Hand stitching", "Custom tailoring", "Bespoke clothing", "Fashion design"]
       },
       {
         "name": "Alterations",
         "description": "Clothing alterations and adjustments"
+        ,"skills": ["Hemming", "Resizing", "Repair", "Tailoring", "Zipper replacement", "Button sewing", "Sleeve adjustment", "Clothing alteration", "Garment fitting", "Size adjustment"]
       },
       {
         "name": "Repairs",
         "description": "Clothing repair and mending"
+        ,"skills": ["Patchwork", "Stitching", "Button replacement", "Zipper repair", "Darning", "Hole repair", "Fabric glue", "Clothing mending", "Garment repair", "Fabric restoration"]
+      },
+      {
+        "name": "Sustainable Fashion",
+        "description": "Eco-friendly clothing services and upcycling"
+        ,"skills": ["Upcycling", "Clothing transformation", "Eco-friendly materials", "Vintage restoration", "Sustainable design", "Fabric recycling", "Zero waste fashion", "Ethical fashion"]
       },
       {
         "name": "Wedding Attire",
         "description": "Custom wedding dress and formal wear services"
+        ,"skills": ["Dress design", "Fitting", "Embroidery", "Fabric selection", "Beading", "Veil design", "Corset fitting", "Wedding dress", "Bridal wear", "Formal wear"]
       }
     ]
   },
-  "beautician": {
+  "Beautician": {
     "description": "Professional beauty and cosmetic services",
     "services": [
       {
         "name": "Hair Styling",
         "description": "Professional haircuts and styling"
+        ,"skills": ["Cutting", "Styling", "Coloring", "Blow drying", "Hair straightening", "Perming", "Hair extensions", "Keratin treatment", "Hair styling", "Hair cut", "Hair color", "Balayage"]
       },
       {
         "name": "Makeup",
         "description": "Professional makeup application"
+        ,"skills": ["Application", "Color matching", "Contouring", "Product selection", "Airbrush makeup", "Bridal makeup", "HD makeup", "Special effects makeup", "Permanent makeup", "Microblading"]
       },
       {
         "name": "Nail Care",
         "description": "Manicure and pedicure services"
+        ,"skills": ["Manicure", "Pedicure", "Nail art", "Gel nails", "Sanitation", "Acrylic nails", "Nail extension", "Dip powder nails", "Nail design", "French manicure"]
       },
       {
         "name": "Facial Treatment",
         "description": "Facial care and skin treatments"
+        ,"skills": ["Cleansing", "Exfoliation", "Mask application", "Massage", "Microdermabrasion", "Peel treatment", "Hydration facial", "Anti-aging treatment", "Acne treatment", "Skin analysis"]
+      },
+      {
+        "name": "Aesthetic Services",
+        "description": "Advanced beauty and aesthetic treatments"
+        ,"skills": ["Botox", "Dermal fillers", "Laser treatment", "IPL therapy", "Body contouring", "Coolsculpting", "Skin tightening", "Aesthetic consultation"]
       }
     ]
   },
-  "cleaner": {
+  "Cleaner": {
     "description": "Professional cleaning and maintenance services",
     "services": [
       {
         "name": "House Cleaning",
-        "description": "Complete home cleaning services"
+        "description": "Complete home cleaning services",
+        "skills": ["Dusting", "Vacuuming", "Mopping", "Sanitizing", "Disinfection", "Organization", "Deep cleaning", "Kitchen cleaning", "Bathroom cleaning", "Home cleaning service", "Residential cleaning"]
       },
       {
         "name": "Office Cleaning",
-        "description": "Commercial space cleaning"
+        "description": "Commercial space cleaning",
+        "skills": ["Surface cleaning", "Trash removal", "Restroom cleaning", "Floor care", "Window cleaning", "Desk sanitizing", "Conference room cleaning", "Commercial cleaning", "Janitorial service", "Workplace cleaning"]
+      },
+      {
+        "name": "Sanitization Services",
+        "description": "Professional disinfection and sanitization",
+        "skills": ["COVID disinfection", "Hospital grade cleaning", "Electrostatic spraying", "UV sanitization", "Antimicrobial treatment", "Virus elimination", "Deep sanitization", "Medical facility cleaning"]
       },
       {
         "name": "Carpet Cleaning",
         "description": "Deep carpet and upholstery cleaning"
+        ,"skills": ["Stain removal", "Steam cleaning", "Vacuuming", "Odor treatment", "Upholstery cleaning", "Rug cleaning", "Pet stain removal", "Carpet shampooing", "Fabric protection"]
       },
       {
         "name": "Window Cleaning",
         "description": "Professional window and glass cleaning"
+        ,"skills": ["Glass cleaning", "Frame cleaning", "Streak removal", "Safety", "Water-fed pole cleaning", "Screen cleaning", "High-rise cleaning", "Pressure washing", "Gutter cleaning"]
       }
     ]
   },
-  "painter": {
+  "Painter": {
     "description": "Professional painting services for interior and exterior",
     "services": [
       {
         "name": "Interior Painting",
         "description": "Indoor wall and ceiling painting"
+        ,"skills": ["Surface preparation", "Painting", "Finishing", "Cleanup", "Color mixing", "Wall patching", "Primer application", "House painting", "Wall painting", "Ceiling painting"]
       },
       {
         "name": "Exterior Painting",
         "description": "Outdoor surface painting"
+        ,"skills": ["Surface preparation", "Weatherproofing", "Painting", "Safety", "Scaffolding", "Pressure washing", "Fence painting", "Exterior house painting", "Deck staining", "Siding painting"]
       },
       {
         "name": "Wallpaper Installation",
         "description": "Wallpaper application and removal"
+        ,"skills": ["Measuring", "Cutting", "Application", "Removal", "Pattern matching", "Wallpaper repair", "Seam alignment", "Wall covering", "Vinyl installation"]
       },
       {
         "name": "Decorative Painting",
         "description": "Custom decorative paint finishes"
+        ,"skills": ["Design", "Technique application", "Color mixing", "Finishing", "Stencil work", "Murals", "Textured paint", "Faux finishing", "Artistic painting"]
       }
     ]
   },
-  "gardener": {
+  "Gardener": {
     "description": "Professional landscaping and garden maintenance",
     "services": [
       {
         "name": "Lawn Maintenance",
         "description": "Regular lawn care and mowing"
+        ,"skills": ["Mowing", "Edging", "Fertilizing", "Weed control", "Aeration", "Leaf removal", "Grass seeding", "Lawn care service", "Yard maintenance", "Turf management"]
       },
       {
         "name": "Landscaping",
         "description": "Garden design and landscaping services"
+        ,"skills": ["Design", "Planting", "Hardscaping", "Maintenance", "Irrigation setup", "Mulching", "Garden lighting", "Landscape design", "Garden installation", "Outdoor living spaces"]
       },
       {
         "name": "Tree Service",
         "description": "Tree trimming and removal"
+        ,"skills": ["Pruning", "Removal", "Safety", "Equipment operation", "Stump grinding", "Tree planting", "Storm cleanup", "Arborist service", "Tree health assessment"]
       },
       {
         "name": "Plant Care",
         "description": "Plant maintenance and disease control"
+        ,"skills": ["Watering", "Fertilizing", "Disease identification", "Treatment", "Pest control", "Repotting", "Soil testing", "Plant health care", "Garden consultation"]
       }
     ]
   },
-  "tutor": {
+  "Tutor": {
     "description": "Educational and academic support services",
     "services": [
       {
         "name": "Academic Tutoring",
         "description": "Subject-specific academic support"
+        ,"skills": ["Subject expertise", "Lesson planning", "Assessment", "Communication", "Online teaching tools", "Homework help", "Exam review", "Math tutoring", "Science tutoring", "Online tutoring"]
       },
       {
         "name": "Test Preparation",
         "description": "Exam preparation and study guidance"
+        ,"skills": ["Exam strategies", "Practice tests", "Time management", "Review", "Mock exams", "Flashcards", "Study schedule", "SAT prep", "IELTS preparation", "Competitive exam prep"]
       },
       {
         "name": "Language Teaching",
         "description": "Foreign language instruction"
+        ,"skills": ["Language proficiency", "Teaching", "Assessment", "Cultural knowledge", "Phonetics", "Accent training", "Conversation practice", "English teaching", "Spanish lessons", "Online language classes"]
       },
       {
         "name": "Skills Training",
         "description": "Practical skills and hobby instruction"
+        ,"skills": ["Skill demonstration", "Instruction", "Feedback", "Motivation", "Workshop facilitation", "Group activities", "Online courses", "Computer skills", "Coding bootcamp", "Digital literacy"]
       }
     ]
   },
-  "chef": {
+  "Chef": {
     "description": "Professional cooking and catering services",
     "services": [
       {
         "name": "Personal Chef",
         "description": "Private cooking services"
+        ,"skills": ["Menu planning", "Cooking", "Presentation", "Sanitation", "Special diets", "Meal plating", "Grocery shopping", "Private chef service", "Healthy meal prep", "Keto cooking"]
       },
       {
         "name": "Event Catering",
         "description": "Catering for events and parties"
+        ,"skills": ["Large-scale cooking", "Coordination", "Menu design", "Service", "Buffet setup", "Table setup", "Event planning", "Wedding catering", "Corporate catering", "Party catering"]
       },
       {
         "name": "Cooking Classes",
         "description": "Private and group cooking instruction"
+        ,"skills": ["Teaching", "Recipe development", "Demonstration", "Feedback", "Class management", "Ingredient sourcing", "Online classes", "Virtual cooking class", "Baking classes", "International cuisine"]
       },
       {
         "name": "Meal Prep",
         "description": "Weekly meal preparation services"
+        ,"skills": ["Batch cooking", "Storage", "Nutrition", "Planning", "Portion control", "Meal packaging", "Calorie counting", "Healthy meal delivery", "Diet meal prep", "Family meal planning"]
       }
     ]
   },
-  "agency": {
+  "Agency": {
     "description": "Professional agency and consulting services",
     "services": [
       {
         "name": "Recruitment",
         "description": "Staffing and recruitment services"
+        ,"skills": ["Interviewing", "Screening", "Networking", "Negotiation", "HR software", "Resume review", "Job posting", "Talent acquisition", "Executive search", "Remote hiring"]
       },
       {
-        "name": "Marketing",
-        "description": "Marketing and advertising services"
+        "name": "Digital Marketing",
+        "description": "Online marketing and advertising services"
+        ,"skills": ["Campaign planning", "Content creation", "Digital marketing", "Analytics", "SEO", "Social media", "Branding", "Google Ads", "Facebook marketing", "Instagram marketing"]
       },
       {
         "name": "Consulting",
         "description": "Business consulting and advisory"
+        ,"skills": ["Analysis", "Strategy", "Presentation", "Problem solving", "Financial modeling", "Business plan", "Market research", "Management consulting", "Startup consulting", "Digital transformation"]
       },
       {
         "name": "Event Management",
         "description": "Professional event planning and management"
+        ,"skills": ["Planning", "Coordination", "Budgeting", "Execution", "Vendor management", "Venue booking", "Guest management", "Virtual events", "Hybrid events", "Corporate events"]
       }
     ]
   },
-  "other": {
+  "Courier": {
+    "description": "Door-to-door courier and delivery services",
+    "services": [
+      {
+        "name": "Door to Door Courier",
+        "description": "Pickup and delivery of parcels directly from sender to recipient",
+        "skills": ["Parcel handling", "Route planning", "Customer communication", "Time management", "GPS navigation", "Proof of delivery", "Express delivery", "Cash on delivery", "Fragile item handling", "Same day delivery", "Food delivery", "Package tracking"]
+      }
+    ]
+  },
+  "Healthcare": {
+    "description": "Medical and healthcare services including doctors and nursing staff",
+    "services": [
+      {
+        "name": "General Practice Doctor",
+        "description": "Primary healthcare and general medical consultation",
+        "skills": ["Medical consultation", "Diagnosis", "Prescription", "Health checkup", "Preventive care", "Medical screening", "Patient counseling", "Chronic disease management", "Family medicine", "General practitioner"]
+      },
+      {
+        "name": "Specialist Doctor",
+        "description": "Specialized medical care and expert consultation",
+        "skills": ["Cardiology", "Neurology", "Orthopedics", "Dermatology", "Gynecology", "Pediatrics", "Psychiatry", "Oncology", "Endocrinology", "Specialist consultation", "Expert medical opinion"]
+      },
+      {
+        "name": "Doctor Home Visit",
+        "description": "Medical consultation and care at patient's home",
+        "skills": ["Home consultation", "Bedside manner", "Portable equipment", "Emergency care", "Elderly care", "Post-surgery care", "Chronic patient care", "House call", "Mobile medical service"]
+      },
+      {
+        "name": "Telemedicine Doctor",
+        "description": "Remote medical consultation and digital healthcare",
+        "skills": ["Video consultation", "Digital diagnosis", "Remote monitoring", "Online prescription", "Health app consultation", "Teleconsultation", "Virtual healthcare", "Digital medical records", "Remote patient monitoring"]
+      },
+      {
+        "name": "Emergency Doctor",
+        "description": "Urgent medical care and emergency response",
+        "skills": ["Emergency medicine", "Critical care", "Life support", "Trauma care", "First aid", "CPR", "Emergency response", "Urgent care", "Medical emergency", "Ambulatory care"]
+      },
+      {
+        "name": "Home Nursing",
+        "description": "Professional nursing care at patient's home",
+        "skills": ["Patient care", "Medication administration", "Wound dressing", "Vital signs monitoring", "Injection services", "Post-operative care", "Elderly nursing", "Chronic care nursing", "Home healthcare", "Bedside nursing"]
+      },
+      {
+        "name": "Elderly Care Nursing",
+        "description": "Specialized nursing care for elderly patients",
+        "skills": ["Geriatric care", "Mobility assistance", "Personal hygiene care", "Medication management", "Fall prevention", "Dementia care", "Alzheimer care", "Senior nursing", "Elderly assistance", "Companion care"]
+      },
+      {
+        "name": "Post-Surgery Nursing",
+        "description": "Specialized nursing for post-operative recovery",
+        "skills": ["Surgical wound care", "Pain management", "Recovery monitoring", "Physiotherapy support", "Mobility training", "Post-op nursing", "Rehabilitation nursing", "Surgical recovery", "Wound healing"]
+      },
+      {
+        "name": "Pediatric Nursing",
+        "description": "Professional nursing care for children and infants",
+        "skills": ["Child care nursing", "Infant care", "Vaccination administration", "Pediatric medication", "Child development monitoring", "Newborn care", "Baby nursing", "Child health assessment", "Immunization services"]
+      },
+      {
+        "name": "Chronic Care Nursing",
+        "description": "Long-term nursing care for chronic conditions",
+        "skills": ["Diabetes care", "Hypertension management", "Cardiac care", "Respiratory care", "Dialysis support", "Cancer care nursing", "Chronic disease management", "Long-term care", "Palliative care"]
+      }
+    ]
+  },
+  "Astrologer": {
+    "description": "Astrology, spiritual guidance, and religious ceremonies",
+    "services": [
+      {
+        "name": "Astrology Consultation",
+        "description": "Personal and business astrology advice, horoscope analysis",
+        "skills": ["Astrology", "Horoscope", "Kundli", "Birth Chart", "Numerology", "Palmistry", "Matchmaking", "Career Astrology", "Health Astrology", "Love Astrology", "Remedial Measures", "Gemstone Advice", "Muhurta", "Daily Horoscope"]
+      },
+      {
+        "name": "Pandit Ji Services",
+        "description": "Religious rituals, puja, havan, and spiritual ceremonies",
+        "skills": ["Puja", "Havan", "Grah Pravesh", "Rudrabhishek", "Satyanarayan Puja", "Wedding Rituals", "Vastu Shanti", "Navgrah Puja", "Ganesh Puja", "Lakshmi Puja", "Festival Puja", "Jaap", "Path", "Spiritual Guidance", "Prasad Arrangement", "Temple Visit"]
+      },
+      {
+        "name": "Vastu Consultation",
+        "description": "Home and office Vastu analysis and remedies",
+        "skills": ["Vastu", "Vastu Shastra", "Vastu Remedies", "Site Visit", "Layout Analysis", "Energy Balancing", "Vastu Consultation", "Vastu Interior", "Vastu Architecture"]
+      }
+    ]
+  },
+  "Other": {
     "description": "Miscellaneous professional services",
     "services": [
       {
         "name": "Pet Care",
         "description": "Pet sitting and grooming services"
+        ,"skills": ["Animal handling", "Grooming", "Feeding", "Safety", "Pet first aid", "Dog walking", "Cat sitting", "Medication administration", "Pet boarding", "Pet training"]
       },
       {
         "name": "Moving Services",
         "description": "Residential and commercial moving"
+        ,"skills": ["Packing", "Lifting", "Transport", "Organization", "Furniture assembly", "Unpacking", "Storage solutions", "Local moving", "Long distance moving", "Office relocation"]
       },
       {
         "name": "Photography",
         "description": "Professional photography services"
+        ,"skills": ["Camera operation", "Lighting", "Editing", "Composition", "Photo retouching", "Portrait photography", "Event photography", "Wedding photography", "Product photography", "Real estate photography"]
       },
       {
         "name": "Personal Assistant",
         "description": "Personal assistance and errand services"
+        ,"skills": ["Scheduling", "Task management", "Communication", "Problem solving", "Travel booking", "Errand running", "Document organization", "Virtual assistant", "Administrative support", "Calendar management"]
       }
     ]
   }

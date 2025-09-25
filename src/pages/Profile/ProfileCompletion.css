@@ -8,6 +8,62 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+/* Skills Selection Styles */
+.skills-selection .selected-skills-container {
+  margin-top: 8px;
+}
+
+.skills-selection .selected-skill-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--ion-color-primary-tint);
+  color: var(--ion-color-primary);
+  padding: 4px 12px;
+  border-radius: 16px;
+  margin: 4px;
+  font-size: 14px;
+}
+
+.skills-selection .selected-skill-tag button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 0 4px;
+  font-size: 18px;
+  border: none;
+  background: transparent;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.skills-selection .selected-skill-tag button:hover {
+  color: var(--ion-color-primary-shade);
+}
+
+/* IonSelect Popover Styles */
+.skills-select-interface {
+  --max-height: 300px;
+}
+
+.skills-select-interface ion-list {
+  padding: 0;
+}
+
+.skills-select-interface ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 48px;
+}
+
+.skills-selection ion-select {
+  width: 100%;
+  max-width: 100%;
+  --padding-start: 16px;
+  --padding-end: 16px;
   padding: 3px;
   overflow: visible;
 }

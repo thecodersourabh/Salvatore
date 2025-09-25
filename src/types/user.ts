@@ -73,6 +73,10 @@ export interface User {
         longitude: number;
       };
     }>;
+    serviceAtHome: boolean;
+    serviceAtWorkshop: boolean;
+    radius: number;
+    unit: "km" | "mi";
   };
   services?: Array<{
     id: string;
@@ -98,10 +102,7 @@ export interface User {
       public: boolean;
       searchable: boolean;
     };
-    serviceAtHome: boolean;
-    serviceAtWorkshop: boolean;
-    radius: number;
-    unit: "km" | "mi";
+   
   };
   pricing?: {
     model: "hourly" | "fixed" | "project";

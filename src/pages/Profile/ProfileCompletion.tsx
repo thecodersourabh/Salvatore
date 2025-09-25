@@ -6,7 +6,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { useImageGallery } from '../../hooks/useImageGallery';
 import { camera } from 'ionicons/icons';
 import './ProfileCompletion.css';
-import { VerificationBadge } from '../../components/ui/VerificationBadge';
+import { VerificationBadge, NetworkErrorMessage } from '../../components/ui';
 import {
   IonContent,
   IonText,
@@ -21,14 +21,15 @@ import {
 import { UserService } from '../../services/userService';
 import { ImageService } from '../../services/imageService';
 import { ServiceSector } from '../../types/user';
+import { getSectorSkills, getSectorNames } from '../../utils/sectorServices';
+import { Modal } from '../../components/ui/Modal';
+import { FormDataType, DocumentType, Document, Skill } from './types';
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   document: { url: string; name: string; type: string } | null;
 }
-
-import { Modal } from '../../components/ui/Modal';
 
 const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ isOpen, onClose, document }) => {
   return (
@@ -58,14 +59,29 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ isOpen, onC
   );
 };
 
-
 export const ProfileCompletion = () => {
   const navigate = useNavigate();
   const auth = useAuth();
   const { user } = auth;
-  const { currentStep, nextStep, previousStep, canGoNext, canGoPrevious } = useStep();
+  const { currentStep, nextStep: baseNextStep, previousStep: basePreviousStep, canGoNext, canGoPrevious } = useStep();
   const [, setLoading] = useState(true);
   const { requestPermission, getCurrentLocationWithAddress, permissionStatus, locationData } = useLocation();
+
+  // Wrapper for nextStep that ensures data is saved
+  const handleNextStep = async () => {
+    if (validateStep()) {
+      await commitChanges();
+      baseNextStep();
+    }
+  };
+
+  // Wrapper for previousStep that ensures data is saved
+  const handlePreviousStep = async () => {
+    await commitChanges();
+    basePreviousStep();
+  };
+  const [availableSectors] = useState<string[]>(() => getSectorNames());
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
 
   // Form state
   const [error, setError] = useState<string | null>(null);
@@ -78,48 +94,7 @@ export const ProfileCompletion = () => {
     size?: number;
     lastModified?: string;
   }>>([]);
-  const [unsavedData, setUnsavedData] = useState<FormDataType | null>(null);
-  const [savedData, setSavedData] = useState<FormDataType>({
-    // Basic Info
-    name: user?.name || '',
-    userName: '',
-    sector: user?.sector || '',
-    phoneNumber: user?.phoneNumber || '',
-    avatar: user?.avatar || '',
-    
-    // Documents
-    documents: {
-      professional: []
-    },
-    // Skills
-    skills: [],
-    // Availability
-    availability: {
-      weekdays: true,
-      weekends: false,
-      hours: {
-        start: '09:00',
-        end: '17:00'
-      }
-    },
-    // Service Areas
-    serviceAreas: {
-      locations: [],
-      serviceAtHome: true,
-      serviceAtWorkshop: false,
-      radius: 50,
-      unit: 'km'
-    },
-    // Pricing
-    pricing: {
-      model: 'hourly',
-      baseRate: 0,
-      currency: 'USD',
-      minimumCharge: 0,
-      travelFee: 0,
-      servicePackages: []
-    }
-  });
+  const [unsavedData, setUnsavedData] = useState<Partial<FormDataType>>({});
   const [uploadingDocument, setUploadingDocument] = useState<DocumentType | null>(null);
   const [selectedImage, setSelectedImage] = useState<{ url: string; name: string; type: string } | null>(null);
   const [formData, setFormData] = useState<FormDataType>({
@@ -150,7 +125,7 @@ export const ProfileCompletion = () => {
       locations: [],
       serviceAtHome: true,
       serviceAtWorkshop: false,
-      radius: 50,
+      radius: 5,
       unit: 'km'
     },
     // Pricing
@@ -172,11 +147,11 @@ export const ProfileCompletion = () => {
     selectImage 
   } = useImageGallery({ 
     images: userImages,
-    initialImage: (unsavedData || savedData).avatar,
+    initialImage: (unsavedData).avatar,
     autoSwitchInterval: 3000
   });
 
-  // Update form data when current image changes
+
   useEffect(() => {
     if (currentImage) {
       setFormData(prev => ({
@@ -395,7 +370,7 @@ export const ProfileCompletion = () => {
     if (!username && !user?.email) return;
     
     try {
-      const userIdentifier = username || (unsavedData || savedData).userName || user!.email.split('@')[0];
+      const userIdentifier = username || (unsavedData).userName || user!.email.split('@')[0];
       const response = await ImageService.listImages(userIdentifier, 'profile');
       
       // Use images directly from the response, they already have the right URL format
@@ -453,79 +428,6 @@ export const ProfileCompletion = () => {
     }
   };
 
-  type Skill = {
-    name: string;
-    level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    yearsOfExperience: number;
-  };
-
-  type Location = {
-    city: string;
-    state: string;
-    country: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-
-  type DocumentType = 'aadhaar' | 'pan' | 'professional';
-
-  type Document = {
-    key: string;
-    url: string;
-    name: string;
-    type: string;
-    size: number;
-    verified: boolean;
-    verifiedAt: string | null;
-    verifiedBy: string | null;
-    uploadedAt: string;
-  };
-
-
-  type Documents = {
-    aadhaar?: Document;
-    pan?: Document;
-    others?: Document[];
-    professional?: Document[];
-  };
-
-  type FormDataType = {
-    name: string;
-    userName: string;
-    sector: string;
-    phoneNumber: string;
-    avatar: string;
-    documents: Documents;
-    skills: Skill[];
-    availability: {
-      weekdays: boolean;
-      weekends: boolean;
-      hours: {
-        start: string;
-        end: string;
-      };
-    };
-    serviceAreas: {
-      locations: Location[];
-      serviceAtHome: boolean;
-      serviceAtWorkshop: boolean;
-      radius: number;
-      unit: 'km' | 'mi';
-    };
-    pricing: {
-      model: 'hourly' | 'fixed' | 'project';
-      baseRate: number;
-      currency: string;
-      minimumCharge: number;
-      travelFee: number;
-      servicePackages: string[];
-    };
-  };
-
-
-
    // Debug renders
   useEffect(() => {
     console.log('ProfileCompletion rendered:', {
@@ -545,9 +447,10 @@ export const ProfileCompletion = () => {
       try {
         const userData = await UserService.getUserByEmail(user.email);
         if (userData) {
+          console.log('Loading user data:', { userData, prevName: formData.name });
           setFormData(prev => ({
             ...prev,
-            name: userData.name || prev.name,
+            name: userData.name || user?.name || prev.name,
             userName: userData.userName || prev.userName,
             avatar: userData.avatar || prev.avatar,
             sector: userData.sector || prev.sector,
@@ -557,8 +460,10 @@ export const ProfileCompletion = () => {
             serviceAreas: {
               ...prev.serviceAreas,
               locations: userData.serviceAreas?.locations || prev.serviceAreas.locations,
-              serviceAtHome: userData.preferences?.serviceAtHome ?? prev.serviceAreas.serviceAtHome,
-              serviceAtWorkshop: userData.preferences?.serviceAtWorkshop ?? prev.serviceAreas.serviceAtWorkshop,
+              serviceAtHome: userData.serviceAreas?.serviceAtHome ?? prev.serviceAreas.serviceAtHome,
+              serviceAtWorkshop: userData.serviceAreas?.serviceAtWorkshop ?? prev.serviceAreas.serviceAtWorkshop,
+              radius: userData.serviceAreas?.radius || prev.serviceAreas.radius,
+              unit: userData.serviceAreas?.unit || prev.serviceAreas.unit
             },
             pricing: userData.pricing || prev.pricing, // Keep default pricing as it's not in the User type
             documents: {
@@ -617,7 +522,7 @@ export const ProfileCompletion = () => {
     }
     
     // Initialize skills step with a default skill only when entering the step for the first time
-    if (currentStep === 1 && formData.skills.length === 0) {
+    if (currentStep === 1 && (!formData.skills || formData.skills.length === 0)) {
       console.log('🔧 Adding default skill template');
       setFormData(prev => ({
         ...prev,
@@ -632,14 +537,6 @@ export const ProfileCompletion = () => {
     }
   }, [currentStep]); // Only run when step changes
 
-  useEffect(() => {
-    console.log('📊 Form data updated:', {
-      step: currentStep,
-      skillsCount: formData.skills.length,
-      skills: formData.skills,
-      locationsCount: formData.serviceAreas.locations.length
-    });
-  }, [formData, currentStep]);
 
   useEffect(() => {
     console.log('Error state changed:', error);
@@ -656,6 +553,60 @@ export const ProfileCompletion = () => {
       loadUserImages(username);
     }
   }, [user?.email, formData.userName]);
+
+  useEffect(() => {
+    console.log('Debug: formData.name initialized as:', formData.name);
+  }, [formData.name]);
+
+  // Load initial skills based on selected sector
+  useEffect(() => {
+    if (formData.sector) {
+      const skills = getSectorSkills(formData.sector);
+      setAvailableSkills(skills);
+    } else {
+      setAvailableSkills([]);
+    }
+  }, [formData.sector]);
+
+  const handleFieldChange = (field: keyof FormDataType, value: any) => {
+    if (field === 'sector') {
+      const skills = getSectorSkills(value);
+      setAvailableSkills(skills);
+      setUnsavedData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    } else if (field === 'skills') {
+      // Handle skills array with proper typing and preserve existing skill details
+      const newSkills = Array.isArray(value) ? value : [];
+      const updatedSkills = newSkills.map(skill => {
+        if (typeof skill === 'string') {
+          // If it's just a skill name string, create a new skill object
+          return {
+            name: skill,
+            level: 'beginner' as const,
+            yearsOfExperience: 0
+          };
+        } else {
+          // If it's already a skill object, preserve its data
+          return {
+            name: skill.name,
+            level: skill.level || 'beginner',
+            yearsOfExperience: skill.yearsOfExperience || 0
+          };
+        }
+      });
+      setUnsavedData(prev => ({ ...prev, [field]: updatedSkills }));
+      setFormData(prev => ({ ...prev, [field]: updatedSkills }));
+    } else {
+      setUnsavedData(prev => ({ ...prev, [field]: value }));
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+  };
 
   const validateStep = () => {
     console.log('=== validateStep START ===');
@@ -690,7 +641,13 @@ export const ProfileCompletion = () => {
           console.log('Validating skills step');
           console.log('Current skills data:', formData.skills);
           
-          const validSkills = formData.skills.filter(skill => skill.name.trim());
+          if (!formData.skills || formData.skills.length === 0) {
+            console.log('❌ Validation failed: No skills found');
+            setError('Please add at least one skill');
+            return false;
+          }
+
+          const validSkills = formData.skills.filter(skill => skill && skill.name && skill.name.trim());
           if (validSkills.length === 0) {
             console.log('❌ Validation failed: No valid skills found');
             setError('Please add at least one skill with a name');
@@ -786,22 +743,14 @@ export const ProfileCompletion = () => {
     }
   };
 
-  // Helper function to update unsaved data
-  const updateField = (field: keyof FormDataType, value: any) => {
-    setUnsavedData(prev => ({
-      ...(prev || savedData),
-      [field]: value
-    }));
-  };
+  
 
-  // Helper function to commit unsaved changes
-  const commitChanges = () => {
-    if (unsavedData) {
-      setSavedData(unsavedData);
-      setUnsavedData(null);
-      return true;
-    }
-    return false;
+  // Helper function to commit changes and ensure persistence
+  const commitChanges = async () => {
+    console.log('Committing changes for step:', currentStep);
+    
+    // Attempt to save to backend if needed
+    await handleSubmit(true);
   };
 
   const handleSubmit = async (isPartialSave: boolean = false) => {
@@ -814,103 +763,136 @@ export const ProfileCompletion = () => {
       console.log('❌ Final validation failed');
       return false;
     }
-    // Always save using the active data (unsaved changes if they exist)
-    const dataToSave = unsavedData || savedData;
-    
+
     setSaving(true);
     setError(null);
 
     try {
       let dataToUpdate: any = {};
       
-      // Only send the relevant data based on the current step
-      switch (currentStep) {
-        case 0:
-          // Ensure avatar is a valid URL before sending
-          let avatarUrl = formData.avatar;
-          if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-            // Find the image URL from userImages
-            const avatarImage = userImages.find(img => img.key === avatarUrl);
-            if (avatarImage?.url) {
-              avatarUrl = avatarImage.url;
-            } else {
-              // Fallback to getting URL from ImageService
-              avatarUrl = ImageService.getImageUrl(avatarUrl);
+      // For partial saves, only send the current step's data plus any required fields
+      if (isPartialSave) {
+        switch (currentStep) {
+          case 0:
+            // Ensure avatar is a valid URL before sending
+            let avatarUrl = formData.avatar;
+            if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+              const avatarImage = userImages.find(img => img.key === avatarUrl);
+              if (avatarImage?.url) {
+                avatarUrl = avatarImage.url;
+              } else {
+                avatarUrl = ImageService.getImageUrl(avatarUrl);
+              }
             }
-          }
-
-          dataToUpdate = {
-            displayName: dataToSave.name,
-            userName: dataToSave.userName,
-            sector: dataToSave.sector as ServiceSector,
-            phone: dataToSave.phoneNumber,
-            avatar: avatarUrl
-          };
-          console.log('📤 Submitting basic info data:', dataToUpdate);
-          break;
-        case 1:
-          // Filter out empty skills and format the data
-          const validSkills = formData.skills.filter(skill => skill.name.trim());
-          if (validSkills.length === 0) {
-            setError('Please add at least one skill');
-            setSaving(false);
-            return false;
-          }
-          dataToUpdate = {
-            skills: validSkills.map(skill => ({
-              name: skill.name.trim(),
-              level: skill.level || 'beginner',
-              yearsOfExperience: parseInt(String(skill.yearsOfExperience)) || 0
-            }))
-          };
-          console.log('📤 Submitting skills data:', dataToUpdate.skills);
-          break;
-        case 2:
-          dataToUpdate = {
-            availability: formData.availability
-          };
-          break;
-        case 3:
-          dataToUpdate = {
-            serviceAreas: formData.serviceAreas
-          };
-          break;
-        case 4:
-          if (isPartialSave) {
             dataToUpdate = {
-              pricing: formData.pricing
+              displayName: formData.name,
+              userName: formData.userName,
+              sector: formData.sector as ServiceSector,
+              phone: formData.phoneNumber,
+              avatar: avatarUrl,
+              // Include skills to preserve them
+              skills: formData.skills
+            };
+            console.log('📤 Submitting basic info data:', dataToUpdate);
+            break;
+            
+          case 1:
+            // Validate skills
+            const validSkills = formData.skills || [];
+            if (validSkills.length === 0) {
+              setError('Please select at least one skill');
+              setSaving(false);
+              return false;
+            }
+            dataToUpdate = {
+              skills: validSkills.map(skill => ({
+                name: skill.name,
+                level: skill.level || 'beginner',
+                yearsOfExperience: parseInt(String(skill.yearsOfExperience)) || 0
+              }))
+            };
+            console.log('📤 Submitting skills data:', dataToUpdate.skills);
+            break;
+            
+          case 2:
+            dataToUpdate = {
+              availability: formData.availability,
+              // Include skills to preserve them
+              skills: formData.skills
+            };
+            console.log('📤 Submitting availability data:', dataToUpdate);
+            break;
+            
+          case 3:
+            dataToUpdate = {
+              serviceAreas: formData.serviceAreas,
+              // Include skills to preserve them
+              skills: formData.skills
+            };
+            console.log('📤 Submitting service areas data:', dataToUpdate);
+            break;
+            
+          case 4:
+            dataToUpdate = {
+              pricing: formData.pricing,
+              // Include skills to preserve them
+              skills: formData.skills
             };
             console.log('📤 Submitting pricing data:', dataToUpdate);
-          }
-          break;
+            break;
 
-        case 5:
-          // Final step with document verification, send all data
-          // Ensure avatar is a valid URL
-          let finalAvatarUrl = formData.avatar;
-          if (finalAvatarUrl && !finalAvatarUrl.startsWith('http') && !finalAvatarUrl.startsWith('data:')) {
-            const avatarImage = userImages.find(img => img.key === finalAvatarUrl);
-            if (avatarImage?.url) {
-              finalAvatarUrl = avatarImage.url;
-            } else {
-              finalAvatarUrl = ImageService.getImageUrl(finalAvatarUrl);
+          case 5:
+            // Final step with document verification, send all data
+            // Ensure avatar is a valid URL
+            let finalAvatarUrl = formData.avatar;
+            if (finalAvatarUrl && !finalAvatarUrl.startsWith('http') && !finalAvatarUrl.startsWith('data:')) {
+              const avatarImage = userImages.find(img => img.key === finalAvatarUrl);
+              if (avatarImage?.url) {
+                finalAvatarUrl = avatarImage.url;
+              } else {
+                finalAvatarUrl = ImageService.getImageUrl(finalAvatarUrl);
+              }
             }
-          }
 
-          dataToUpdate = {
-            displayName: formData.name,
-            userName: formData.userName,
-            sector: formData.sector as ServiceSector,
-            phone: formData.phoneNumber,
-            avatar: finalAvatarUrl,
-            skills: formData.skills,
-            availability: formData.availability,
-            serviceAreas: formData.serviceAreas,
-            pricing: formData.pricing,
-            documents: formData.documents
-          };
-          console.log('📤 Submitting complete profile data:', dataToUpdate);
-          break;
+            dataToUpdate = {
+              displayName: formData.name,
+              userName: formData.userName,
+              sector: formData.sector as ServiceSector,
+              phone: formData.phoneNumber,
+              avatar: finalAvatarUrl,
+              skills: formData.skills,
+              availability: formData.availability,
+              serviceAreas: formData.serviceAreas,
+              pricing: formData.pricing,
+              documents: formData.documents
+            };
+            console.log('📤 Submitting complete profile data:', dataToUpdate);
+            break;
+        }
+      } else {
+        // For non-partial saves (final submission), send all data
+        let finalAvatarUrl = formData.avatar;
+        if (finalAvatarUrl && !finalAvatarUrl.startsWith('http') && !finalAvatarUrl.startsWith('data:')) {
+          const avatarImage = userImages.find(img => img.key === finalAvatarUrl);
+          if (avatarImage?.url) {
+            finalAvatarUrl = avatarImage.url;
+          } else {
+            finalAvatarUrl = ImageService.getImageUrl(finalAvatarUrl);
+          }
+        }
+
+        dataToUpdate = {
+          displayName: formData.name,
+          userName: formData.userName,
+          sector: formData.sector as ServiceSector,
+          phone: formData.phoneNumber,
+          avatar: finalAvatarUrl,
+          skills: formData.skills,
+          availability: formData.availability,
+          serviceAreas: formData.serviceAreas,
+          pricing: formData.pricing,
+          documents: formData.documents
+        };
       }
 
       console.log(`📤 Submitting ${isPartialSave ? 'partial' : 'complete'} profile data:`, dataToUpdate);
@@ -933,18 +915,7 @@ export const ProfileCompletion = () => {
     }
   };
 
-  const sectors = [
-    { id: 'Technology', name: 'Technology', icon: '💻' },
-    { id: 'Engineering', name: 'Engineering', icon: '🔧' },
-    { id: 'electrician', name: 'Electrician', icon: '⚡' },
-    { id: 'plumber', name: 'Plumber', icon: '🔧' },
-    { id: 'tailor', name: 'Tailor', icon: '✂️' },
-    { id: 'mechanic', name: 'Mechanic', icon: '🔧' },
-    { id: 'carpenter', name: 'Carpenter', icon: '🔨' },
-    { id: 'painter', name: 'Painter', icon: '🖌️' },
-    { id: 'gardener', name: 'Gardener', icon: '🌳' },
-    { id: 'cleaner', name: 'Cleaner', icon: '🧹' }
-  ];
+
 
   if (!user) {
     return (
@@ -995,18 +966,18 @@ export const ProfileCompletion = () => {
                     }
                     
                     // Reset unsaved changes before moving to new step
-                    setUnsavedData(null);
+                    setUnsavedData({});
                     
                     // Navigate to the selected step
                     if (index < currentStep) {
                       // Going backwards
                       for (let i = currentStep; i > index; i--) {
-                        previousStep();
+                        handlePreviousStep();
                       }
                     } else if (index > currentStep) {
                       // Going forwards
                       for (let i = currentStep; i < index; i++) {
-                        nextStep();
+                        handleNextStep();
                       }
                     }
                   };
@@ -1175,11 +1146,16 @@ export const ProfileCompletion = () => {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <IonInput
-                        value={(unsavedData || savedData).name}
+                        value={formData.name}
                         label="Name"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => updateField('name', e.detail.value!)}
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.name !== value) {
+                            setFormData(prev => ({ ...prev, name: value }));
+                          }
+                        }}
                         placeholder="Enter your name"
                         required
                       />
@@ -1189,7 +1165,12 @@ export const ProfileCompletion = () => {
                         label="User Name"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({ ...prev, userName: e.detail.value! }))}
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.userName !== value) {
+                            setFormData(prev => ({ ...prev, userName: value }));
+                          }
+                        }}
                         placeholder="Enter your user name"
                         required
                       />
@@ -1199,12 +1180,17 @@ export const ProfileCompletion = () => {
                         label="Service Sector"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({ ...prev, sector: e.detail.value }))}
+                        onIonChange={e => {
+                          const value = e.detail.value;
+                          if (formData.sector !== value) {
+                            setFormData(prev => ({ ...prev, sector: value }));
+                          }
+                        }}
                         placeholder="Select your sector"
                       >
-                        {sectors.map(sector => (
-                          <IonSelectOption key={sector.id} value={sector.id}>
-                            {sector.icon} {sector.name}
+                        {availableSectors.map(sector => (
+                          <IonSelectOption key={sector} value={sector}>
+                            {sector}
                           </IonSelectOption>
                         ))}
                       </IonSelect>
@@ -1215,7 +1201,12 @@ export const ProfileCompletion = () => {
                         labelPlacement="floating"
                         value={formData.phoneNumber}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({ ...prev, phoneNumber: e.detail.value! }))}
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.phoneNumber !== value) {
+                            setFormData(prev => ({ ...prev, phoneNumber: value }));
+                          }
+                        }}
                         placeholder="Enter your phone number"
                         required
                       />
@@ -1226,50 +1217,80 @@ export const ProfileCompletion = () => {
 
               {currentStep === 1 && (
                 <div className="space-y-4 sm:space-y-6">
-                  
-                  {/* Skills List */}
-                  {formData.skills.map((skill, index) => (
-                    <div key={index} className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
-                      {/* Skill Header */}
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-gray-700">Skill {index + 1}</h4>
-                        <IonButton
-                          size="small"
-                          color="danger"
-                          fill="outline"
-                          onClick={() => {
-                            const newSkills = formData.skills.filter((_, i) => i !== index);
-                            setFormData(prev => ({ ...prev, skills: newSkills }));
-                          }}
-                        >
-                          Remove
-                        </IonButton>
-                      </div>
+                  {/* Skills Selection */}
+                  <div className="skills-selection p-4 border rounded-lg bg-white shadow-sm">
+                    <IonSelect
+                      value={formData.skills?.map(s => s.name) || []}
+                      label="Skills"
+                      labelPlacement="floating"
+                      className="w-full"
+                      onIonChange={e => handleFieldChange('skills', e.detail.value || [])}
+                      placeholder="Select skills"
+                      multiple={true}
+                      onClick={() => {
+                        // This will trigger the select to open on click
+                        const select = document.querySelector('.skills-select-interface');
+                        if (select) {
+                          select.classList.add('show-options');
+                        }
+                      }}
+                    >
+                      {availableSkills.map(skill => (
+                        <IonSelectOption key={skill} value={skill} className="select-option">
+                          {skill}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </div>
 
-                      {/* Skill Fields - Stack on mobile, grid on larger screens */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {/* Selected Skills List */}
+                  {formData.skills?.map((skill: Skill, index) => (
+                    <div key={index} className="p-1.5 sm:p-2 border rounded-lg bg-white shadow-sm">
+                      {/* Skill Fields - Compact layout */}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-2">
                         <IonInput
                           value={skill.name}
                           label="Skill Name"
                           labelPlacement="floating"
-                          className="w-full sm:col-span-2 lg:col-span-1"
-                          onIonInput={e => {
-                            const newSkills = [...formData.skills];
-                            newSkills[index] = { ...skill, name: (e.target as HTMLIonInputElement).value?.toString() || '' };
-                            setFormData(prev => ({ ...prev, skills: newSkills }));
+                          className="w-full sm:w-2/5 text-sm"
+                          onIonChange={e => {
+                            const value = e.detail.value || '';
+                            if (skill.name !== value) {
+                              const newSkills = [...formData.skills];
+                              newSkills[index] = { ...skill, name: value };
+                              setFormData(prev => ({ ...prev, skills: newSkills }));
+                            }
                           }}
-                          placeholder="e.g., Plumbing, Electrical, etc."
+                          placeholder="Selected Skill Name..."
                         />
-                        
+                        <IonInput
+                          type="number"
+                          label="Years of Experience"
+                          labelPlacement="floating"
+                          value={skill.yearsOfExperience}
+                          className="w-full sm:w-1/5 text-sm"
+                          onIonInput={e => {
+                            const value = parseInt(e.detail.value!) || 0;
+                            if (skill.yearsOfExperience !== value) {
+                              const newSkills = [...formData.skills];
+                              newSkills[index] = { ...skill, yearsOfExperience: value };
+                              setFormData(prev => ({ ...prev, skills: newSkills }));
+                            }
+                          }}
+                          min="0"
+                        />
                         <IonSelect
                           value={skill.level}
                           label="Level"
                           labelPlacement="floating"
-                          className="w-full"
+                          className="w-full sm:w-2/5 text-sm"
                           onIonChange={e => {
-                            const newSkills = [...formData.skills];
-                            newSkills[index] = { ...skill, level: e.detail.value };
-                            setFormData(prev => ({ ...prev, skills: newSkills }));
+                            const value = e.detail.value;
+                            if (skill.level !== value) {
+                              const newSkills = [...formData.skills];
+                              newSkills[index] = { ...skill, level: value };
+                              setFormData(prev => ({ ...prev, skills: newSkills }));
+                            }
                           }}
                         >
                           <IonSelectOption value="beginner">Beginner</IonSelectOption>
@@ -1278,38 +1299,22 @@ export const ProfileCompletion = () => {
                           <IonSelectOption value="expert">Expert</IonSelectOption>
                         </IonSelect>
                         
-                        <IonInput
-                          type="number"
-                          label="Years of Experience"
-                          labelPlacement="floating"
-                          value={skill.yearsOfExperience}
-                          className="w-full"
-                          onIonChange={e => {
-                            const newSkills = [...formData.skills];
-                            newSkills[index] = { ...skill, yearsOfExperience: parseInt(e.detail.value!) || 0 };
+                        <IonButton
+                          size="small"
+                          color="danger"
+                          fill="outline"
+                          className="w-full sm:w-auto sm:min-w-[70px] text-xs"
+                          onClick={() => {
+                            const newSkills = formData.skills.filter((_, i) => i !== index);
                             setFormData(prev => ({ ...prev, skills: newSkills }));
                           }}
-                          min="0"
-                        />
+                        >
+                          Remove
+                        </IonButton>
                       </div>
                     </div>
                   ))}
-                  
-                  {/* Add Skill Button */}
-                  <IonButton
-                    expand="block"
-                    fill="outline"
-                    size="default"
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        skills: [...prev.skills, { name: '', level: 'beginner', yearsOfExperience: 0 }]
-                      }));
-                    }}
-                    className="mt-4"
-                  >
-                    + Add Another Skill
-                  </IonButton>
+                
                 </div>
               )}
 
@@ -1326,10 +1331,15 @@ export const ProfileCompletion = () => {
                         label="Available on Weekdays"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          availability: { ...prev.availability, weekdays: e.detail.value }
-                        }))}
+                        onIonChange={e => {
+                          const value = e.detail.value;
+                          if (formData.availability.weekdays !== value) {
+                            setFormData(prev => ({
+                              ...prev,
+                              availability: { ...prev.availability, weekdays: value }
+                            }));
+                          }
+                        }}
                       >
                         <IonSelectOption value={true}>Yes</IonSelectOption>
                         <IonSelectOption value={false}>No</IonSelectOption>
@@ -1340,10 +1350,15 @@ export const ProfileCompletion = () => {
                         label="Available on Weekends"
                         labelPlacement="floating"
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          availability: { ...prev.availability, weekends: e.detail.value }
-                        }))}
+                        onIonChange={e => {
+                          const value = e.detail.value;
+                          if (formData.availability.weekends !== value) {
+                            setFormData(prev => ({
+                              ...prev,
+                              availability: { ...prev.availability, weekends: value }
+                            }));
+                          }
+                        }}
                       >
                         <IonSelectOption value={true}>Yes</IonSelectOption>
                         <IonSelectOption value={false}>No</IonSelectOption>
@@ -1362,13 +1377,18 @@ export const ProfileCompletion = () => {
                         labelPlacement="floating"
                         value={formData.availability.hours.start}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            hours: { ...prev.availability.hours, start: e.detail.value! }
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.availability.hours.start !== value) {
+                            setFormData(prev => ({
+                              ...prev,
+                              availability: {
+                                ...prev.availability,
+                                hours: { ...prev.availability.hours, start: value }
+                              }
+                            }));
                           }
-                        }))}
+                        }}
                       />
                       
                       <IonInput
@@ -1377,13 +1397,18 @@ export const ProfileCompletion = () => {
                         labelPlacement="floating"
                         value={formData.availability.hours.end}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            hours: { ...prev.availability.hours, end: e.detail.value! }
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.availability.hours.end !== value) {
+                            setFormData(prev => ({
+                              ...prev,
+                              availability: {
+                                ...prev.availability,
+                                hours: { ...prev.availability.hours, end: value }
+                              }
+                            }));
                           }
-                        }))}
+                        }}
                       />
                     </div>
                   </div>
@@ -1422,7 +1447,7 @@ export const ProfileCompletion = () => {
                           label='City'
                           labelPlacement='floating'
                           className="w-full"
-                          onIonChange={e => {
+                          onIonInput={e => {
                             const newLocations = [...formData.serviceAreas.locations];
                             newLocations[index] = { ...location, city: e.detail.value! };
                             setFormData(prev => ({
@@ -1437,7 +1462,7 @@ export const ProfileCompletion = () => {
                           label='State'
                           labelPlacement='floating'
                           className="w-full"
-                          onIonChange={e => {
+                          onIonInput={e => {
                             const newLocations = [...formData.serviceAreas.locations];
                             newLocations[index] = { ...location, state: e.detail.value! };
                             setFormData(prev => ({
@@ -1452,7 +1477,7 @@ export const ProfileCompletion = () => {
                           label='Country'
                           labelPlacement='floating'
                           className="w-full sm:col-span-2 lg:col-span-1"
-                          onIonChange={e => {
+                          onIonInput={e => {
                             const newLocations = [...formData.serviceAreas.locations];
                             newLocations[index] = { ...location, country: e.detail.value! };
                             setFormData(prev => ({
@@ -1472,7 +1497,7 @@ export const ProfileCompletion = () => {
                             labelPlacement='floating'
                             value={location.coordinates.latitude}
                             className="w-full"
-                            onIonChange={e => {
+                            onIonInput={e => {
                               const newLocations = [...formData.serviceAreas.locations];
                               newLocations[index] = {
                                 ...location,
@@ -1494,7 +1519,7 @@ export const ProfileCompletion = () => {
                             labelPlacement='floating'
                             value={location.coordinates.longitude}
                             className="w-full"
-                            onIonChange={e => {
+                            onIonInput={e => {
                               const newLocations = [...formData.serviceAreas.locations];
                               newLocations[index] = {
                                 ...location,
@@ -1562,10 +1587,12 @@ export const ProfileCompletion = () => {
                         label='Service at Home'
                         labelPlacement='floating'
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          serviceAreas: { ...prev.serviceAreas, serviceAtHome: e.detail.value }
-                        }))}
+                        onIonChange={e => {
+                          setFormData(prev => ({
+                            ...prev,
+                            serviceAreas: { ...prev.serviceAreas, serviceAtHome: e.detail.value }
+                          }));
+                        }}
                       >
                         <IonSelectOption value={true}>Yes</IonSelectOption>
                         <IonSelectOption value={false}>No</IonSelectOption>
@@ -1576,10 +1603,12 @@ export const ProfileCompletion = () => {
                         label='Service at Workshop'
                         labelPlacement='floating'
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          serviceAreas: { ...prev.serviceAreas, serviceAtWorkshop: e.detail.value }
-                        }))}
+                        onIonChange={e => {
+                          setFormData(prev => ({
+                            ...prev,
+                            serviceAreas: { ...prev.serviceAreas, serviceAtWorkshop: e.detail.value }
+                          }));
+                        }}
                       >
                         <IonSelectOption value={true}>Yes</IonSelectOption>
                         <IonSelectOption value={false}>No</IonSelectOption>
@@ -1594,10 +1623,15 @@ export const ProfileCompletion = () => {
                         labelPlacement='floating'
                         value={formData.serviceAreas.radius}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          serviceAreas: { ...prev.serviceAreas, radius: parseInt(e.detail.value!) || 0 }
-                        }))}
+                        onIonInput={e => {
+                          const value = parseInt(e.detail.value!) || 0;
+                          if (formData.serviceAreas.radius !== value) {
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceAreas: { ...prev.serviceAreas, radius: value }
+                            }));
+                          }
+                        }}
                       />
                       
                       <IonSelect
@@ -1605,10 +1639,13 @@ export const ProfileCompletion = () => {
                         label='Unit'
                         labelPlacement='floating'
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
-                          ...prev,
-                          serviceAreas: { ...prev.serviceAreas, unit: e.detail.value }
-                        }))}
+                        onIonChange={e => {
+                          const value = e.detail.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            serviceAreas: { ...prev.serviceAreas, unit: value }
+                          }));
+                        }}
                       >
                         <IonSelectOption value="km">Kilometers</IonSelectOption>
                         <IonSelectOption value="mi">Miles</IonSelectOption>
@@ -1627,13 +1664,11 @@ export const ProfileCompletion = () => {
                     
                     <IonSelect
                       value={formData.pricing.model}
-                      label='Pricing Model'
-                      labelPlacement='floating'
-                      className="w-full"
                       onIonChange={e => setFormData(prev => ({
                         ...prev,
                         pricing: { ...prev.pricing, model: e.detail.value }
                       }))}
+                      className="w-full"
                     >
                       <IonSelectOption value="hourly">Hourly Rate</IonSelectOption>
                       <IonSelectOption value="fixed">Fixed Rate</IonSelectOption>
@@ -1652,7 +1687,7 @@ export const ProfileCompletion = () => {
                         labelPlacement='floating'
                         value={formData.pricing.baseRate}
                         className="w-full"
-                        onIonChange={e => {
+                        onIonInput={e => {
                           const value = e.detail.value;
                           const baseRate = value ? parseFloat(value) : 0;
                           console.log('Base rate changed:', { rawValue: value, parsedValue: baseRate });
@@ -1684,7 +1719,7 @@ export const ProfileCompletion = () => {
                         labelPlacement='floating'
                         value={formData.pricing.minimumCharge}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
+                        onIonInput={e => setFormData(prev => ({
                           ...prev,
                           pricing: { ...prev.pricing, minimumCharge: parseFloat(e.detail.value!) || 0 }
                         }))}
@@ -1696,7 +1731,7 @@ export const ProfileCompletion = () => {
                         labelPlacement='floating'
                         value={formData.pricing.travelFee}
                         className="w-full"
-                        onIonChange={e => setFormData(prev => ({
+                        onIonInput={e => setFormData(prev => ({
                           ...prev,
                           pricing: { ...prev.pricing, travelFee: parseFloat(e.detail.value!) || 0 }
                         }))}
@@ -1713,7 +1748,7 @@ export const ProfileCompletion = () => {
                       labelPlacement='floating'
                       value={(formData.pricing.servicePackages || []).join(', ')}
                       className="w-full"
-                      onIonChange={e => setFormData(prev => ({
+                      onIonInput={e => setFormData(prev => ({
                         ...prev,
                         pricing: { 
                           ...prev.pricing, 
@@ -2008,15 +2043,26 @@ export const ProfileCompletion = () => {
                 document={selectedImage}
               />
               
-              {/* Error Alert */}
+              {/* Error Message */}
               {error && (
-                <IonAlert
-                  isOpen={!!error}
-                  onDidDismiss={() => setError(null)}
-                  header="Error"
-                  message={error}
-                  buttons={['OK']}
-                />
+                <div className="mb-4">
+                  {error.includes('Unable to connect') || error.includes('Failed to fetch') ? (
+                    <NetworkErrorMessage
+                      onRetry={() => {
+                        setError(null);
+                     
+                      }}
+                    />
+                  ) : (
+                    <IonAlert
+                      isOpen={!!error}
+                      onDidDismiss={() => setError(null)}
+                      header="Error"
+                      message={error}
+                      buttons={['OK']}
+                    />
+                  )}
+                </div>
               )}
 
               {/* Navigation Buttons */}
@@ -2032,7 +2078,7 @@ export const ProfileCompletion = () => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log('⬅️ Previous clicked, current step:', currentStep);
-                        previousStep();
+                        handlePreviousStep();
                       }}
                       disabled={currentStep === 0 || saving}
                     >
@@ -2064,13 +2110,13 @@ export const ProfileCompletion = () => {
                         }
 
                         // Reset unsaved changes before moving to next step
-                        setUnsavedData(null);
+                        setUnsavedData({});
                         
                         if (currentStep === 5) {
                           console.log('🎯 Final step - form completed');
                         } else {
                           console.log('➡️ Moving to next step');
-                          nextStep();
+                          handleNextStep();
                         }
                       }}
                       disabled={saving}
@@ -2090,18 +2136,7 @@ export const ProfileCompletion = () => {
                 </div>
           </div>
           
-          {/* Error Alert */}
-          {error && (
-            <div className="ion-padding">
-              <IonAlert
-                isOpen={!!error}
-                onDidDismiss={() => setError(null)}
-                header="Error"
-                message={error}
-                buttons={['OK']}
-              />
-            </div>
-          )}
+          {/* Error handling moved to main content area */}
         </div>
       </div>
     </IonContent>

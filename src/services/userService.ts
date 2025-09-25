@@ -1,14 +1,14 @@
-import { ApiService } from "./api";
+import { api } from "./api";
 import { User, CreateUserRequest } from "../types/user";
 
 export class UserService {
   static async createUser(userData: CreateUserRequest): Promise<User> {
-    return await ApiService.post<User>("/api/users", userData);
+    return await api.post<User>("/api/users", userData);
   }
 
   static async getUser(userId: string): Promise<User> {
     try {
-      const result = await ApiService.get<User>(`/api/users/${userId}`);
+      const result = await api.get<User>(`/api/users/${userId}`);
       return result;
     } catch (error) {
       console.error("UserService.getUser failed:", error);
@@ -19,7 +19,7 @@ export class UserService {
   static async getUserByUsername(username: string): Promise<User | null> {
     try {
       // Using the v2 API endpoint to match other methods
-      const result = await ApiService.get<User>(`/api/v2/users/username/${encodeURIComponent(username)}`);
+      const result = await api.get<User>(`/api/v2/users/username/${encodeURIComponent(username)}`);
       return result;
     } catch (error) {
       // Return null for 404 errors (user not found)
@@ -38,7 +38,7 @@ export class UserService {
 
   static async getUserByEmail(email: string): Promise<User | null> {
     try {
-      const result = await ApiService.get<User>(
+      const result = await api.get<User>(
         `/api/v2/users/email/${encodeURIComponent(email)}`
       );
       return result;
@@ -81,7 +81,11 @@ export class UserService {
                   latitude: location.coordinates.latitude,
                   longitude: location.coordinates.longitude,
                 },
-              }))
+              })),
+              serviceAtHome: profile.serviceAreas.serviceAtHome,
+              serviceAtWorkshop: profile.serviceAreas.serviceAtWorkshop,
+              radius: profile.serviceAreas.radius,
+              unit: profile.serviceAreas.unit,
             }
           : undefined,
         preferences: profile.preferences
@@ -117,7 +121,7 @@ export class UserService {
           : undefined,
       };
       // Pass the object, not a string
-      const result = await ApiService.put<User>(
+      const result = await api.put<User>(
         `api/v2/users/email/${encodeURIComponent(email)}`,
         profileData
       );

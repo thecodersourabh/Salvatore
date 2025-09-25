@@ -1,4 +1,4 @@
-import { MapPin } from 'lucide-react';
+import { MapPin, Home, Building2, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Address } from '../types/user';
 import { AddressService } from '../services/addressService';
@@ -37,15 +37,26 @@ export const AddressBar = ({ userId: userId }: AddressBarProps) => {
   };
 
   const formatAddress = (addr: Address) => {
-    switch(addr.type) {
+    const type = addr.type.charAt(0).toUpperCase() + addr.type.slice(1);
+    return (
+      <>
+        <span className="font-semibold text-gray-800">{type}: </span>
+        <span className="font-normal text-gray-800">{addr.street}</span>
+        <span className="font-normal text-gray-800">, {addr.city}</span>
+      </>
+    );
+  };
+
+  const getAddressIcon = (type?: string) => {
+    switch(type) {
       case 'home':
-        return `Home: ${addr.street}, ${addr.city}`;
+        return <Home className="h-4 w-4 text-rose-600" />;
       case 'office':
-        return `Office: ${addr.street}, ${addr.city}`;
+        return <Building2 className="h-4 w-4 text-rose-600" />;
       case 'work':
-        return `Work: ${addr.street}, ${addr.city}`;
+        return <Briefcase className="h-4 w-4 text-rose-600" />;
       default:
-        return `${addr.street}, ${addr.city}`;
+        return <MapPin className="h-4 w-4 text-rose-600" />;
     }
   };
 
@@ -56,10 +67,12 @@ export const AddressBar = ({ userId: userId }: AddressBarProps) => {
     >
       <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="flex items-center space-x-2 text-sm">
-          <MapPin className="h-4 w-4 text-rose-600" />
-          <span className="text-gray-600 flex-1 truncate">
-            {address ? formatAddress(address) : 'Select your delivery address'}
-          </span>
+          {getAddressIcon(address?.type)}
+          <div className="text-sm flex-1 truncate">
+            {address ? formatAddress(address) : (
+              <span className="text-gray-600">Select your delivery address</span>
+            )}
+          </div>
           <span className="text-rose-600 font-medium">Change</span>
         </div>
       </div>

@@ -16,6 +16,7 @@ import { getAllSectorServices } from "../../utils/sectorServices";
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
 import { AddressBar } from "../../components/AddressBar";
+import { usePlatform } from "../../hooks/usePlatform";
 
 interface ServiceItem {
   id: number;
@@ -52,6 +53,7 @@ const iconMap: Record<ServiceSector, any> = {
 
 export const Dashboard = () => {
   const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
+  const { isNative } = usePlatform();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(true);
@@ -164,8 +166,8 @@ export const Dashboard = () => {
 
   return (
     <div className="bg-gray-50">
-      {/* Address Bar */}
-      {userId && <AddressBar userId={userId} />}
+      {/* Address Bar - only shown on mobile apps */}
+      {userId && isNative && <AddressBar userId={userId} />}
       {/* Profile Completion Alert */}
       {showProfileAlert && user && profileCompletion !== 100 && (
         <ProfileCompletionAlert onClose={() => setShowProfileAlert(false)} completion={profileCompletion} profile={user} />

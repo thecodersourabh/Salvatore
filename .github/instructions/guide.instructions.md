@@ -1,3 +1,4 @@
+
 ---
 applyTo: '**'
 ---
@@ -17,3 +18,8 @@ Provide project context and coding guidelines that AI should follow when generat
 	- Suitable for tag-based search and matching (e.g., Plumbing, C#, Petcare)
 	- Sector specific (e.g., Healthcare, IT, Home Services)
 	- Covering granular, daily-life tasks and specialties
+10. When adding new pages or components, always:
+	- Use Tailwind CSS utility classes for both light and dark mode (e.g., bg-white dark:bg-gray-900, text-gray-900 dark:text-white).
+	- Ensure all backgrounds, borders, and text are readable in both themes.
+	- Test responsiveness for mobile and web.
+	- Prefer minimal, reusable code and follow the existing theme structure.

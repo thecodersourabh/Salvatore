@@ -25,14 +25,15 @@ export const Wishlist = () => {
     }
   };
 
-  return (    <div className="flex flex-col min-h-full bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-white border-b border-gray-200 pt-safe">
+  return (    
+  <div className="flex flex-col min-h-full bg-white dark:bg-gray-900">
+    {/* Header */}
+    <header className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-safe">
         <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Heart className="h-5 w-5 text-rose-600" />
-              <h1 className="text-lg font-semibold text-gray-900">My Wishlist</h1>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">My Wishlist</h1>
             </div>
             {wishlistItems.length > 0 && (
               <button
@@ -53,9 +54,9 @@ export const Wishlist = () => {
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           {wishlistItems.length === 0 ? (
             <div className="text-center py-12">
-              <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">Your wishlist is empty</h3>
-              <p className="mt-1 text-sm sm:text-base text-gray-500">
+              <Heart className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Your wishlist is empty</h3>
+              <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-300">
                 Start adding items you love to your wishlist
               </p>
             </div>
@@ -64,7 +65,7 @@ export const Wishlist = () => {
               {wishlistItems.map((item) => (
                 <div
                   key={item.id}
-                  className="relative bg-white sm:bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors shadow-sm hover:shadow overflow-hidden"
+                  className="relative bg-white dark:bg-gray-800 sm:bg-gray-50 dark:sm:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-colors shadow-sm hover:shadow overflow-hidden"
                 >
                   <div 
                     className="aspect-w-4 aspect-h-3 bg-gray-200 cursor-pointer"
@@ -77,8 +78,8 @@ export const Wishlist = () => {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                    <p className="mt-1 text-sm text-gray-700">₹{item.price.toFixed(2)}</p>
+                    <h3 className="font-medium text-gray-900 dark:text-white truncate">{item.name}</h3>
+                    <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">₹{item.price.toFixed(2)}</p>
                     
                     <div className="mt-4 flex items-center gap-3">
                       <button
@@ -118,18 +119,18 @@ export const Wishlist = () => {
             <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
 
             {/* Modal panel */}
-            <div className="relative inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="relative inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+              <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
                     <Trash2 className="h-6 w-6 text-red-600" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       Clear Wishlist
                     </h3>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-300">
                         Are you sure you want to clear your wishlist? This action cannot be undone.
                       </p>
                     </div>
@@ -150,7 +151,7 @@ export const Wishlist = () => {
                 <button
                   type="button"
                   onClick={() => setIsConfirmClearOpen(false)}
-                  className="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
+                  className="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-base font-medium text-gray-700 dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
                 >
                   Cancel
                 </button>

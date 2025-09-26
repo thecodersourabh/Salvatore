@@ -567,7 +567,7 @@ export const ProfileView = () => {
                   <Card fullWidth>
                     <div className="p-6">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">About</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">About</h3>
                         {isOwnProfile && (
                           <button
                             onClick={() => setIsEditing(!isEditing)}

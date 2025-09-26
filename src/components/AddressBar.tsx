@@ -3,21 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { Address } from '../types/user';
 import { AddressService } from '../services/addressService';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-interface AddressBarProps {
-  userId?: string;
-}
-
-export const AddressBar = ({ userId: userId }: AddressBarProps) => {
+export const AddressBar = () => {
+  const { user } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
   const [address, setAddress] = useState<Address | undefined>();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadAddress = async () => {
-      if (!userId) {
-        return;
-      }
+    if (user?.sub) {
+      const mappedId = localStorage.getItem(`auth0_${user.sub}`);
+      setUserId(mappedId);
+    } else {
+      setUserId(null);
+    }
+  }, [user?.sub]);
 
+  useEffect(() => {
+    const loadAddress = async () => {
+      if (!userId) return;
       try {
         const addresses = await AddressService.getUserAddresses(userId);
         const defaultAddress = addresses.find(addr => addr.isDefault);
@@ -28,9 +33,10 @@ export const AddressBar = ({ userId: userId }: AddressBarProps) => {
         console.error('AddressBar - Error loading addresses:', error);
       }
     };
-
     loadAddress();
   }, [userId]);
+
+  if (!userId) return null;
 
   const handleAddressClick = () => {
     navigate('/addresses');

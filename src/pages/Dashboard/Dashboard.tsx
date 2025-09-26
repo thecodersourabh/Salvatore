@@ -178,12 +178,6 @@ export const Dashboard = () => {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
-      {/* Address Bar - only shown on mobile apps, fixed at top */}
-      {userId && isNative && (
-        <div className="fixed top-0 left-0 w-full z-30">
-          <AddressBar userId={userId} />
-        </div>
-      )}
       {/* Network Error Message */}
       {networkError && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
@@ -205,7 +199,7 @@ export const Dashboard = () => {
       {/* Hero Dashboard Section */}
       <div
         className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-        style={userId && isNative ? { marginTop: 56 } : {}} // Adjust 56px if AddressBar height changes
+        style={userId && isNative ? { marginTop: 'calc(56px + env(safe-area-inset-top, 24px))' } : {}}
       >
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

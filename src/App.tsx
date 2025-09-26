@@ -32,6 +32,7 @@ import {
   ROUTER_FUTURE_CONFIG,
   SPLASH_CONFIG
 } from "./constants";
+import { AddressBar } from './components/AddressBar';
 
 // Auth0 callback handler for mobile deep linking
 function Auth0CallbackHandler() {
@@ -216,6 +217,8 @@ function MyApp() {
                 
                 <div className="flex flex-col h-full">
                   <Navigation />
+                  {/* Global Address Bar for mobile apps */}
+                  {Capacitor.isNativePlatform() && <AddressBar />}
                   <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
                     <AppRoutes />
                   </main>

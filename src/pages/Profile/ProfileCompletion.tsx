@@ -1017,7 +1017,7 @@ export const ProfileCompletion = () => {
 
               {/* Step Content */}
               {currentStep === 0 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
               
                   {/* Profile Picture */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
@@ -1220,7 +1220,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 1 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Skills Selection */}
                   <div className="skills-selection p-4 border rounded-lg bg-white shadow-sm">
                     <IonSelect
@@ -1323,7 +1323,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 2 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
                  
                   {/* Availability Options */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
@@ -1420,7 +1420,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 3 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
                   
                   {/* Location List */}
                   {formData.serviceAreas.locations.map((location, index) => (
@@ -1660,7 +1660,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 4 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
                 
                   {/* Pricing Model */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -1768,7 +1768,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 5 && (
-                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
+                <div className="space-y-4 sm:space-y-6">
                   
                   {/* Document Upload Section */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -2071,7 +2071,7 @@ export const ProfileCompletion = () => {
 
               {/* Navigation Buttons */}
               <div className="ion-padding pb-16">
-                <div className="navigation-buttons space-y-4">
+                <div className="navigation-buttons space-y-4 pb-16 sm:pb-8">
                   {/* Navigation actions */}
                   <div className="flex gap-4">
                     <IonButton

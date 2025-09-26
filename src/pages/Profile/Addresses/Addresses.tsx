@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { IonInput, IonSelect, IonSelectOption } from '@ionic/react';
 import { 
   MapPin, 
   Plus, 
@@ -407,175 +408,141 @@ export const Addresses = () => {
       {/* Add/Edit Address Modal */}
       {(isAddModalOpen || editingAddress) && (
   <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-40 transition-opacity" 
-              aria-hidden="true"
-              onClick={cleanupForm}
-            />
-            
-            {/* Center modal on desktop */}
-            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-
-            {/* Modal panel */}
-            <div className="relative inline-block w-full transform overflow-hidden rounded-t-xl bg-white dark:bg-gray-800 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:rounded-xl sm:align-middle">
-              <div className="bg-white dark:bg-gray-800">
-                <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {editingAddress ? 'Edit Address' : 'Add New Address'}
-                    </h3>
-                    <button
-                      onClick={cleanupForm}
-                      className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                    >
-                      <span className="sr-only">Close</span>
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="mt-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name || ''}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                        placeholder="Enter your full name"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone || ''}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                        placeholder="Enter phone number"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Address Type
-                      </label>
-                      <select
-                        value={formData.type || 'home'}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value as Address['type'] })}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                        required
-                      >
-                        <option value="home">Home</option>
-                        <option value="office">Office</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Street Address
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.street || ''}
-                        onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                        placeholder="Enter street address"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.city || ''}
-                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                          placeholder="Enter city"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          State
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.state || ''}
-                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                          placeholder="Enter state"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        ZIP Code
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.zipCode || ''}
-                        onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
-                        placeholder="Enter ZIP code"
-                        required
-                      />
-                    </div>
-
-                    {!editingAddress?.isDefault && (
-                      <div className="flex items-center pt-2">
-                        <input
-                          type="checkbox"
-                          id="isDefault"
-                          checked={formData.isDefault || false}
-                          onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                          className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="isDefault" className="ml-2 block text-base text-gray-900 dark:text-white">
-                          Set as default address
-                        </label>
-                      </div>
-                    )}
-
-                    <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4">
-                      <div className="flex flex-col-reverse sm:flex-row sm:space-x-3">
-                        <button
-                          type="button"
-                          onClick={cleanupForm}
-                          className="mt-3 sm:mt-0 w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-base font-medium rounded-lg text-gray-700 dark:text-white bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={saving || !formData.street || !formData.city || !formData.state}
-                          className="w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-transparent text-base font-medium rounded-lg text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {saving ? 'Saving...' : (editingAddress ? 'Save Changes' : 'Add Address')}
-                        </button>
-                      </div>
-                    </div>
-                  </form>
+    <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      {/* Background overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-40 transition-opacity" 
+        aria-hidden="true"
+        onClick={cleanupForm}
+      />
+      {/* Center modal on desktop */}
+      <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+      {/* Modal panel */}
+      <div className="relative inline-block w-full transform overflow-hidden rounded-t-xl bg-white dark:bg-gray-800 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:rounded-xl sm:align-middle">
+        <div className="bg-white dark:bg-gray-800">
+          <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {editingAddress ? 'Edit Address' : 'Add New Address'}
+              </h3>
+              <button
+                onClick={cleanupForm}
+                className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <span className="sr-only">Close</span>
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="mt-3 space-y-4">
+              <div>
+                <IonInput
+                  value={formData.name || ''}
+                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, name: (e.detail as any).value })}
+                  placeholder="Full Name"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  required
+                />
+              </div>
+              <div>
+                <IonInput
+                  value={formData.phone || ''}
+                  type="tel"
+                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, phone: (e.detail as any).value })}
+                  placeholder="Phone Number"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  required
+                />
+              </div>
+              <div>
+                <IonSelect
+                  value={formData.type || 'home'}
+                  onIonChange={(e: CustomEvent) => setFormData({ ...formData, type: (e.detail as any).value as Address['type'] })}
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  interface="popover"
+                  required
+                  placeholder="Address Type"
+                >
+                  <IonSelectOption value="home">Home</IonSelectOption>
+                  <IonSelectOption value="office">Office</IonSelectOption>
+                  <IonSelectOption value="other">Other</IonSelectOption>
+                </IonSelect>
+              </div>
+              <div>
+                <IonInput
+                  value={formData.street || ''}
+                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, street: (e.detail as any).value })}
+                  placeholder="Street Address"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <IonInput
+                    value={formData.city || ''}
+                    onIonInput={(e: CustomEvent) => setFormData({ ...formData, city: (e.detail as any).value })}
+                    placeholder="City"
+                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <IonInput
+                    value={formData.state || ''}
+                    onIonInput={(e: CustomEvent) => setFormData({ ...formData, state: (e.detail as any).value })}
+                    placeholder="State"
+                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                    required
+                  />
                 </div>
               </div>
-            </div>
+              <div>
+                <IonInput
+                  value={formData.zipCode || ''}
+                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, zipCode: (e.detail as any).value })}
+                  placeholder="ZIP Code"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  required
+                />
+              </div>
+              {!editingAddress?.isDefault && (
+                <div className="flex items-center pt-2">
+                  <input
+                    type="checkbox"
+                    id="isDefault"
+                    checked={formData.isDefault || false}
+                    onChange={e => setFormData({ ...formData, isDefault: e.target.checked })}
+                    className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isDefault" className="ml-2 block text-base text-gray-900 dark:text-white">
+                    Set as default address
+                  </label>
+                </div>
+              )}
+              <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4">
+                <div className="flex flex-col-reverse sm:flex-row sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={cleanupForm}
+                    className="mt-3 sm:mt-0 w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-base font-medium rounded-lg text-gray-700 dark:text-white bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !formData.street || !formData.city || !formData.state}
+                    className="w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-transparent text-base font-medium rounded-lg text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Saving...' : (editingAddress ? 'Save Changes' : 'Add Address')}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
       )}
     </div>
   );

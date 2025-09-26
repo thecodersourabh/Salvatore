@@ -11,7 +11,6 @@ import {
   Settings, 
   LogOut, 
   X,
-  ShoppingBag,
   ShoppingCart
 } from "lucide-react";
 import "./Sidebar.css";
@@ -72,7 +71,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     {
       icon: CreditCard,
       label: "Payment Methods",
-      link: "/profile/payments"
+      link: "/payments"
     },
     {
       icon: MapPin,
@@ -82,7 +81,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     {
       icon: Settings,
       label: "Account Settings",
-      link: "/profile/settings"
+      link: "/settings"
     }
   ];
 

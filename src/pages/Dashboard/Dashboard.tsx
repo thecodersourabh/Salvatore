@@ -14,7 +14,9 @@ import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
 import { ErrorType } from "../../services/apiErrorHandler";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
-import { getAllSectorServices } from "../../utils/sectorServices";
+import {useSectorTranslation } from '../../hooks/useSectorTranslation';
+import {useLanguage } from '../../context/LanguageContext';
+
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
 import { AddressBar } from "../../components/AddressBar";
@@ -54,8 +56,10 @@ const iconMap: Record<ServiceSector, any> = {
 };
 
 export const Dashboard = () => {
+  const { getCurrentSectors, translateSector } = useSectorTranslation();
   const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
   const { isNative } = usePlatform();
+  const { language } = useLanguage();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(true);
@@ -110,9 +114,10 @@ export const Dashboard = () => {
         const profile = await UserService.getUserByEmail(user.email) as User;
         
         if (profile?.sector) {
-          const sectorServices = getAllSectorServices();
+          const sectorServices = getCurrentSectors(language);
           const userSector = profile.sector;
-          const sectorData = sectorServices[userSector as ServiceSector];
+          const translatedSector = translateSector(userSector);
+          const sectorData = sectorServices[translatedSector as ServiceSector];
           if (sectorData) {
             const serviceCards = sectorData.services.map((service, index) => {
               return {

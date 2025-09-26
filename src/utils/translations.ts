@@ -1,0 +1,30 @@
+export const translations = {
+  en: {
+    settings: {
+      title: 'Settings',
+      language: 'Language',
+      selectLanguage: 'Select Language',
+      english: 'English',
+      hindi: 'Hindi',
+      saved: 'Settings saved successfully'
+    },
+    common: {
+      save: 'Save',
+      cancel: 'Cancel'
+    }
+  },
+  hi: {
+    settings: {
+      title: 'सेटिंग्स',
+      language: 'भाषा',
+      selectLanguage: 'भाषा चुनें',
+      english: 'अंग्रेज़ी',
+      hindi: 'हिंदी',
+      saved: 'सेटिंग्स सफलतापूर्वक सहेजी गईं'
+    },
+    common: {
+      save: 'सहेजें',
+      cancel: 'रद्द करें'
+    }
+  }
+} as const;

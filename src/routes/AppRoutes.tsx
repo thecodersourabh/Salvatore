@@ -11,6 +11,7 @@ import { ProfileView } from "../pages/Profile/ProfileView";
 import { Orders } from "../pages/Orders/Orders";
 import { Addresses } from "../pages/Profile/Addresses/Addresses";
 import { Wishlist } from "../pages/Profile/Wishlist/Wishlist";
+import { Settings } from "../pages/Settings/Settings";
 
 export const AppRoutes = () => {
   return (
@@ -50,6 +51,11 @@ export const AppRoutes = () => {
       <Route path="/wishlist" element={
         <ProtectedRoute>
           <Wishlist />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       } />
     </Routes>

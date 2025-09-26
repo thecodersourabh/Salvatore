@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useStep } from '../../context/StepContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useImageGallery } from '../../hooks/useImageGallery';
 import { camera } from 'ionicons/icons';
@@ -21,7 +22,8 @@ import {
 import { UserService } from '../../services/userService';
 import { ImageService } from '../../services/imageService';
 import { ServiceSector } from '../../types/user';
-import { getSectorSkills, getSectorNames } from '../../utils/sectorServices';
+import { getSectorSkills } from '../../utils/sectorServices';
+import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import { Modal } from '../../components/ui/Modal';
 import { FormDataType, DocumentType, Document, Skill } from './types';
 
@@ -60,6 +62,8 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ isOpen, onC
 };
 
 export const ProfileCompletion = () => {
+  const { translateSector, toEnglish, getSectorNames } = useSectorTranslation();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const auth = useAuth();
   const { user } = auth;
@@ -1176,21 +1180,23 @@ export const ProfileCompletion = () => {
                       />
                       
                       <IonSelect
-                        value={formData.sector}
+                        value={translateSector(formData.sector)}
                         label="Service Sector"
                         labelPlacement="floating"
                         className="w-full"
                         onIonChange={e => {
-                          const value = e.detail.value;
-                          if (formData.sector !== value) {
-                            setFormData(prev => ({ ...prev, sector: value }));
+                          const selectedValue = e.detail.value;
+                          const englishValue = toEnglish(selectedValue);
+                          console.log('Selected:', selectedValue, 'Converted:', englishValue);
+                          if (formData.sector !== englishValue) {
+                            setFormData(prev => ({ ...prev, sector: englishValue }));
                           }
                         }}
                         placeholder="Select your sector"
                       >
                         {availableSectors.map(sector => (
                           <IonSelectOption key={sector} value={sector}>
-                            {sector}
+                            {translateSector(sector)}
                           </IonSelectOption>
                         ))}
                       </IonSelect>

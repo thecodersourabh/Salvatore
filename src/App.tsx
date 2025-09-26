@@ -17,6 +17,7 @@ import { AppRoutes } from "./routes/AppRoutes";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { LanguageProvider } from "./context/LanguageContext";
 
 // Utils and Config
 import * as config from "./auth_config.json";
@@ -209,18 +210,20 @@ function MyApp() {
         <AuthProvider>
           <CartProvider>
             <WishlistProvider>
-              <Auth0CallbackHandler />
-              
-              <div className="flex flex-col h-full">
-                <Navigation />
-                <main className="flex-1 overflow-auto bg-gray-50">
-                  <AppRoutes />
-                </main>
+              <LanguageProvider>
+                <Auth0CallbackHandler />
                 
-                {/* Floating components */}
-                <Cart />
-                <ChatBot />
-              </div>
+                <div className="flex flex-col h-full">
+                  <Navigation />
+                  <main className="flex-1 overflow-auto bg-gray-50">
+                    <AppRoutes />
+                  </main>
+                  
+                  {/* Floating components */}
+                  <Cart />
+                  <ChatBot />
+                </div>
+              </LanguageProvider>
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>

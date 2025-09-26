@@ -1017,7 +1017,7 @@ export const ProfileCompletion = () => {
 
               {/* Step Content */}
               {currentStep === 0 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
               
                   {/* Profile Picture */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
@@ -1220,7 +1220,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 1 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
                   {/* Skills Selection */}
                   <div className="skills-selection p-4 border rounded-lg bg-white shadow-sm">
                     <IonSelect
@@ -1323,7 +1323,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 2 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
                  
                   {/* Availability Options */}
                   <div className="space-y-4 p-3 sm:p-4 pb-6 border rounded-lg bg-white shadow-sm">
@@ -1420,7 +1420,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 3 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
                   
                   {/* Location List */}
                   {formData.serviceAreas.locations.map((location, index) => (
@@ -1660,7 +1660,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 4 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
                 
                   {/* Pricing Model */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -1768,7 +1768,7 @@ export const ProfileCompletion = () => {
               )}
 
               {currentStep === 5 && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-8">
                   
                   {/* Document Upload Section */}
                   <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -2077,7 +2077,8 @@ export const ProfileCompletion = () => {
                     <IonButton
                       fill="outline"
                       expand="block"
-                      className="flex-1"
+                      color="rose"
+                      className="flex-1 border-rose-600 text-rose-600 hover:bg-rose-50 focus:bg-rose-100"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -2088,16 +2089,17 @@ export const ProfileCompletion = () => {
                     >
                       Previous
                     </IonButton>
-                    
+
                     <IonButton
                       fill="solid"
                       expand="block"
-                      className="flex-1"
+                      color="rose"
+                      className="flex-1 bg-rose-600 border-rose-600 text-white hover:bg-rose-700 focus:bg-rose-700"
                       onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log('➡️ Next/Submit clicked, current step:', currentStep);
-                        
+
                         if (!validateStep()) {
                           console.log('❌ Step validation failed');
                           return;
@@ -2115,7 +2117,7 @@ export const ProfileCompletion = () => {
 
                         // Reset unsaved changes before moving to next step
                         setUnsavedData({});
-                        
+
                         if (currentStep === 5) {
                           console.log('🎯 Final step - form completed');
                         } else {

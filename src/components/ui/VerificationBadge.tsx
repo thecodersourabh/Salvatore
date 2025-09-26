@@ -30,11 +30,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       <IonIcon
         icon={isVerified ? checkmarkCircle : closeCircle}
         className={`w-5 h-5 ${
-          isVerified ? 'text-green-500' : 'text-gray-400'
+          isVerified ? 'text-green-500 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
         }`}
       />
       {showTooltip && (
-        <span className="ml-1 text-sm text-gray-600">
+        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">
           {isVerified ? 'Verified' : 'Not Verified'}
         </span>
       )}

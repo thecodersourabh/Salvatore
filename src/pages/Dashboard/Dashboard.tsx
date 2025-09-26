@@ -170,14 +170,14 @@ export const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 border-t-transparent"></div>
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 dark:border-rose-500 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 dark:bg-gray-900">
       {/* Address Bar - only shown on mobile apps */}
       {userId && isNative && <AddressBar userId={userId} />}
       {/* Network Error Message */}
@@ -199,14 +199,14 @@ export const Dashboard = () => {
       )}
 
       {/* Hero Dashboard Section */}
-      <div className="bg-white border-b">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <h1 className="text-3xl font-bold mb-2 text-gray-900">
+              <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                 Welcome to Dashboard
               </h1>
-              <p className="text-lg text-gray-600 mb-4">
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
                 Manage your services and grow your business across multiple sectors
               </p>
               <div className="flex flex-wrap gap-3">
@@ -221,31 +221,31 @@ export const Dashboard = () => {
             
             {/* Quick Stats */}
             <div className="space-y-3">
-              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm">Active Services</p>
-                    <p className="text-xl font-bold text-gray-900">{activeServices.length}</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Active Services</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{activeServices.length}</p>
                   </div>
                   <TrendingUp className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm">Total Earnings</p>
-                    <p className="text-xl font-bold text-gray-900">${totalEarnings.toLocaleString()}</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Total Earnings</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">${totalEarnings.toLocaleString()}</p>
                   </div>
                   <DollarSign className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm">This Month</p>
-                    <p className="text-xl font-bold text-gray-900">23 Jobs</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">This Month</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">23 Jobs</p>
                   </div>
                   <Calendar className="h-6 w-6 text-rose-600" />
                 </div>
@@ -259,10 +259,10 @@ export const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
               Your Services
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Manage your service offerings across different sectors
             </p>
           </div>
@@ -273,34 +273,36 @@ export const Dashboard = () => {
         </div>
 
         {services.length === 0 ? (
-          <div className="text-center text-gray-600 py-8">
+          <div className="text-center text-gray-600 dark:text-gray-400 py-8">
             No services found. Please complete your service provider profile.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service) => (
-              <ServiceCard
-                key={service.id}
-                title={service.title}
-                description={service.description}
-                icon={service.icon}
-                category={service.category}
-                rating={service.rating}
-                totalJobs={service.totalJobs}
-                isActive={service.isActive}
-                onToggle={() => toggleServiceStatus(service.id)}
-                services={service.services}
-                skills={service.skills}
-              />
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <ServiceCard
+                  key={service.id}
+                  title={service.title}
+                  description={service.description}
+                  icon={service.icon}
+                  category={service.category}
+                  rating={service.rating}
+                  totalJobs={service.totalJobs}
+                  isActive={service.isActive}
+                  onToggle={() => toggleServiceStatus(service.id)}
+                  services={service.services}
+                  skills={service.skills}
+                />
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {/* Quick Actions Section */}
-      <div className="bg-white border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 text-center">
             Quick Actions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -308,24 +310,24 @@ export const Dashboard = () => {
               <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Calendar className="h-6 w-6 text-rose-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-1">View Bookings</h4>
-              <p className="text-gray-600 text-xs">Check your upcoming appointments and schedule</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">View Bookings</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">Check your upcoming appointments and schedule</p>
             </div>
             
             <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
               <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <TrendingUp className="h-6 w-6 text-rose-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Analytics</h4>
-              <p className="text-gray-600 text-xs">Track your performance and earnings</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Analytics</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">Track your performance and earnings</p>
             </div>
             
             <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
               <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <DollarSign className="h-6 w-6 text-rose-600" />
               </div>
-              <h4 className="font-semibold text-gray-900 mb-1">Payments</h4>
-              <p className="text-gray-600 text-xs">Manage your earnings and payments</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Payments</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">Manage your earnings and payments</p>
             </div>
           </div>
         </div>

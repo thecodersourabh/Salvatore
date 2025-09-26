@@ -96,12 +96,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       />
 
       {/* Sidebar */}
-      <div className={`sidebar-container bg-white h-full shadow-xl flex flex-col ${isNative ? 'sidebar-safe-top' : ''}`}>
+      <div className={`sidebar-container bg-white dark:bg-gray-800 h-full shadow-xl flex flex-col ${isNative ? 'sidebar-safe-top' : ''}`}>
         {/* Header */}        
-        <div className="p-3 sm:p-4 border-b flex justify-between items-center">
+        <div className="p-3 sm:p-4 border-b flex justify-between items-center hover:bg-gray-50  dark:hover:bg-gray-800 transition-colors cursor-pointer">
           <div className="flex items-center space-x-2">
             <User className="sidebar-icon-mobile text-rose-600" />
-            <h2 className="text-lg sm:text-base font-semibold text-gray-900">My Profile</h2>
+            <h2 className="text-lg sm:text-base font-semibold text-gray-900 dark:text-white">My Profile</h2>
           </div>
           <button 
             onClick={onClose}
@@ -116,22 +116,22 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <Link 
             to="/profile" 
             onClick={onClose}
-            className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 transition-colors sidebar-focusable"
+            className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors sidebar-focusable"
           >
             <div className="flex items-center">
               {picture && (
                 <img 
                   src={picture} 
                   alt={name || "Profile"} 
-                  className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200"
+                  className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200 dark:border-gray-700 "
                 />
               )}
               <div className="ml-3">
-                <h3 className="font-medium text-gray-900 text-sm leading-tight">{name}</h3>
-                <p className="text-xs text-gray-600 mt-0.5">{email}</p>
+                <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight">{name}</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{email}</p>
               </div>
             </div>
-          </Link>          
+          </Link>
           {/* Menu Items - Scrollable */}
           <nav className="sidebar-nav flex-1 overflow-y-auto">
             <ul className="divide-y divide-gray-200">
@@ -140,18 +140,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   {item.action ? (
                     <button
                       onClick={item.action}
-                      className="sidebar-menu-item flex items-center space-x-3 w-full px-4 sm:px-6 py-4 sm:py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left sidebar-focusable"
+                      className="sidebar-menu-item flex items-center space-x-3 w-full px-4 sm:px-6 py-4 sm:py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left sidebar-focusable"
                     >
-                      <item.icon className="sidebar-icon-mobile text-gray-600" />
+                      <item.icon className="sidebar-icon-mobile text-gray-600 dark:text-gray-300 " />
                       <span className="text-base sm:text-sm font-medium">{item.label}</span>
                     </button>
                   ) : (
                     <Link 
                       to={item.link}
-                      className="sidebar-menu-item flex items-center space-x-3 px-4 sm:px-6 py-4 sm:py-3 text-gray-700 hover:bg-gray-50 transition-colors sidebar-focusable"
+                      className="sidebar-menu-item flex items-center space-x-3 px-4 sm:px-6 py-4 sm:py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors sidebar-focusable"
                       onClick={onClose}
                     >
-                      <item.icon className="sidebar-icon-mobile text-gray-600" />
+                      <item.icon className="sidebar-icon-mobile text-gray-600 dark:text-gray-300" />
                       <span className="text-base sm:text-sm font-medium">{item.label}</span>
                     </Link>
                   )}

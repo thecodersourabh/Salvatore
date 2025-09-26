@@ -24,7 +24,7 @@ export function Navigation() {
 
   // Dynamic classes for mobile safe area
   const navClasses = `
-    bg-white border-b border-gray-100 px-4
+    bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4
     ${isNative ? 'pt-safe pb-3' : 'py-3'}
     ${isAndroid ? 'android-status-bar' : ''}
     ${isIOS ? 'ios-status-bar' : ''}
@@ -36,25 +36,25 @@ export function Navigation() {
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
             <Scissors className="h-6 w-6 text-rose-600" />
-            <span className="text-xl font-semibold">FabricCraft</span>
+            <span className="text-xl font-semibold dark:text-white">FabricCraft</span>
           </Link>
           <div className="hidden md:flex space-x-6">
-            <Link to="/" className="text-gray-600 hover:text-gray-900">
+            <Link to="/" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
               Home
             </Link>
-            <Link to="/about" className="text-gray-600 hover:text-gray-900">
+            <Link to="/about" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
               About
             </Link>
             
           </div>
         </div>
         <div className="flex items-center space-x-6">
-          <button className="text-gray-600 hover:text-gray-900">
+          <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
             <Heart className="h-5 w-5" />
           </button>
           <button
             onClick={() => setIsCartOpen(true)}
-            className="text-gray-600 hover:text-gray-900 relative"
+            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white relative"
           >
             <ShoppingCart className="h-5 w-5" />
             {items.length > 0 && (
@@ -70,14 +70,14 @@ export function Navigation() {
             >
               <img
                 src={(user as any)?.picture}
-                className="h-8 w-8 rounded-full border-2 border-rose-200"
+                className="h-8 w-8 rounded-full border-2 border-rose-200 dark:border-rose-700"
               />
-              <span className="text-sm text-gray-700 hidden md:inline">{(user as any)?.name}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 hidden md:inline">{(user as any)?.name}</span>
             </button>
           ) : (
             <button
               onClick={() => loginWithRedirect()}
-              className="text-sm text-gray-600 hover:text-gray-900 flex items-center space-x-1"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white flex items-center space-x-1"
             >
               <User className="h-5 w-5" />
               <span>Sign In</span>

@@ -18,6 +18,7 @@ import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { LanguageProvider } from "./context/LanguageContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // Utils and Config
 import * as config from "./auth_config.json";
@@ -158,10 +159,10 @@ async function closeBrowser() {
 // Loading component
 function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 border-t-transparent"></div>
-        <p className="text-gray-600 font-medium">Loading...</p>
+        <p className="text-gray-600 dark:text-gray-300 font-medium">Loading...</p>
       </div>
     </div>
   );
@@ -204,7 +205,7 @@ function MyApp() {
 
   return (
     <Router future={ROUTER_FUTURE_CONFIG}>
-      <div className="h-screen overflow-hidden">
+      <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
         {isPending && <TransitionIndicator />}
         
         <AuthProvider>
@@ -215,7 +216,7 @@ function MyApp() {
                 
                 <div className="flex flex-col h-full">
                   <Navigation />
-                  <main className="flex-1 overflow-auto bg-gray-50">
+                  <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
                     <AppRoutes />
                   </main>
                   
@@ -248,9 +249,11 @@ export default function App() {
 
   return (
     <Auth0Provider {...auth0Config}>
-      <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
-        <MyApp />
-      </MobileSplashScreen>
+      <ThemeProvider>
+        <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
+          <MyApp />
+        </MobileSplashScreen>
+      </ThemeProvider>
     </Auth0Provider>
   );
 }

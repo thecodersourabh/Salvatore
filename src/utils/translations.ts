@@ -6,6 +6,9 @@ export const translations = {
       selectLanguage: 'Select Language',
       english: 'English',
       hindi: 'Hindi',
+      theme: 'Theme',
+      themeLight: 'Light',
+      themeDark: 'Dark',
       saved: 'Settings saved successfully'
     },
     common: {
@@ -20,6 +23,10 @@ export const translations = {
       selectLanguage: 'भाषा चुनें',
       english: 'अंग्रेज़ी',
       hindi: 'हिंदी',
+      theme: 'थीम',
+      themeLight: 'लाइट',
+      themeDark: 'डार्क',
+      themeSystem: 'सिस्टम',
       saved: 'सेटिंग्स सफलतापूर्वक सहेजी गईं'
     },
     common: {

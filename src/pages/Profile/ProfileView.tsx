@@ -4,7 +4,9 @@ import {
   IonAvatar,
   IonIcon,
   IonSpinner,
+
 } from "@ionic/react";
+
 import {
   alertCircleOutline,
   locationOutline,
@@ -42,7 +44,7 @@ const Card: React.FC<CardProps> = ({
   fullWidth = false,
 }) => {
   const classes = [
-    "bg-white rounded-lg shadow-lg",
+    "bg-white dark:bg-gray-800 rounded-lg shadow-lg",
     fullWidth ? "md:col-span-2" : "",
     className,
   ]
@@ -286,24 +288,24 @@ export const ProfileView = () => {
   const renderProfileContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 p-4">
+        <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
           <div className="max-w-md w-full space-y-6">
             <div className="text-center">
-              <IonSpinner name="crescent" className="h-8 w-8 text-rose-600" />
-              <p className="mt-4 text-gray-600">Loading profile...</p>
+              <IonSpinner name="crescent" className="h-8 w-8 text-rose-600 dark:text-rose-500" />
+              <p className="mt-4 text-gray-600 dark:text-gray-300">Loading profile...</p>
             </div>
 
             {isOwnProfile && userContext && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Profile Completion</h3>
-                  <div className="relative w-full h-2 bg-gray-100 rounded">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Profile Completion</h3>
+                  <div className="relative w-full h-2 bg-gray-100 dark:bg-gray-700 rounded">
                     <div
-                      className="absolute left-0 top-0 h-full bg-rose-500 rounded transition-all duration-500"
+                      className="absolute left-0 top-0 h-full bg-rose-500 dark:bg-rose-600 rounded transition-all duration-500"
                       style={{ width: `${profileCompletion}%` }}
                     />
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {profileCompletion < 100 
                       ? `Your profile is ${profileCompletion}% complete` 
                       : 'Your profile is complete!'
@@ -319,8 +321,8 @@ export const ProfileView = () => {
 
     if (error || !user) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 text-center max-w-md w-full">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center max-w-md w-full">
             <div className="text-rose-600 mb-4">
               <IonIcon icon={alertCircleOutline} className="w-12 h-12" />
             </div>
@@ -340,12 +342,12 @@ export const ProfileView = () => {
     }
 
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1">
           <IonPage>
             <Navigation />
             <IonContent className="ion-content-scroll-host">
-              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-white dark:bg-gray-900 rounded-xl">
                 {/* Profile Header Card */}
                 {/* Profile Completion Alert */}
                 {isOwnProfile && profileCompletion < 100 && (
@@ -490,48 +492,34 @@ export const ProfileView = () => {
 
                 {/* Quick Info Card */}
                 <Card fullWidth>
-                  <div className="flex flex-col md:flex-row md:divide-x divide-gray-200">
+                  <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 dark:divide-gray-700">
                     {/* Contact */}
                     <div className="px-4 py-3 flex-1">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Contact
-                      </h4>
+                      <h4 className="text-base font-bold dark:text-white mb-2">Contact</h4>
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <IonIcon
-                            icon={mailOutline}
-                            className="h-4 w-4 text-gray-400 mr-2"
-                          />
-                          <span>{user.email}</span>
+                        <div className="flex items-center text-xs text-gray-700 dark:text-gray-300">
+                          <IonIcon icon={mailOutline} className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="font-medium dark:text-gray-300">{user.email}</span>
                         </div>
-                        <div className="flex items-center text-sm">
-                          <IonIcon
-                            icon={phonePortraitOutline}
-                            className="h-4 w-4 text-gray-400 mr-2"
-                          />
-                          <span>{user.phone}</span>
+                        <div className="flex items-center text-xs text-gray-700 dark:text-gray-300">
+                          <IonIcon icon={phonePortraitOutline} className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="font-medium dark:text-gray-300">{user.phone}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Working Hours */}
                     <div className="px-4 py-3 flex-1 md:border-l">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Availability
-                      </h4>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center">
+                      <h4 className="text-base font-bold dark:text-white mb-2">Availability</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center text-gray-700 dark:text-gray-300">
                           <span className="text-green-600 mr-2">●</span>
-                          <span>Available Weekdays</span>
+                          <span className="font-medium dark:text-gray-300">Available Weekdays</span>
                         </div>
-                        <div className="flex items-center text-gray-600">
-                          <IonIcon
-                            icon={globeOutline}
-                            className="h-4 w-4 mr-2"
-                          />
-                          <span>
-                            {user.availability?.hours?.start} -{" "}
-                            {user.availability?.hours?.end}
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                          <IonIcon icon={globeOutline} className="h-4 w-4 mr-2" />
+                          <span className="font-medium dark:text-gray-300">
+                            {user.availability?.hours?.start} - {user.availability?.hours?.end}
                           </span>
                         </div>
                       </div>
@@ -539,24 +527,18 @@ export const ProfileView = () => {
 
                     {/* Service Area */}
                     <div className="px-4 py-3 flex-1">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Service Area
-                      </h4>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center">
-                          <IonIcon
-                            icon={locationOutline}
-                            className="h-4 w-4 text-gray-400 mr-2"
-                          />
-                          <span>
-                            {user.serviceAreas?.locations?.[0]?.city},{" "}
-                            {user.serviceAreas?.locations?.[0]?.state}
+                      <h4 className="text-base font-bold dark:text-white mb-2">Service Area</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center text-gray-700 dark:text-gray-300">
+                          <IonIcon icon={locationOutline} className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="font-medium dark:text-gray-300">
+                            {user.serviceAreas?.locations?.[0]?.city}, {user.serviceAreas?.locations?.[0]?.state}
                           </span>
                         </div>
                         {user.serviceAreas?.serviceAtHome && (
-                          <div className="flex items-center text-green-600">
+                          <div className="flex items-center text-green-600 dark:text-green-400">
                             <span className="mr-1">✓</span>
-                            <span>Home Service Available</span>
+                            <span className="font-medium dark:text-gray-300">Home Service Available</span>
                           </div>
                         )}
                       </div>
@@ -564,16 +546,14 @@ export const ProfileView = () => {
 
                     {/* Core Skills */}
                     <div className="px-4 py-3 flex-1">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Core Skills
-                      </h4>
+                      <h4 className="text-base font-bold dark:text-white mb-2">Core Skills</h4>
                       <div className="flex flex-wrap gap-2">
                         {user.skills?.slice(0, 5).map((skill, index) => (
                           <div
                             key={index}
-                            className="inline-flex items-center text-sm bg-green-50 text-green-700 rounded-full px-3 py-1"
+                            className="inline-flex items-center text-xs bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full px-3 py-1 font-medium"
                           >
-                            {skill.name}
+                            <span className="dark:text-green-400">{skill.name}</span>
                           </div>
                         ))}
                       </div>
@@ -602,8 +582,8 @@ export const ProfileView = () => {
                         <textarea
                           className={`w-full min-h-[100px] p-3 border rounded-lg resize-none transition-colors ${
                             isEditing 
-                              ? 'border-gray-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent bg-white pr-12' 
-                              : 'border-transparent bg-gray-50'
+                              ? 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-rose-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white pr-12' 
+                              : 'border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-300'
                           }`}
                           placeholder={isOwnProfile ? "Tell us about yourself..." : "No description available"}
                           value={description}
@@ -643,7 +623,7 @@ export const ProfileView = () => {
                           </IonAvatar>
                           <div className="flex-1">
                             <textarea
-                              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
+                              className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                               placeholder="What's on your mind?"
                               rows={3}
                             />
@@ -663,7 +643,7 @@ export const ProfileView = () => {
                       </div>
 
                       {/* Sample Post */}
-                      <div className="border-t border-gray-200 pt-6">
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                         <div className="flex space-x-4">
                           <IonAvatar className="w-10 h-10">
                             <img
@@ -674,10 +654,10 @@ export const ProfileView = () => {
                           </IonAvatar>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
-                              <h4 className="font-semibold text-gray-900">{user.name}</h4>
-                              <span className="text-gray-500 text-sm">• 2h ago</span>
+                              <h4 className="font-semibold text-gray-900 dark:text-white">{user.name}</h4>
+                              <span className="text-gray-500 dark:text-gray-400 text-sm">• 2h ago</span>
                             </div>
-                            <p className="mt-2 text-gray-700">
+                            <p className="mt-2 text-gray-700 dark:text-gray-300">
                               Just completed another successful project! Looking forward to new challenges.
                             </p>
                             <div className="mt-4">
@@ -715,7 +695,7 @@ export const ProfileView = () => {
         {/* QR Code Modal */}
         {showQRCode && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold">Profile QR Code</h3>
                 <p className="text-sm text-gray-600">Scan to view profile</p>

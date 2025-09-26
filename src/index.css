@@ -2,6 +2,162 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  }
+
+  .dark body {
+    background-color: theme('colors.gray.900');
+    color: theme('colors.gray.100');
+  }
+
+  #root {
+    height: 100%;
+    overflow: auto;
+  }
+}
+
+ion-content {
+  --overflow: auto;
+}
+
+@layer components {
+  .card {
+    background-color: white;
+    border: 1px solid theme('colors.gray.200');
+    border-radius: theme('borderRadius.lg');
+    box-shadow: theme('boxShadow.sm');
+  }
+
+  .dark .card {
+    background-color: theme('colors.gray.800');
+    border-color: theme('colors.gray.700');
+  }
+
+  .button-primary {
+    background-color: theme('colors.rose.600');
+    color: white;
+    border-radius: theme('borderRadius.md');
+    transition: background-color 0.2s;
+  }
+
+  .button-primary:hover {
+    background-color: theme('colors.rose.700');
+  }
+
+  .dark .button-primary {
+    background-color: theme('colors.rose.500');
+  }
+
+  .dark .button-primary:hover {
+    background-color: theme('colors.rose.600');
+  }
+
+  .button-secondary {
+    background-color: theme('colors.gray.200');
+    color: theme('colors.gray.900');
+    border-radius: theme('borderRadius.md');
+    transition: background-color 0.2s;
+  }
+
+  .button-secondary:hover {
+    background-color: theme('colors.gray.300');
+  }
+
+  .dark .button-secondary {
+    background-color: theme('colors.gray.700');
+    color: white;
+  }
+
+  .dark .button-secondary:hover {
+    background-color: theme('colors.gray.600');
+  }
+
+  .nav-link {
+    color: theme('colors.gray.600');
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover {
+    color: theme('colors.gray.900');
+  }
+
+  .dark .nav-link {
+    color: theme('colors.gray.300');
+  }
+
+  .dark .nav-link:hover {
+    color: white;
+  }
+}
+
+/* Custom scrollbar */
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: theme('colors.gray.100');
+  }
+  
+  .dark ::-webkit-scrollbar-track {
+    background-color: theme('colors.gray.800');
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 9999px;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.600');
+  }
+}
+
+/* Mobile status bars */
+.android-status-bar {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 24px));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 100%);
+}
+
+.dark .android-status-bar {
+  background: linear-gradient(to bottom, rgba(17, 24, 39, 0.8) 0%, transparent 100%);
+}
+
+.ios-status-bar {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 44px));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 100%);
+}
+
+.dark .ios-status-bar {
+  background: linear-gradient(to bottom, rgba(17, 24, 39, 0.8) 0%, transparent 100%);
+}
+
+/* Safe area insets */
+.safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.safe-left { padding-left: max(1rem, env(safe-area-inset-left)); }
+.safe-right { padding-right: max(1rem, env(safe-area-inset-right)); }
+.pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+.pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Global styles */
 html, body {
   height: 100%;
@@ -11,6 +167,16 @@ html, body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode base styles */
+.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Dark mode transition */
+body {
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
 #root {
@@ -30,26 +196,112 @@ ion-content {
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    @apply bg-gray-100 dark:bg-gray-800;
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* Common dark mode components */
+@layer components {
+  .card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+  }
+
+  .card-header {
+    @apply p-4 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .input {
+    @apply bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-rose-500 focus:border-rose-500 dark:focus:ring-rose-400 dark:focus:border-rose-400;
+  }
+
+  .button-primary {
+    @apply bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white rounded-md transition-colors;
+  }
+
+  .button-secondary {
+    @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-md transition-colors;
+  }
+
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors;
+  }
+
+  .dropdown {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md;
+  }
+
+  .modal {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg;
+  }
+
+  .badge {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full px-2 py-0.5 text-sm;
+  }
+
+  .divider {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+}
+
+/* Common components with dark mode support */
+@layer components {
+  .card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+  }
+
+  .card-header {
+    @apply p-4 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .input {
+    @apply bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md focus:ring-rose-500 focus:border-rose-500 dark:focus:ring-rose-400 dark:focus:border-rose-400;
+  }
+
+  .button-primary {
+    @apply bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white rounded-md transition-colors;
+  }
+
+  .button-secondary {
+    @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-md transition-colors;
+  }
+
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors;
+  }
+
+  .dropdown {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md;
+  }
+
+  .modal {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg;
+  }
+
+  .badge {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full px-2 py-0.5 text-sm;
+  }
+
+  .divider {
+    @apply border-gray-200 dark:border-gray-700;
   }
 }
 
 /* Focus styles for accessibility */
 @layer utilities {
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-500 dark:focus:ring-rose-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
   }
   
   .focus-ring-inset {
-    @apply focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-inset;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-500 dark:focus:ring-rose-400 focus:ring-inset;
   }
 }
 
@@ -124,15 +376,13 @@ ion-content {
   background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 100%);
 }
 
-/* Theme-aware mobile navigation */
-@media (prefers-color-scheme: dark) {
-  .android-status-bar {
-    background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 100%);
-  }
-  
-  .ios-status-bar {
-    background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%);
-  }
+/* Dark mode status bar gradients */
+.dark .android-status-bar {
+  background: linear-gradient(to bottom, rgba(17, 24, 39, 0.8) 0%, transparent 100%);
+}
+
+.dark .ios-status-bar {
+  background: linear-gradient(to bottom, rgba(17, 24, 39, 0.8) 0%, transparent 100%);
 }
 
 /* Print styles */

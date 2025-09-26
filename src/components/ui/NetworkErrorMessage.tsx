@@ -113,17 +113,17 @@ export const NetworkErrorMessage: React.FC<NetworkErrorMessageProps> = ({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div 
-          className={`bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 ${
+          className={`bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 ${
             isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           } ${className}`}
         >
           {/* Header */}
-          <div className={`bg-${color}-50 p-6 rounded-t-xl border-b border-${color}-100`}>
+          <div className={`bg-${color}-50 dark:bg-${color}-900/20 p-6 rounded-t-xl border-b border-${color}-100 dark:border-${color}-700`}>
             <div className="flex items-center space-x-3">
-              <div className={`bg-${color}-100 rounded-full p-3`}>
-                <IonIcon icon={getErrorIcon()} className={`h-8 w-8 text-${color}-600`} />
+              <div className={`bg-${color}-100 dark:bg-${color}-800 rounded-full p-3`}>
+                <IonIcon icon={getErrorIcon()} className={`h-8 w-8 text-${color}-600 dark:text-${color}-400`} />
               </div>
-              <h3 id="error-title" className={`text-xl font-semibold text-${color}-900`}>
+              <h3 id="error-title" className={`text-xl font-semibold text-${color}-900 dark:text-${color}-100`}>
                 {getErrorTitle()}
               </h3>
             </div>
@@ -131,10 +131,10 @@ export const NetworkErrorMessage: React.FC<NetworkErrorMessageProps> = ({
 
           {/* Body */}
           <div className="p-6">
-            <div className="text-base text-gray-600 mb-6">
+            <div className="text-base text-gray-600 dark:text-gray-300 mb-6">
               <p>{error.message}</p>
               {error.type === ErrorType.NETWORK && (
-                <ul className="mt-4 list-disc list-inside space-y-2 text-sm">
+                <ul className="mt-4 list-disc list-inside space-y-2 text-sm dark:text-gray-400">
                   <li>Check your internet connection</li>
                   <li>Verify your Wi-Fi or mobile data is enabled</li>
                   <li>Try refreshing the page</li>
@@ -146,7 +146,7 @@ export const NetworkErrorMessage: React.FC<NetworkErrorMessageProps> = ({
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handleClose}
-                className={`inline-flex items-center px-4 py-2 border-2 border-${color}-600 text-base font-medium rounded-lg text-white bg-${color}-600 hover:bg-${color}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${color}-500 transition-colors`}
+                className={`inline-flex items-center px-4 py-2 border-2 border-${color}-600 dark:border-${color}-500 text-base font-medium rounded-lg text-white bg-${color}-600 hover:bg-${color}-700 dark:bg-${color}-600 dark:hover:bg-${color}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-800 focus:ring-${color}-500 dark:focus:ring-${color}-400 transition-colors`}
               >
                 Try Again
               </button>

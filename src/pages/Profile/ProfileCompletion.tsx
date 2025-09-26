@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useStep } from '../../context/StepContext';
-import { useLanguage } from '../../context/LanguageContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useImageGallery } from '../../hooks/useImageGallery';
 import { camera } from 'ionicons/icons';
@@ -63,7 +62,6 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ isOpen, onC
 
 export const ProfileCompletion = () => {
   const { translateSector, toEnglish, getSectorNames } = useSectorTranslation();
-  const { language } = useLanguage();
   const navigate = useNavigate();
   const auth = useAuth();
   const { user } = auth;

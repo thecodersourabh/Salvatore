@@ -19,15 +19,15 @@ export const Cart = () => {
       />
 
       {/* Cart panel */}
-      <div className={`relative w-full max-w-md bg-white h-full shadow-xl flex flex-col ${isNative ? 'pt-safe' : ''}`}>
-        <div className="p-4 border-b flex justify-between items-center">
+      <div className={`relative w-full max-w-md bg-white dark:bg-gray-800 h-full shadow-xl flex flex-col ${isNative ? 'pt-safe' : ''}`}>
+        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <ShoppingBag className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Shopping Cart</h2>
+            <ShoppingBag className="h-5 w-5 dark:text-gray-300" />
+            <h2 className="text-lg font-semibold dark:text-white">Shopping Cart</h2>
           </div>
           <button
             onClick={() => setIsCartOpen(false)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <X className="h-5 w-5" />
           </button>
@@ -35,7 +35,7 @@ export const Cart = () => {
 
         {items.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">Your cart is empty</p>
+            <p className="text-gray-500 dark:text-gray-400">Your cart is empty</p>
           </div>
         ) : (
           <>

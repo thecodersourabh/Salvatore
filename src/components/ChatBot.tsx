@@ -33,7 +33,7 @@ export const ChatBot = () => {
           <MessageCircle className="h-6 w-6" />
         </button>
       ) : (
-        <div className="bg-white rounded-lg shadow-xl w-[360px] h-[480px] flex flex-col sm:w-[360px] sm:h-[480px] max-sm:fixed max-sm:w-full max-sm:h-full max-sm:inset-0 max-sm:rounded-none">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[360px] h-[480px] flex flex-col sm:w-[360px] sm:h-[480px] max-sm:fixed max-sm:w-full max-sm:h-full max-sm:inset-0 max-sm:rounded-none">
           <div className="p-4 bg-rose-600 text-white rounded-t-lg flex justify-between items-center max-sm:rounded-none">
             <div className="flex items-center space-x-2">
               <MessageCircle className="h-5 w-5" />
@@ -56,7 +56,7 @@ export const ChatBot = () => {
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     message.isBot
-                      ? 'bg-gray-100 text-gray-800'
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                       : 'bg-rose-600 text-white'
                   }`}
                 >
@@ -66,14 +66,14 @@ export const ChatBot = () => {
             ))}
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-4 border-t">
+          <form onSubmit={handleSendMessage} className="p-4 border-t dark:border-gray-700">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:border-rose-600"
+                className="flex-1 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-full px-4 py-2 focus:outline-none focus:border-rose-600"
               />
               <button
                 type="submit"

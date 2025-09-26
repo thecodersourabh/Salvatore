@@ -279,14 +279,14 @@ export const Addresses = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-white">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-white dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 pt-safe">
-        <div className="px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-safe">
+    <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Saved Addresses</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Saved Addresses</h1>
             </div>
             <button
               onClick={() => {
@@ -315,11 +315,11 @@ export const Addresses = () => {
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-6 py-4 sm:py-6">
+  <div className="px-4 sm:px-6 py-4 sm:py-6">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
+              <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
             </div>
           )}
 
@@ -330,9 +330,9 @@ export const Addresses = () => {
             </div>
           ) : addresses.length === 0 ? (
             <div className="text-center py-12">
-              <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No addresses saved</h3>
-              <p className="mt-1 text-sm sm:text-base text-gray-500">
+              <MapPin className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">No addresses saved</h3>
+              <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-300">
                 Add a new address to save it for future purchases
               </p>
             </div>
@@ -342,24 +342,24 @@ export const Addresses = () => {
                 return (
                 <div
                   key={address.id}
-                  className="relative bg-white sm:bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 hover:border-gray-300 transition-colors shadow-sm hover:shadow"
+                  className="relative bg-white dark:bg-gray-800 sm:bg-gray-50 dark:sm:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-colors shadow-sm hover:shadow"
                 >
                   {address.isDefault && (
                     <div className="absolute right-0 top-0 p-3">
-                      <span className="px-2 py-1 bg-rose-100 text-rose-700 text-xs font-medium rounded-full">
+                      <span className="px-2 py-1 bg-rose-100 dark:bg-rose-900 text-rose-700 dark:text-rose-300 text-xs font-medium rounded-full">
                         Default
                       </span>
                     </div>
                   )}
                   <div className="flex items-start space-x-3">
-                    <div className="mt-1 text-gray-500 flex-shrink-0">
+                    <div className="mt-1 text-gray-500 dark:text-gray-400 flex-shrink-0">
                       {getAddressIcon(address.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-medium text-gray-900 truncate pr-16">{address.name}</h3>
-                      <p className="mt-1 text-sm text-gray-600 break-words">{address.street}</p>
-                      <p className="text-sm text-gray-600">{address.city}, {address.state} {address.zipCode}</p>
-                      <p className="mt-2 text-sm text-gray-600">Phone: {address.phone}</p>
+                      <h3 className="text-base font-medium text-gray-900 dark:text-white truncate pr-16">{address.name}</h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 break-words">{address.street}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{address.city}, {address.state} {address.zipCode}</p>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Phone: {address.phone}</p>
                       
                       <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-3 sm:gap-4">
                         <button
@@ -368,7 +368,7 @@ export const Addresses = () => {
                             setFormData(address);
                             setIsAddModalOpen(true);
                           }}
-                          className="inline-flex items-center px-2 py-1 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100"
+                          className="inline-flex items-center px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
@@ -379,14 +379,14 @@ export const Addresses = () => {
                               onClick={() => {
                                 handleDelete(address.id!);
                               }}
-                              className="inline-flex items-center px-2 py-1 text-sm text-red-600 hover:text-red-700 rounded-md hover:bg-red-50"
+                              className="inline-flex items-center px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-md hover:bg-red-50 dark:hover:bg-red-900"
                             >
                               <Trash className="h-4 w-4 mr-1" />
                               Delete
                             </button>
                             <button
                               onClick={() => handleSetDefault(address.id!)}
-                              className="inline-flex items-center px-2 py-1 text-sm text-rose-600 hover:text-rose-700 rounded-md hover:bg-rose-50"
+                              className="inline-flex items-center px-2 py-1 text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900"
                             >
                               <MapPin className="h-4 w-4 mr-1" />
                               Set as Default
@@ -406,7 +406,7 @@ export const Addresses = () => {
 
       {/* Add/Edit Address Modal */}
       {(isAddModalOpen || editingAddress) && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+  <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {/* Background overlay */}
             <div 
@@ -419,11 +419,11 @@ export const Addresses = () => {
             <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
 
             {/* Modal panel */}
-            <div className="relative inline-block w-full transform overflow-hidden rounded-t-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:rounded-xl sm:align-middle">
-              <div className="bg-white">
+            <div className="relative inline-block w-full transform overflow-hidden rounded-t-xl bg-white dark:bg-gray-800 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:rounded-xl sm:align-middle">
+              <div className="bg-white dark:bg-gray-800">
                 <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                       {editingAddress ? 'Edit Address' : 'Add New Address'}
                     </h3>
                     <button
@@ -437,41 +437,41 @@ export const Addresses = () => {
 
                   <form onSubmit={handleSubmit} className="mt-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Full Name
                       </label>
                       <input
                         type="text"
                         value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                         placeholder="Enter your full name"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Phone Number
                       </label>
                       <input
                         type="tel"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                         placeholder="Enter phone number"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Address Type
                       </label>
                       <select
                         value={formData.type || 'home'}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value as Address['type'] })}
-                        className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                         required
                       >
                         <option value="home">Home</option>
@@ -481,14 +481,14 @@ export const Addresses = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Street Address
                       </label>
                       <input
                         type="text"
                         value={formData.street || ''}
                         onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                         placeholder="Enter street address"
                         required
                       />
@@ -496,14 +496,14 @@ export const Addresses = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           City
                         </label>
                         <input
                           type="text"
                           value={formData.city || ''}
                           onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                          className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                           placeholder="Enter city"
                           required
                         />
@@ -516,7 +516,7 @@ export const Addresses = () => {
                           type="text"
                           value={formData.state || ''}
                           onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                          className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                           placeholder="Enter state"
                           required
                         />
@@ -524,14 +524,14 @@ export const Addresses = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         ZIP Code
                       </label>
                       <input
                         type="text"
                         value={formData.zipCode || ''}
                         onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                        className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
+                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:ring-rose-500 focus:border-rose-500 text-base"
                         placeholder="Enter ZIP code"
                         required
                       />
@@ -546,7 +546,7 @@ export const Addresses = () => {
                           onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
                           className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
                         />
-                        <label htmlFor="isDefault" className="ml-2 block text-base text-gray-900">
+                        <label htmlFor="isDefault" className="ml-2 block text-base text-gray-900 dark:text-white">
                           Set as default address
                         </label>
                       </div>
@@ -557,7 +557,7 @@ export const Addresses = () => {
                         <button
                           type="button"
                           onClick={cleanupForm}
-                          className="mt-3 sm:mt-0 w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                          className="mt-3 sm:mt-0 w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-base font-medium rounded-lg text-gray-700 dark:text-white bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
                         >
                           Cancel
                         </button>

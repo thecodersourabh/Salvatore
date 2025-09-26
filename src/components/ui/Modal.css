@@ -26,6 +26,11 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+.dark .modal-container {
+  background: #1f2937;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -35,12 +40,21 @@
   background: white;
 }
 
+.dark .modal-header {
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+}
+
 .modal-title {
   font-size: 1.125rem;
   font-weight: 500;
   color: #111827;
   margin: 0;
   padding-right: 2rem;
+}
+
+.dark .modal-title {
+  color: #f3f4f6;
 }
 
 .modal-close {

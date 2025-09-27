@@ -24,7 +24,7 @@ export function Navigation() {
 
   // Dynamic classes for mobile safe area
   const navClasses = `
-    bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4
+    bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 shadow-md
     ${isNative ? 'pt-safe pb-3' : 'py-3'}
     ${isAndroid ? 'android-status-bar' : ''}
     ${isIOS ? 'ios-status-bar' : ''}

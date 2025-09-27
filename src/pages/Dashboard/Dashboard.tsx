@@ -16,10 +16,8 @@ import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
 import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import {useLanguage } from '../../context/LanguageContext';
-
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
-import { AddressBar } from "../../components/AddressBar";
 import { usePlatform } from "../../hooks/usePlatform";
 
 interface ServiceItem {

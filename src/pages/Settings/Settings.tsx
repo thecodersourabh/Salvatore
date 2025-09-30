@@ -2,7 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { translations } from '../../utils/translations';
-import { IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
 
 export const Settings: React.FC = () => {
   const { language, setLanguage } = useLanguage();
@@ -15,16 +15,16 @@ export const Settings: React.FC = () => {
       <IonAccordionGroup expand="inset" multiple={true} value={["general", "notifications", "realtime"]}>
           {/* General Panel */}
           <IonAccordion value="general" className="mb-4">
-            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
+            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800">
               <IonLabel className="font-semibold text-lg text-gray-900 dark:text-white">General</IonLabel>
             </IonItem>
             <div className="ion-padding bg-white dark:bg-gray-900" slot="content">
-              <IonList lines="full" className="bg-white dark:bg-gray-900 ">
+              <IonList lines="full">
                   <IonSelect 
                     label={t.settings.language}
                     value={language}
                     placeholder={t.settings.selectLanguage}
-                    className="w-full bg-gray-50 rounded-lg border border-gray-300 px-3 py-2 text-base text-gray-900 dark:bg-gray-900 dark:border-gray-600 dark:text-white "
+                    className="w-full"
                     onIonChange={e => setLanguage(e.detail.value as 'en' | 'hi')}
                   >
                     <IonSelectOption value="en">{t.settings.english}</IonSelectOption>
@@ -34,7 +34,7 @@ export const Settings: React.FC = () => {
                   <IonSelect
                     label={t.settings.theme}
                     value={theme}
-                    className="w-full bg-gray-50 rounded-lg border border-gray-300 px-3 py-2 text-base text-gray-900 dark:bg-gray-900 dark:border-gray-600 dark:text-white"
+                    className="w-full"
                     placeholder="Select Theme"
                     onIonChange={e => setTheme(e.detail.value as 'light' | 'dark')}
                   >
@@ -46,18 +46,18 @@ export const Settings: React.FC = () => {
           </IonAccordion>
 
           {/* Notifications Panel */}
-          <IonAccordion className="mb-4 dark:bg-gray-800" value="notifications">
-            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-900 dark:border-gray-600">
+          <IonAccordion className="mb-4" value="notifications">
+            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800">
               <IonLabel className="font-semibold text-lg text-gray-900 dark:text-white">Notifications</IonLabel>
             </IonItem>
             <div className="ion-padding bg-white dark:bg-gray-900" slot="content">
               <IonNote className="block mb-4 text-sm text-gray-500 dark:text-gray-400">
                 Select the notifications you want and how you'd like to receive them. When necessary, we'll send essential account and order notifications.
               </IonNote>
-              <IonList lines="full" className="w-full bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <IonList lines="full" className="rounded-lg border border-gray-200 dark:border-gray-700">
                 {["Inbox messages", "Order messages", "Order updates", "Rating reminders", "Buyer briefs", "Account updates"].map(label => (
-                  <IonItem key={label} className="w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-3 py-2 text-base">
-                    <IonLabel className="text-gray-900 dark:text-gray-200">{label}</IonLabel>
+                  <IonItem key={label} className="border-b border-gray-100 dark:border-gray-800">
+                    <IonLabel>{label}</IonLabel>
                     <IonToggle slot="end" color="primary" />
                   </IonItem>
                 ))}
@@ -66,21 +66,21 @@ export const Settings: React.FC = () => {
           </IonAccordion>
 
           {/* Real-time Notifications Panel */}
-          <IonAccordion className="dark:bg-gray-800" value="realtime">
-            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
+          <IonAccordion value="realtime">
+            <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800">
               <IonLabel className="font-semibold text-lg text-gray-900 dark:text-white">Real-time notifications</IonLabel>
             </IonItem>
             <div className="ion-padding bg-white dark:bg-gray-900" slot="content">
               <IonNote className="block mb-4 text-sm text-gray-500 dark:text-gray-400">
                 Receive on-screen updates, announcements, and more while online.
               </IonNote>
-              <IonList lines="full" className="bg-white dark:bg-gray-900 dark:border-gray-600">
-                <IonItem className="bg-white dark:bg-gray-900">
-                  <IonLabel className="text-gray-900 dark:text-gray-200">Real-time notifications</IonLabel>
+              <IonList lines="full">
+                <IonItem>
+                  <IonLabel>Real-time notifications</IonLabel>
                   <IonToggle slot="end" color="primary" />
                 </IonItem>
-                <IonItem className="bg-white dark:bg-gray-900">
-                  <IonLabel className="text-gray-900 dark:text-gray-200">Sound effects</IonLabel>
+                <IonItem>
+                  <IonLabel>Sound effects</IonLabel>
                   <IonToggle slot="end" color="primary" />
                 </IonItem>
               </IonList>

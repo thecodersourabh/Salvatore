@@ -21,6 +21,9 @@ import {
   chatbubbleOutline,
   shareOutline,
   personAddOutline,
+  star,
+  starHalf,
+  starOutline,
 } from "ionicons/icons";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -35,17 +38,14 @@ import { UserService } from "../../services/userService";
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  fullWidth?: boolean;
 }
 
 const Card: React.FC<CardProps> = ({
   children,
   className = "",
-  fullWidth = false,
 }) => {
   const classes = [
-    "bg-white dark:bg-gray-800 rounded-lg shadow-lg",
-    fullWidth ? "md:col-span-2" : "",
+    "bg-white dark:bg-gray-800 w-full",
     className,
   ]
     .filter(Boolean)
@@ -68,6 +68,42 @@ export const ProfileView = () => {
   const [descriptionChanged, setDescriptionChanged] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Enhanced auto-resize textarea function
+  const handleTextareaResize = (textarea: HTMLTextAreaElement) => {
+    // Reset height to get accurate scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate desired height with better min/max constraints
+    const minHeight = isEditing ? 120 : 80; // Larger min height for editing
+    const maxHeight = 400; // Increased max height for better content display
+    const scrollHeight = textarea.scrollHeight;
+    
+    // Set height based on content, with scroll if needed
+    if (scrollHeight <= maxHeight) {
+      textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+      textarea.style.overflowY = 'hidden';
+    } else {
+      textarea.style.height = maxHeight + 'px';
+      textarea.style.overflowY = 'auto';
+    }
+  };
+
+  // Handle description changes with enhanced auto-resize
+  const handleDescriptionChangeWithResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setDescription(newValue);
+    setDescriptionChanged(true);
+    handleTextareaResize(e.target);
+  };
+
+  // Effect to resize textarea when switching between edit modes or initial load
+  useEffect(() => {
+    const textarea = document.querySelector('textarea[data-description]') as HTMLTextAreaElement;
+    if (textarea) {
+      handleTextareaResize(textarea);
+    }
+  }, [isEditing, description]);
 
   // Calculate if this is the user's own profile with proper authorization checks
   const isOwnProfile = useMemo(() => {
@@ -188,11 +224,7 @@ export const ProfileView = () => {
     input.click();
   };
 
-  // Handle description changes
-  const handleDescriptionChange = (newValue: string) => {
-    setDescription(newValue);
-    setDescriptionChanged(true);
-  };
+
 
   // Handle saving description
   const handleSaveDescription = async () => {
@@ -296,7 +328,7 @@ export const ProfileView = () => {
             </div>
 
             {isOwnProfile && userContext && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white p-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Profile Completion</h3>
                   <div className="relative w-full h-2 bg-gray-100 dark:bg-gray-700 rounded">
@@ -322,7 +354,7 @@ export const ProfileView = () => {
     if (error || !user) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 p-6 text-center w-full">
             <div className="text-rose-600 mb-4">
               <IonIcon icon={alertCircleOutline} className="w-12 h-12" />
             </div>
@@ -332,7 +364,7 @@ export const ProfileView = () => {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors"
+              className="bg-rose-600 text-white px-4 py-2 hover:bg-rose-700 transition-colors"
             >
               Retry
             </button>
@@ -347,48 +379,46 @@ export const ProfileView = () => {
           <IonPage>
             <Navigation />
             <IonContent className="ion-content-scroll-host">
-              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-white dark:bg-gray-900 rounded-xl">
-                {/* Profile Header Card */}
-                {/* Profile Completion Alert */}
-                {isOwnProfile && profileCompletion < 100 && (
+              <main className="bg-white dark:bg-gray-900">
+                <div className="max-w-7xl mx-auto px-4">
+                  {/* Profile Header Card */}
+                  {/* Profile Completion Alert */}
+                  {isOwnProfile && profileCompletion < 100 && (
                   <div className="mb-6">
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <IonIcon
-                            icon={alertCircleOutline}
-                            className="h-5 w-5 text-yellow-400"
-                          />
-                        </div>
-                        <div className="ml-3">
-                          <h3 className="text-sm font-medium text-yellow-800">
-                            Complete Your Profile
-                          </h3>
-                          <div className="mt-2">
-                            <div className="relative w-full h-2 bg-yellow-100 rounded">
-                              <div
-                                className="absolute left-0 top-0 h-full bg-yellow-400 rounded"
-                                style={{ width: `${profileCompletion}%` }}
-                              />
-                            </div>
-                            <p className="mt-2 text-sm text-yellow-700">
-                              Your profile is {profileCompletion}% complete. Complete your profile to access all features.
-                            </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <IonIcon
+                              icon={alertCircleOutline}
+                              className="h-5 w-5 text-yellow-400"
+                            />
                           </div>
-                          <div className="mt-3">
-                            <button
-                              onClick={() => navigate('/profile')}
-                              className="text-sm font-medium text-yellow-800 hover:text-yellow-900"
-                            >
-                              <div 
-                                onClick={() => navigate('/profile')}
-                                className="flex items-center space-x-1 cursor-pointer"
-                              >
-                                <span>Complete Now</span>
-                                <span className="ml-1">→</span>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-800">
+                              Complete Your Profile
+                            </h3>
+                            <div className="mt-2">
+                              <div className="relative w-full h-2 bg-yellow-100 rounded-lg">
+                                <div
+                                  className="absolute left-0 top-0 h-full bg-yellow-400 rounded-lg"
+                                  style={{ width: `${profileCompletion}%` }}
+                                />
                               </div>
-                            </button>
+                              <p className="mt-2 text-sm text-yellow-700">
+                                Your profile is {profileCompletion}% complete. Complete your profile to access all features.
+                              </p>
+                            </div>
                           </div>
+                        </div>
+                        <div className="flex-shrink-0 ml-6">
+                          <button
+                            onClick={() => navigate('/profile')}
+                            className="flex items-center space-x-1 text-sm font-medium text-yellow-800 hover:text-yellow-900 cursor-pointer"
+                          >
+                            <span>Complete Now</span>
+                            <span className="ml-1">→</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -396,7 +426,7 @@ export const ProfileView = () => {
                 )}
 
                 {/* Profile Header Card */}
-                <Card fullWidth className="mb-6 overflow-hidden relative h-48 bg-gradient-to-r from-rose-500 to-purple-600">
+                <Card className="overflow-hidden relative h-48 bg-gradient-to-r from-rose-500 to-purple-600 rounded-lg">
                   <div className="relative h-full">
                     {user.coverImage && (
                       <img
@@ -411,14 +441,14 @@ export const ProfileView = () => {
                       <div className="absolute top-4 right-4 flex items-center space-x-3 z-20">
                         <button
                           onClick={() => {/* TODO: Implement connect handler */}}
-                          className="flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors shadow-lg"
+                          className="flex items-center px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 transition-colors"
                         >
                           <IonIcon icon={personAddOutline} className="h-5 w-5 mr-2" />
                           Connect
                         </button>
                         <button
                           onClick={() => {/* TODO: Implement message handler */}}
-                          className="flex items-center px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white transition-colors shadow-lg"
+                          className="flex items-center px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors"
                         >
                           <IonIcon icon={chatbubbleOutline} className="h-5 w-5 mr-2" />
                           Message
@@ -428,71 +458,113 @@ export const ProfileView = () => {
 
                     {/* Bottom right - Cover Management Buttons for own profile */}
                     {isOwnProfile && (
-                      <div className="absolute bottom-4 right-4 flex items-center space-x-2 z-10">
+                      <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 flex items-center space-x-1 sm:space-x-2 z-10">
                         <button
                           onClick={() => handleFileSelect("cover")}
-                          className="bg-white/90 hover:bg-white backdrop-blur-sm rounded-full p-2.5 transition-all group shadow-lg"
+                          className="bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 sm:p-2.5 transition-all group"
                           disabled={uploading === "cover"}
                         >
                           {uploading === "cover" ? (
                             <IonSpinner
                               name="crescent"
-                              className="h-5 w-5 text-rose-600"
+                              className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600"
                             />
                           ) : (
                             <IonIcon
                               icon={cameraOutline}
-                              className="h-5 w-5 text-gray-700 group-hover:text-gray-900 group-hover:scale-110 transition-all"
+                              className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700 group-hover:text-gray-900 group-hover:scale-110 transition-all"
                             />
                           )}
                         </button>
                         <button
                           onClick={() => setShowQRCode(true)}
-                          className="bg-white/90 hover:bg-white backdrop-blur-sm rounded-full p-2.5 transition-all group shadow-lg"
+                          className="bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 sm:p-2.5 transition-all group"
                         >
                           <IonIcon
                             icon={qrCodeOutline}
-                            className="h-5 w-5 text-gray-700 group-hover:text-gray-900 group-hover:scale-110 transition-all"
+                            className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700 group-hover:text-gray-900 group-hover:scale-110 transition-all"
                           />
                         </button>
                       </div>
                     )}
 
                     {/* Avatar Section */}
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2">
+                    <div className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 flex items-center space-x-2 sm:space-x-4">
                       <div className="relative">
-                        <IonAvatar className="w-32 h-32 border-4 border-white rounded-full shadow-xl">
+                        <IonAvatar className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 border-2 sm:border-4 border-white">
                           <img
                             src={user.avatar || '/assets/default-avatar.svg'}
                             alt=""
-                            className="w-full h-full object-cover rounded-full bg-gradient-to-br from-rose-500 to-purple-600"
+                            className="w-full h-full object-cover bg-gradient-to-br from-rose-500 to-purple-600"
                           />
                         </IonAvatar>
                         <button
                           onClick={() => handleFileSelect("avatar")}
-                          className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:bg-white hover:shadow-md transition-all duration-200 group flex items-center justify-center w-7 h-7"
+                          className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-white/90 backdrop-blur-sm p-1 sm:p-1.5 hover:bg-white transition-all duration-200 group flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
                           disabled={uploading === "avatar"}
                         >
                           {uploading === "avatar" ? (
                             <IonSpinner
                               name="crescent"
-                              className="h-4 w-4 text-rose-500"
+                              className="h-3 w-3 sm:h-4 sm:w-4 text-rose-500"
                             />
                           ) : (
                             <IonIcon
                               icon={cameraOutline}
-                              className="h-4 w-4 text-gray-500/90 group-hover:text-gray-600 transition-colors duration-200"
+                              className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500/90 group-hover:text-gray-600 transition-colors duration-200"
                             />
                           )}
                         </button>
+                      </div>
+                      
+                      {/* Username and Rating */}
+                      <div className="backdrop-blur-sm p-2 sm:p-3 rounded-lg shadow-sm max-w-xs sm:max-w-sm">
+                        <div className="space-y-1">
+                          <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
+                             @{user.userName || 'username'}
+                          </p>
+                          <p className="text-xs text-gray-700 truncate">
+                             {user.serviceAreas?.locations?.[0]?.city}, {user.serviceAreas?.locations?.[0]?.state}
+                          </p >
+                          <div className="flex items-center space-x-0.5">
+                            {[1, 2, 3, 4, 5].map((starIndex) => {
+                              const rating = ((user as any).rating || 4.5);
+                              let iconToShow;
+                              
+                              if (starIndex <= Math.floor(rating)) {
+                                // Full star
+                                iconToShow = star;
+                              } else if (starIndex === Math.floor(rating) + 1 && rating % 1 !== 0) {
+                                // Half star
+                                iconToShow = starHalf;
+                              } else {
+                                // Empty star
+                                iconToShow = starOutline;
+                              }
+                              
+                              return (
+                                <IonIcon 
+                                  key={starIndex} 
+                                  icon={iconToShow}
+                                  className={`h-3 w-3 sm:h-4 sm:w-4 ${
+                                    starIndex <= Math.ceil(rating) ? 'text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              );
+                            })}
+                            <span className="text-xs sm:text-sm font-semibold text-gray-800 ml-1">
+                              ({((user as any).rating || 4.5)})
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </Card>
 
                 {/* Quick Info Card */}
-                <Card fullWidth>
-                  <div className="flex flex-col md:flex-row md:divide-x divide-gray-200 dark:divide-gray-700">
+                <Card>
+                  <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-700">
                     {/* Contact */}
                     <div className="px-4 py-3 flex-1">
                       <h4 className="text-base font-bold dark:text-white mb-2">Contact</h4>
@@ -509,7 +581,7 @@ export const ProfileView = () => {
                     </div>
 
                     {/* Working Hours */}
-                    <div className="px-4 py-3 flex-1 md:border-l">
+                    <div className="px-4 py-3 flex-1">
                       <h4 className="text-base font-bold dark:text-white mb-2">Availability</h4>
                       <div className="space-y-1 text-xs">
                         <div className="flex items-center text-gray-700 dark:text-gray-300">
@@ -551,7 +623,7 @@ export const ProfileView = () => {
                         {user.skills?.slice(0, 5).map((skill, index) => (
                           <div
                             key={index}
-                            className="inline-flex items-center text-xs bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full px-3 py-1 font-medium"
+                            className="inline-flex items-center text-xs bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 font-medium"
                           >
                             <span className="dark:text-green-400">{skill.name}</span>
                           </div>
@@ -562,16 +634,16 @@ export const ProfileView = () => {
                 </Card>
 
                 {/* Posts and Description Section */}
-                <div className="mt-6 space-y-6">
+                <div className="space-y-0">
                   {/* About Section */}
-                  <Card fullWidth>
-                    <div className="p-6">
+                  <Card>
+                    <div className="p-6 w-full">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">About</h3>
                         {isOwnProfile && (
                           <button
                             onClick={() => setIsEditing(!isEditing)}
-                            className="p-1.5 text-gray-500 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-all duration-200"
+                            className="p-1.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200"
                             title={isEditing ? "Cancel editing" : "Edit description"}
                           >
                             <IonIcon icon={pencilOutline} className="h-5 w-5" />
@@ -580,20 +652,28 @@ export const ProfileView = () => {
                       </div>
                       <div className="relative">
                         <textarea
-                          className={`w-full min-h-[100px] p-3 border rounded-lg resize-none transition-colors ${
+                          data-description="true"
+                          ref={(el) => {
+                            if (el) {
+                              // Delay resize to ensure proper rendering
+                              setTimeout(() => handleTextareaResize(el), 0);
+                            }
+                          }}
+                          className={`w-full p-3 border resize-none transition-all duration-200 ${
                             isEditing 
                               ? 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-rose-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white pr-12' 
                               : 'border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-300'
                           }`}
+                          style={{ minHeight: isEditing ? '120px' : '80px' }}
                           placeholder={isOwnProfile ? "Tell us about yourself..." : "No description available"}
                           value={description}
-                          onChange={(e) => handleDescriptionChange(e.target.value)}
+                          onChange={handleDescriptionChangeWithResize}
                           readOnly={!isEditing}
                         />
                         {isOwnProfile && isEditing && descriptionChanged && (
                           <button
                             onClick={handleSaveDescription}
-                            className="absolute right-2 bottom-2 p-2 text-gray-500 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-all duration-200 bg-white shadow-sm"
+                            className="absolute right-2 bottom-2 p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 bg-white"
                             disabled={savingDescription}
                             title="Save changes"
                           >
@@ -609,8 +689,8 @@ export const ProfileView = () => {
                   </Card>
 
                   {/* Posts Section */}
-                  <Card fullWidth>
-                    <div className="p-6">
+                  <Card>
+                    <div className="p-6 w-full">
                       {/* Create Post */}
                       <div className="mb-6">
                         <div className="flex items-start space-x-4">
@@ -623,7 +703,7 @@ export const ProfileView = () => {
                           </IonAvatar>
                           <div className="flex-1">
                             <textarea
-                              className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                              className="w-full p-3 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                               placeholder="What's on your mind?"
                               rows={3}
                             />
@@ -634,7 +714,7 @@ export const ProfileView = () => {
                                   <span>Photo</span>
                                 </button>
                               </div>
-                              <button className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors">
+                              <button className="px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 transition-colors">
                                 Post
                               </button>
                             </div>
@@ -687,6 +767,7 @@ export const ProfileView = () => {
                     </div>
                   </Card>
                 </div>
+                </div>
               </main>
             </IonContent>
           </IonPage>
@@ -695,7 +776,7 @@ export const ProfileView = () => {
         {/* QR Code Modal */}
         {showQRCode && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
+            <div className="bg-white dark:bg-gray-800 p-6 max-w-md w-full">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold">Profile QR Code</h3>
                 <p className="text-sm text-gray-600">Scan to view profile</p>
@@ -710,7 +791,7 @@ export const ProfileView = () => {
               </div>
               <button
                 onClick={() => setShowQRCode(false)}
-                className="w-full px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+                className="w-full px-4 py-2 bg-rose-600 text-white hover:bg-rose-700"
               >
                 Close
               </button>

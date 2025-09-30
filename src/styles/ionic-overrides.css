@@ -24,3 +24,74 @@
   --background: var(--ion-color-primary);
   --color: var(--ion-color-light);
 }
+
+/* Dark mode overrides for Select components */
+.dark ion-select {
+  --background: rgb(17 24 39); /* gray-900 */
+  --color: rgb(243 244 246); /* gray-100 */
+  --placeholder-color: rgb(156 163 175); /* gray-400 */
+}
+
+.dark ion-select::part(text) {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark ion-select::part(icon) {
+  color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+/* Dark mode overrides for Accordion components */
+.dark ion-accordion-group {
+  --background: rgb(17 24 39); /* gray-900 */
+}
+
+.dark ion-accordion {
+  --background: rgb(17 24 39); /* gray-900 */
+  --border-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark ion-accordion ion-item[slot="header"] {
+  --background: rgb(31 41 55); /* gray-800 */
+  --color: rgb(243 244 246); /* gray-100 */
+  --border-color: rgb(55 65 81); /* gray-700 */
+}
+
+/* Dark mode overrides for List and Item components */
+.dark ion-list {
+  --background: rgb(17 24 39); /* gray-900 */
+}
+
+.dark ion-item {
+  --background: rgb(17 24 39); /* gray-900 */
+  --color: rgb(243 244 246); /* gray-100 */
+  --border-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark ion-item ion-label {
+  --color: rgb(243 244 246); /* gray-100 */
+}
+
+/* Dark mode overrides for Toggle components */
+.dark ion-toggle {
+  --background: rgb(55 65 81); /* gray-700 */
+  --background-checked: var(--ion-color-primary);
+  --handle-background: rgb(243 244 246); /* gray-100 */
+  --handle-background-checked: rgb(255 255 255); /* white */
+}
+
+/* Dark mode overrides for Notes */
+.dark ion-note {
+  --color: rgb(156 163 175); /* gray-400 */
+}
+
+/* Override Ionic's default list-md styles */
+.list-md {
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  background: transparent !important;
+}
+
+/* Dark theme for list-md */
+.dark .list-md {
+  background: rgb(17 24 39) !important; /* gray-900 */
+}

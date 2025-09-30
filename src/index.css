@@ -409,3 +409,9 @@ ion-content {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 768px) {
+  .billing-grid-responsive .ag-paging-panel {
+    display: none !important;
+  }
+}

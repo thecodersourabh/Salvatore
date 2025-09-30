@@ -8,7 +8,8 @@ import {
   TrendingUp,
   DollarSign,
   Calendar,
-  Plus
+  Plus,
+  Clock
 } from "lucide-react";
 import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
 import { ErrorType } from "../../services/apiErrorHandler";
@@ -199,18 +200,18 @@ export const Dashboard = () => {
         className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
         style={userId && isNative ? { marginTop: 'calc(56px + env(safe-area-inset-top, 24px))' } : {}}
       >
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                Welcome to Dashboard
+                Welcome to Dashboard, {user?.name}
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
                 Manage your services and grow your business across multiple sectors
               </p>
               <div className="flex flex-wrap gap-3">
                 <button className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition-colors">
-                  Add New Service
+                  View Orders
                 </button>
                 <button className="border border-rose-600 text-rose-600 px-4 py-2 rounded-lg font-semibold hover:bg-rose-50 transition-colors">
                   View Analytics
@@ -222,7 +223,7 @@ export const Dashboard = () => {
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm">Active Services</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Active Orders</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">{activeServices.length}</p>
                   </div>
                   <TrendingUp className="h-6 w-6 text-rose-600" />
@@ -244,6 +245,15 @@ export const Dashboard = () => {
                     <p className="text-xl font-bold text-gray-900 dark:text-white">23 Jobs</p>
                   </div>
                   <Calendar className="h-6 w-6 text-rose-600" />
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">On-time delivery</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">100 %</p>
+                  </div>
+                  <Clock className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
             </div>

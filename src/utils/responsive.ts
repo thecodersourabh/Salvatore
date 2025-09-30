@@ -95,7 +95,7 @@ export const RESPONSIVE_SPACING = {
   // Padding
   padding: {
     page: 'p-4 sm:p-6 lg:p-8',
-    section: 'py-8 sm:py-12 lg:py-16',
+    section: 'py-4 sm:p-6 lg:p-8',
     card: 'p-4 sm:p-6',
     compact: 'p-2 sm:p-4',
   },

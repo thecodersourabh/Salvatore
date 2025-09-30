@@ -23,6 +23,7 @@ interface AuthContextType {
   creatingUser: boolean;
   user: UserContext | null;
   userContext: UserContext | null;
+  idToken: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +35,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     user,
     isLoading,
+    getIdTokenClaims
   } = useAuth0();
+
+  const [idToken, setIdToken] = useState<string | null>(null);
+
+  // Fetch idToken when authenticated
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (isAuthenticated && getIdTokenClaims) {
+        const claims = await getIdTokenClaims();
+        setIdToken(claims?.__raw || null);
+      } else {
+        setIdToken(null);
+      }
+    };
+    fetchToken();
+  }, [isAuthenticated, getIdTokenClaims]);
 
   const [userCreated, setUserCreated] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -172,7 +189,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userCreated,
     creatingUser,
     user: userContextValue,
-    userContext: userContextValue
+    userContext: userContextValue,
+    idToken
   };
 
   console.log('🔐 AuthContext: Current auth state:', {

@@ -23,8 +23,12 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 };
 
 const buildUrl = (endpoint: string, params?: Record<string, any>): string => {
-  const baseUrl = API_BASE_URL.replace(/\/$/, '');
-  let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  // If endpoint is a full URL, use it as-is
+  let url = endpoint;
+  if (!/^https?:\/\//i.test(endpoint)) {
+    const baseUrl = API_BASE_URL.replace(/\/$/, '');
+    url = endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+  }
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -34,9 +38,9 @@ const buildUrl = (endpoint: string, params?: Record<string, any>): string => {
         searchParams.append(key, value.toString());
       }
     });
-    cleanEndpoint += `?${searchParams.toString()}`;
+    url += (url.includes('?') ? '&' : '?') + searchParams.toString();
   }
-  return `${baseUrl}${cleanEndpoint}`;
+  return url;
 };
 
 const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promise<T> => {
@@ -51,13 +55,32 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
 
     const { params, ...init } = options;
     const url = buildUrl(endpoint, params);
-    
+
+    // Get token from localStorage (Auth0 default)
+  let token = (init as any).idToken || localStorage.getItem('auth_id_token') || localStorage.getItem('id_token');
+    // If you use a different key, update above accordingly
+
+
+    // Always use a plain object for headers
+    let headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (init.headers) {
+      if (init.headers instanceof Headers) {
+        // Convert Headers object to plain object
+        (init.headers as Headers).forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (typeof init.headers === 'object' && !Array.isArray(init.headers)) {
+        headers = { ...headers, ...init.headers };
+      }
+      // If it's an array or other type, ignore for safety
+    }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...init.headers,
-        },
+        headers,
         ...init,
       });
       return await handleResponse<T>(response);

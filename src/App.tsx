@@ -218,7 +218,7 @@ function MyApp() {
                 <div className="flex flex-col h-full">
                   <Navigation />
                   {/* Global Address Bar for mobile apps */}
-                  {Capacitor.isNativePlatform() && <AddressBar />}
+                  {<AddressBar />}
                   <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
                     <AppRoutes />
                   </main>

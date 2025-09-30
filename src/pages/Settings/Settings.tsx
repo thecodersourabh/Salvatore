@@ -12,7 +12,7 @@ export const Settings: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">{t.settings.title}</h1>
-      <IonAccordionGroup expand="inset" value={["general", "notifications", "realtime"]}>
+      <IonAccordionGroup expand="inset" multiple={true} value={["general", "notifications", "realtime"]}>
           {/* General Panel */}
           <IonAccordion value="general" className="mb-4">
             <IonItem slot="header" className="bg-gray-100 dark:bg-gray-800 dark:border-gray-600">

@@ -19,7 +19,6 @@ import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import {useLanguage } from '../../context/LanguageContext';
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
-import { usePlatform } from "../../hooks/usePlatform";
 
 interface ServiceItem {
   id: number;
@@ -57,22 +56,12 @@ const iconMap: Record<ServiceSector, any> = {
 export const Dashboard = () => {
   const { getCurrentSectors, translateSector } = useSectorTranslation();
   const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
-  const { isNative } = usePlatform();
   const { language } = useLanguage();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(true);
   const [profileCompletion, setProfileCompletion] = useState(0);
-  const [userId, setUserId] = useState<string | null>(null);
   const [networkError, setNetworkError] = useState<{ type: ErrorType; message: string } | null>(null);
-
-  // Get userId from localStorage when user changes
-  useEffect(() => {
-    if (user?.sub) {
-      const mappedId = localStorage.getItem(`auth0_${user.sub}`);
-      setUserId(mappedId);
-    }
-  }, [user?.sub]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -196,10 +185,7 @@ export const Dashboard = () => {
       )}
 
       {/* Hero Dashboard Section */}
-      <div
-        className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-        style={userId && isNative ? { marginTop: 'calc(56px + env(safe-area-inset-top, 24px))' } : {}}
-      >
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">

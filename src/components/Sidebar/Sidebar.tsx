@@ -33,7 +33,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 
-  const { picture, name, email, userName } = (user || {}) as UserProfile;
+  const { picture, name, email } = (user || {}) as UserProfile;
 
   // Track sidebar state changes
   

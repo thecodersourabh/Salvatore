@@ -204,6 +204,7 @@ function MyApp() {
     return <LoadingSpinner />;
   }
 
+
   return (
     <Router future={ROUTER_FUTURE_CONFIG}>
       <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
@@ -218,7 +219,7 @@ function MyApp() {
                 <div className="flex flex-col h-full">
                   <Navigation />
                   {/* Global Address Bar for mobile apps */}
-                  {<AddressBar />}
+                  { Capacitor.isNativePlatform() && <AddressBar /> }
                   <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
                     <AppRoutes />
                   </main>

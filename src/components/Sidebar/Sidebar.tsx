@@ -24,6 +24,7 @@ interface UserProfile {
   picture?: string;
   name?: string;
   email?: string;
+  userName?: string;
   // Add other properties as needed
 }
 
@@ -32,7 +33,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 
-  const { picture, name, email } = (user || {}) as UserProfile;
+  const { picture, name, email, userName } = (user || {}) as UserProfile;
 
   // Track sidebar state changes
   
@@ -51,7 +52,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     {
       icon: User,
       label: "My Profile",
-      link: user?.email ? `/profile/${user.email.split('@')[0]}` : '/profile'
+      link: user?.userName ? `/profile/${user.userName}` : '/profile'
     },
     {
       icon: ShoppingCart,

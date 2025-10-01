@@ -20,21 +20,41 @@ export const AddressBar = () => {
     }
   }, [user?.sub]);
 
-  useEffect(() => {
-    const loadAddress = async () => {
-      if (!userId) return;
-      try {
-        const addresses = await AddressService.getUserAddresses(userId);
-        const defaultAddress = addresses.find(addr => addr.isDefault);
-        if (defaultAddress) {
-          setAddress(defaultAddress);
-        }
-      } catch (error) {
-        console.error('AddressBar - Error loading addresses:', error);
+  const loadAddress = async () => {
+    if (!userId) return;
+    try {
+      const addresses = await AddressService.getUserAddresses(userId);
+      const defaultAddress = addresses.find(addr => addr.isDefault);
+      if (defaultAddress) {
+        setAddress(defaultAddress);
       }
-    };
+    } catch (error) {
+      console.error('AddressBar - Error loading addresses:', error);
+    }
+  };
+
+  useEffect(() => {
     loadAddress();
   }, [userId]);
+
+  // Listen for address default changes from Addresses component
+  useEffect(() => {
+    const handleAddressDefaultChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<{ id: string; address: any }>;
+      console.log('AddressBar - Default address changed:', customEvent.detail);
+      
+      // Refresh address data to get the latest default address
+      loadAddress();
+    };
+
+    // Add event listener
+    window.addEventListener('addressDefaultChanged', handleAddressDefaultChanged);
+    
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('addressDefaultChanged', handleAddressDefaultChanged);
+    };
+  }, [userId]); // Include userId as dependency to ensure loadAddress has access to current userId
 
   if (!userId) return null;
 

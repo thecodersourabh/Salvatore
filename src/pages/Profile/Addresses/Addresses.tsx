@@ -160,22 +160,29 @@ export const Addresses = () => {
           ...addressData
         };
         savedAddress = await AddressService.updateAddress(updateData);
+        const updatedAddress = { 
+          ...addresses.find(a => a.id === editingAddress.id)!,
+          type: formData.type || addresses.find(a => a.id === editingAddress.id)!.type,
+          name: user?.name || user?.email || '',
+          street: formData.street || addresses.find(a => a.id === editingAddress.id)!.street,
+          city: formData.city || addresses.find(a => a.id === editingAddress.id)!.city,
+          state: formData.state || addresses.find(a => a.id === editingAddress.id)!.state,
+          zipCode: formData.zipCode || addresses.find(a => a.id === editingAddress.id)!.zipCode,
+          country: formData.country || addresses.find(a => a.id === editingAddress.id)!.country,
+          phone: formData.phone || addresses.find(a => a.id === editingAddress.id)!.phone,
+          isDefault: formData.isDefault !== undefined ? formData.isDefault : addresses.find(a => a.id === editingAddress.id)!.isDefault
+        } as Address;
+        
         setAddresses(prev => prev.map(addr => 
-          addr.id === editingAddress.id 
-            ? { 
-                ...addr, 
-                type: formData.type || addr.type,
-                name: user?.name || user?.email || '',
-                street: formData.street || addr.street,
-                city: formData.city || addr.city,
-                state: formData.state || addr.state,
-                zipCode: formData.zipCode || addr.zipCode,
-                country: formData.country || addr.country,
-                phone: formData.phone || addr.phone,
-                isDefault: formData.isDefault !== undefined ? formData.isDefault : addr.isDefault
-              } as Address
-            : addr
+          addr.id === editingAddress.id ? updatedAddress : addr
         ));
+        
+        // If this address was set as default, notify other components
+        if (formData.isDefault) {
+          window.dispatchEvent(new CustomEvent('addressDefaultChanged', { 
+            detail: { id: editingAddress.id, address: updatedAddress } 
+          }));
+        }
       } else {
         // Create new address
         savedAddress = await AddressService.createAddress(addressData);
@@ -192,6 +199,13 @@ export const Addresses = () => {
           isDefault: formData.isDefault || false
         };
         setAddresses(prev => [...prev, newAddress]);
+        
+        // If this new address was set as default, notify other components
+        if (newAddress.isDefault && newAddress.id) {
+          window.dispatchEvent(new CustomEvent('addressDefaultChanged', { 
+            detail: { id: newAddress.id, address: newAddress } 
+          }));
+        }
       }
 
       // Reset form and close modal
@@ -247,6 +261,10 @@ export const Addresses = () => {
       
       await AddressService.updateAddress(updateData);
       
+      // Notify other components (e.g. AddressBar) that default address changed
+      window.dispatchEvent(new CustomEvent('addressDefaultChanged', { 
+        detail: { id, address: updatedAddress } 
+      }));
       
       setAddresses(prev => prev.map(address => ({
         ...address,

@@ -36,10 +36,10 @@ export interface Documents {
 }
 
 export interface User {
-  id?: string;
+  id: string;
   auth0Id?: string;
   name?: string;
-  userName?: string;
+  userName: string;
   avatar?: string;
   email?: string;
   displayName?: string;

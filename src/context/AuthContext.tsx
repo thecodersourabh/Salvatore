@@ -2,11 +2,13 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { getLogoutUri } from '../utils/getRedirectUri';
 import { UserService } from '../services';
+import { User } from '../types/user';
 
 export interface UserContext {
   email: string;
   sub?: string;
   name?: string;
+  userName?: string;
   sector?: string;
   phoneNumber?: string;
   email_verified?: boolean;
@@ -23,6 +25,7 @@ interface AuthContextType {
   creatingUser: boolean;
   user: UserContext | null;
   userContext: UserContext | null;
+  apiUser: User | null;
   idToken: string | null;
 }
 
@@ -42,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [idToken, setIdToken] = useState<string | null>(null);
   const [userCreated, setUserCreated] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [apiUser, setApiUser] = useState<User | null>(null);
   const [authRefreshTrigger, setAuthRefreshTrigger] = useState(0);
 
   // Fetch ID token when user is authenticated
@@ -84,6 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check if user already exists in the API
         const userExists = await UserService.isUserExists(user.email);
         
+        let fetchedUser: User | null = null;
+        
         if (!userExists) {
           // Create new user with Auth0 data
           const userData = {
@@ -94,12 +100,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             version: 1
           };
           
-          const apiUser = await UserService.createUser(userData);
+          fetchedUser = await UserService.createUser(userData);
           
           // Store Auth0 to API user ID mapping
-          if (apiUser?.id) {
-            localStorage.setItem(`auth0_${user.sub}`, apiUser.id);
+          if (fetchedUser?.id) {
+            localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
+            localStorage.setItem(`user_name`, fetchedUser.userName);
           }
+        } else {
+          // Fetch existing user data from API
+          fetchedUser = await UserService.getUserByEmail(user.email);
+          
+          // Store mapping for existing user
+          if (fetchedUser?.id) {
+            localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
+            localStorage.setItem(`user_name`, fetchedUser.userName);
+          }
+        }
+        
+        // Update API user state
+        if (fetchedUser) {
+          setApiUser(fetchedUser);
         }
         
         setUserCreated(true);
@@ -113,15 +134,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     createUserIfNeeded();
   }, [isAuthenticated, user, authRefreshTrigger]);
 
-  // Create user context object from Auth0 user data
+  // Create user context object from Auth0 user data combined with API user data
   const userContextValue: UserContext | null = isAuthenticated && user ? {
     email: user.email as string,
     sub: user.sub,
-    name: user.name,
-    phoneNumber: user.phone_number,
+    name: apiUser?.name || user.name,
+    userName: apiUser?.userName,
+    sector: apiUser?.sector,
+    phoneNumber: apiUser?.phone || user.phone_number,
     email_verified: user.email_verified,
     isVerified: user.email_verified,
-    avatar: user.picture
+    avatar: apiUser?.avatar || user.picture
   } : null;
 
   // Auth context value object
@@ -138,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     creatingUser,
     user: userContextValue,
     userContext: userContextValue,
+    apiUser,
     idToken
   };
 

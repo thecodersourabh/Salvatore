@@ -204,7 +204,10 @@ export const Dashboard = () => {
                 >
                   Active Orders
                 </button>
-                <button className="border border-rose-600 text-rose-600 px-4 py-2 rounded-lg font-semibold hover:bg-rose-50 transition-colors">
+                <button
+                  onClick={() => navigate('/payments')}
+                  className="border border-rose-600 text-rose-600 px-4 py-2 rounded-lg font-semibold hover:bg-rose-50 transition-colors"
+                >
                   View Analytics
                 </button>
               </div>
@@ -303,7 +306,10 @@ export const Dashboard = () => {
             Quick Actions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
+            <div
+              onClick={() => navigate('/payments')}
+              className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow cursor-pointer"
+            >
               <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Calendar className="h-6 w-6 text-rose-600" />
               </div>
@@ -319,7 +325,7 @@ export const Dashboard = () => {
                 <p className="text-gray-600 dark:text-gray-300 text-xs">Track your performance and earnings</p>
             </div>
             
-            <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
+            <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow cursor-pointer">
               <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <DollarSign className="h-6 w-6 text-rose-600" />
               </div>

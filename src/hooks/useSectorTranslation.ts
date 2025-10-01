@@ -28,7 +28,7 @@ const sectorKeyMappings: Record<string, string> = {
   'Electrician': 'इलेक्ट्रीशियन',
   'Plumber': 'प्लंबर',
   'Carpenter': 'कारपेंटर',
-  'Mechanic': 'मैकेनिक',
+  'Mechanic': 'मेकैनिक',
   'Tailor': 'टेलर',
   'Beautician': 'ब्यूटीशियन',
   'Cleaner': 'क्लीनर',

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   Zap,
@@ -54,6 +55,7 @@ const iconMap: Record<ServiceSector, any> = {
 };
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const { getCurrentSectors, translateSector } = useSectorTranslation();
   const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
   const { language } = useLanguage();
@@ -196,8 +198,11 @@ export const Dashboard = () => {
                 Manage your services and grow your business across multiple sectors
               </p>
               <div className="flex flex-wrap gap-3">
-                <button className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition-colors">
-                  View Orders
+                <button
+                  onClick={() => navigate('/orders')}
+                  className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition-colors"
+                >
+                  Active Orders
                 </button>
                 <button className="border border-rose-600 text-rose-600 px-4 py-2 rounded-lg font-semibold hover:bg-rose-50 transition-colors">
                   View Analytics

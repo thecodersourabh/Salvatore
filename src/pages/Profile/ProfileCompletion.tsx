@@ -1166,7 +1166,7 @@ export const ProfileCompletion = () => {
                         value={formData.userName}
                         label="User Name"
                         labelPlacement="floating"
-                        className="w-full"
+                        className="w-full disabled:bg-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
                         onIonInput={e => {
                           const value = e.detail.value!;
                           if (formData.userName !== value) {
@@ -1175,6 +1175,7 @@ export const ProfileCompletion = () => {
                         }}
                         placeholder="Enter your user name"
                         required
+                        readonly
                       />
                       
                       <IonSelect

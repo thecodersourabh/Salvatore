@@ -149,6 +149,8 @@ export interface CreateUserRequest {
   phone?: string;
   auth0Id?: string;
   password?: string;
+  isServiceProvider?: boolean;
+  version?: number;
 }
 
 export interface Address {

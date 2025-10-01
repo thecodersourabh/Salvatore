@@ -3,7 +3,13 @@ import { User, CreateUserRequest } from "../types/user";
 
 export class UserService {
   static async createUser(userData: CreateUserRequest): Promise<User> {
-    return await api.post<User>("/api/users", userData);
+    try {
+      const result = await api.post<User>("/api/v2/users", userData);
+      return result;
+    } catch (error) {
+      console.error('UserService.createUser failed:', error);
+      throw error;
+    }
   }
 
   static async getUser(userId: string): Promise<User> {
@@ -16,6 +22,28 @@ export class UserService {
     }
   }
 
+  static async isUserExists(userEmail: string): Promise<boolean> {
+    try {
+      const result = await api.get<{exists: boolean}>(`/api/v2/users/email-exists/${encodeURIComponent(userEmail)}`);
+      return result.exists;
+    } catch (error) {
+      console.error("UserService.isUserExists failed:", error);
+      return false;
+    }
+  }
+
+
+
+  static async isUserNameExists(userName: string): Promise<boolean> {
+    try {
+      const result = await api.get<{exists: boolean}>(`/api/v2/users/username-exists/${encodeURIComponent(userName)}`);
+      return result.exists;
+    } catch (error) {
+      console.error("UserService.isUserNameExists failed:", error);
+      return false;
+    }
+  }
+
   static async getUserByUsername(username: string): Promise<User | null> {
     try {
       // Using the v2 API endpoint to match other methods
@@ -24,14 +52,9 @@ export class UserService {
     } catch (error) {
       // Return null for 404 errors (user not found)
       if (error instanceof Error && error.message.includes("404")) {
-        console.log("User not found:", username);
         return null;
       }
-      console.error("UserService.getUserByUsername failed:", {
-        error,
-        username,
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      console.error("UserService.getUserByUsername failed:", error);
       return null;
     }
   }
@@ -42,11 +65,13 @@ export class UserService {
         `/api/v2/users/email/${encodeURIComponent(email)}`
       );
       return result;
-    } catch (error) {
-      // Return null if user not found
-      if (error instanceof Error && error.message.includes("404")) {
+    } catch (error: any) {
+      // Return null if user not found  
+      if (error?.status === 404 || 
+          (error instanceof Error && (error.message.includes("404") || error.message.includes("User not found") || error.message.includes("not found")))) {
         return null;
       }
+      console.error("UserService.getUserByEmail failed:", error);
       throw error;
     }
   }

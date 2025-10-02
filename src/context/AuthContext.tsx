@@ -144,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     phoneNumber: apiUser?.phone || user.phone_number,
     email_verified: user.email_verified,
     isVerified: user.email_verified,
-    avatar: apiUser?.avatar || user.picture
+   // avatar: apiUser?.avatar || user.picture
   } : null;
 
   // Auth context value object

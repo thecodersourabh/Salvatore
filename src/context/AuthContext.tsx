@@ -52,10 +52,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const fetchToken = async () => {
       if (isAuthenticated && getIdTokenClaims) {
-        const claims = await getIdTokenClaims();
-        setIdToken(claims?.__raw || null);
+        try {
+          const claims = await getIdTokenClaims();
+          const token = claims?.__raw || null;
+          setIdToken(token);
+          
+          // Store token in localStorage for consistent access across services
+          if (token) {
+            localStorage.setItem('id_token', token);
+            localStorage.setItem('auth_id_token', token); // For api.ts compatibility
+          }
+        } catch (error) {
+          console.error('Error fetching ID token:', error);
+          setIdToken(null);
+          localStorage.removeItem('id_token');
+          localStorage.removeItem('auth_id_token');
+        }
       } else {
         setIdToken(null);
+        localStorage.removeItem('id_token');
+        localStorage.removeItem('auth_id_token');
       }
     };
     fetchToken();
@@ -144,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     phoneNumber: apiUser?.phone || user.phone_number,
     email_verified: user.email_verified,
     isVerified: user.email_verified,
-   // avatar: apiUser?.avatar || user.picture
+    avatar: apiUser?.avatar || user.picture
   } : null;
 
   // Auth context value object

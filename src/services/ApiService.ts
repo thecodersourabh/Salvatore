@@ -51,7 +51,11 @@ export class ApiService {
 
   private getIdToken(overrideIdToken?: string): string {
     if (overrideIdToken) return overrideIdToken;
-    const idToken = localStorage.getItem('id_token');
+    
+    // Try multiple token sources for compatibility
+    const idToken = localStorage.getItem('id_token') || 
+                   localStorage.getItem('auth_id_token');
+    
     if (!idToken) {
       throw new Error('ID token not found. Please authenticate.');
     }

@@ -20,20 +20,11 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-interface UserProfile {
-  picture?: string;
-  name?: string;
-  email?: string;
-  userName?: string;
-  // Add other properties as needed
-}
-
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { userContext: user, logout } = useAuth();
   const { setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 
-  const { picture, name, email } = (user || {}) as UserProfile;
 
   // Track sidebar state changes
   
@@ -120,16 +111,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors sidebar-focusable"
           >
             <div className="flex items-center">
-              {picture && (
+              {user?.avatar && (
                 <img 
-                  src={picture} 
-                  alt={name || "Profile"} 
+                  src={user.avatar} 
+                  alt={user.name || "Profile"} 
                   className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200 dark:border-gray-700 "
                 />
               )}
               <div className="ml-3">
-                <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight">{name}</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{email}</p>
+                <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight">{user?.name}</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{user?.email}</p>
               </div>
             </div>
           </Link>

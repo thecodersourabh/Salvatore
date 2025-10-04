@@ -19,6 +19,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import { initNotificationService } from './services/notificationService';
+// Import the order notification tester to make orderTest globally available
+import './services/orderNotificationTester';
 
 // Utils and Config
 import * as config from "./auth_config.json";
@@ -188,6 +192,18 @@ function MyApp() {
     const initializeApp = async () => {
       // Initialize status bar for mobile platforms
       await StatusBarManager.initialize();
+      // Initialize push/local notification handlers for native platforms
+      const notificationResult = await initNotificationService((payload) => {
+        console.log('In-app notification received:', payload);
+        // Emit a local-notification event which InAppNotificationProvider listens to
+        window.dispatchEvent(new CustomEvent('local-notification', { detail: payload }));
+      });
+      
+      if (!notificationResult.success) {
+        console.warn('Notification init failed:', notificationResult.error);
+      } else {
+        console.log('Notification service initialized successfully');
+      }
       
       timer = setTimeout(() => setIsLoading(false), 500);
     };
@@ -211,10 +227,11 @@ function MyApp() {
         {isPending && <TransitionIndicator />}
         
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <LanguageProvider>
-                <Auth0CallbackHandler />
+          <NotificationProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <LanguageProvider>
+                  <Auth0CallbackHandler />
                 
                 <div className="flex flex-col h-full">
                   <Navigation />
@@ -231,6 +248,7 @@ function MyApp() {
               </LanguageProvider>
             </WishlistProvider>
           </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
       </div>
     </Router>

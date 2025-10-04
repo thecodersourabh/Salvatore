@@ -11,7 +11,8 @@ import {
   Settings, 
   LogOut, 
   X,
-  ShoppingCart
+  ShoppingCart,
+  Bell
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -74,6 +75,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       icon: Settings,
       label: "Account Settings",
       link: "/settings"
+    },
+    {
+      icon: Bell,
+      label: "Notification Test",
+      link: "/notification-test"
     }
   ];
 

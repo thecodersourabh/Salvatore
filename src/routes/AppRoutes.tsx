@@ -13,6 +13,7 @@ import { Addresses } from "../pages/Profile/Addresses/Addresses";
 import { Wishlist } from "../pages/Profile/Wishlist/Wishlist";
 import { Settings } from "../pages/Settings/Settings";
 import PaymentPage from "../pages/Payments/PaymentPage";
+import NotificationTestPage from "../pages/NotificationTestPage";
 
 export const AppRoutes = () => {
   return (
@@ -62,6 +63,11 @@ export const AppRoutes = () => {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/notification-test" element={
+        <ProtectedRoute>
+          <NotificationTestPage />
         </ProtectedRoute>
       } />
     </Routes>

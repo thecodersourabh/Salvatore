@@ -2,25 +2,21 @@ import { Link } from "react-router-dom";
 import { Scissors, Heart, ShoppingCart, User } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import { usePlatform } from "../hooks/usePlatform";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
+import { NotificationBell } from "./ui/NotificationBell";
+import { NotificationPanel } from "./NotificationPanel";
+
+
 
 export function Navigation() {
-  const { setIsCartOpen, items } = useCart();
-  const { isAuthenticated, userContext: user, loginWithRedirect, loading: loading } = useAuth();
+  //const { setIsCartOpen, items } = useCart();
+  const { isAuthenticated, userContext: user, loginWithRedirect } = useAuth();
+  const { unreadCount, setIsNotificationPanelOpen } = useNotification();
   const { isAndroid, isIOS, isNative } = usePlatform();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  // Log authentication state changes
-  useEffect(() => {
-    console.log('🧭 Navigation: Auth state changed:', {
-      isAuthenticated,
-      loading,
-      userEmail: (user as any)?.email,
-      userName: (user as any)?.name,
-    });
-  }, [isAuthenticated, user, loading]);
 
   // Dynamic classes for mobile safe area
   const navClasses = `
@@ -49,10 +45,13 @@ export function Navigation() {
           </div>
         </div>
         <div className="flex items-center space-x-6">
-          <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          {/* <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
             <Heart className="h-5 w-5" />
-          </button>
-          <button
+          </button> */}
+          
+         
+          
+          {/* <button
             onClick={() => setIsCartOpen(true)}
             className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white relative"
           >
@@ -62,7 +61,14 @@ export function Navigation() {
                 {items.length}
               </span>
             )}
-          </button>
+          </button> */}
+          {/* Notification Bell */}
+          <NotificationBell
+            count={unreadCount}
+            color="primary"
+            onClick={() => setIsNotificationPanelOpen(true)}
+            ariaLabel={`${unreadCount} unread notifications`}
+          />
           {isAuthenticated ? (
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -91,6 +97,9 @@ export function Navigation() {
           />
         </div>
       </div>
+      
+      {/* Notification Panel */}
+      <NotificationPanel />
     </nav>
   );
 }

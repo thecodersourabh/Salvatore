@@ -1,0 +1,454 @@
+import React, { useEffect, useState } from 'react';
+import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonLabel, IonBadge, IonInput, IonButtons, IonIcon } from '@ionic/react';
+import { useNavigate } from 'react-router-dom';
+import { close } from 'ionicons/icons';
+import { 
+  showLocalNotification, 
+  showOrderNotification, 
+  checkNotificationStatus,
+  onNotificationAction,
+  onPushToken,
+  getLastPushToken,
+  registerDevice,
+  createTestOrder,
+  createOrderWithData,
+  fetchOrders
+} from '../services/notificationService';
+import { useAuth } from '../context/AuthContext';
+
+const NotificationTestPage: React.FC = () => {
+  const { idToken, userContext } = useAuth();
+  const navigate = useNavigate();
+  const [notificationStatus, setNotificationStatus] = useState<any>(null);
+  const [pushToken, setPushToken] = useState<string | null>(null);
+  const [lastNotification, setLastNotification] = useState<any>(null);
+  const [authToken, setAuthToken] = useState<string>('');
+  const [userId, setUserId] = useState<string>('6abc3caa-a411-49ff-9ff7-c142a002033c');
+  const [apiResults, setApiResults] = useState<any>(null);
+
+  const handleClose = () => {
+    navigate('/');
+  };
+
+  useEffect(() => {
+    // Check notification status
+    checkNotificationStatus().then(setNotificationStatus);
+    
+    // Get current push token
+    const token = getLastPushToken();
+    setPushToken(token);
+
+    // Listen for new tokens
+    const unsubscribeToken = onPushToken((token) => {
+      setPushToken(token);
+      console.log('New push token received:', token);
+    });
+
+    // Listen for notification actions
+    const unsubscribeAction = onNotificationAction((payload) => {
+      setLastNotification(payload);
+      console.log('Notification action:', payload);
+    });
+
+    return () => {
+      unsubscribeToken();
+      unsubscribeAction();
+    };
+  }, []);
+
+  // Auto-populate auth token from context
+  useEffect(() => {
+    if (idToken && !authToken) {
+      setAuthToken(idToken);
+    }
+    if (userContext?.sub && userId === '6abc3caa-a411-49ff-9ff7-c142a002033c') {
+      setUserId(userContext.sub);
+    }
+  }, [idToken, userContext, authToken, userId]);
+
+  const testBasicNotification = async () => {
+    const result = await showLocalNotification(
+      'Test Notification',
+      'This is a basic test notification',
+      { testId: Date.now() }
+    );
+    console.log('Basic notification result:', result);
+  };
+
+  const testOrderNotification = async (status: 'order_received' | 'order_status_update' | 'order_cancelled' | 'order_accepted' | 'order_rejected') => {
+    const orderId = `ORD-${Date.now()}`;
+    const result = await showOrderNotification(
+      orderId,
+      status,
+      'John Doe'
+    );
+    console.log('Order notification result:', result);
+  };
+
+  const testOrderReceived = () => testOrderNotification('order_received');
+  const testOrderAccepted = () => testOrderNotification('order_accepted');
+  const testOrderRejected = () => testOrderNotification('order_rejected');
+  const testOrderCancelled = () => testOrderNotification('order_cancelled');
+  const testOrderStatusUpdate = () => testOrderNotification('order_status_update');
+
+  const refreshStatus = async () => {
+    const status = await checkNotificationStatus();
+    setNotificationStatus(status);
+  };
+
+  // API Test Functions
+  const testDeviceRegistration = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setApiResults({ error: 'No Auth0 JWT token available. Please login first.' });
+      return;
+    }
+
+    console.log('Testing device registration...');
+    const result = await registerDevice(userId, pushToken || undefined, token);
+    setApiResults({ 
+      type: 'Device Registration',
+      result,
+      timestamp: new Date().toISOString()
+    });
+    console.log('Device registration result:', result);
+  };
+
+  const testCreateOrder = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setApiResults({ error: 'No Auth0 JWT token available. Please login first.' });
+      return;
+    }
+
+    console.log('Testing order creation...');
+    const result = await createTestOrder(userId, token);
+    setApiResults({ 
+      type: 'Create Order',
+      result,
+      timestamp: new Date().toISOString()
+    });
+    console.log('Create order result:', result);
+  };
+
+  const testCreateCustomOrder = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setApiResults({ error: 'No Auth0 JWT token available. Please login first.' });
+      return;
+    }
+
+    console.log('Testing custom order creation...');
+    const result = await createOrderWithData({
+      serviceProviderId: userId,
+      customerName: 'Jane Smith',
+      customerEmail: 'jane.smith@test.com',
+      customerPhone: '+1-555-987-6543',
+      serviceName: 'Notification Test Service',
+      serviceDescription: 'Testing push notifications through order creation',
+      price: 41.30,
+      authToken: token
+    });
+    setApiResults({ 
+      type: 'Create Custom Order',
+      result,
+      timestamp: new Date().toISOString()
+    });
+    console.log('Create custom order result:', result);
+  };
+
+  const testFetchOrders = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setApiResults({ error: 'No Auth0 JWT token available. Please login first.' });
+      return;
+    }
+
+    console.log('Testing fetch orders...');
+    const result = await fetchOrders(userId, token);
+    setApiResults({ 
+      type: 'Fetch Orders',
+      result,
+      timestamp: new Date().toISOString()
+    });
+    console.log('Fetch orders result:', result);
+  };
+
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Notification Testing</IonTitle>
+          <IonButtons slot="end">
+            <IonButton fill="clear" onClick={handleClose}>
+              <IonIcon icon={close} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding">
+        
+        {/* Status Card */}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Notification Status</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            {notificationStatus && (
+              <>
+                <IonItem>
+                  <IonLabel>Platform</IonLabel>
+                  <IonBadge color="primary">
+                    {navigator.userAgent.includes('Mobile') ? 'Mobile Web' : 'Desktop Web'}
+                  </IonBadge>
+                </IonItem>
+                <IonItem>
+                  <IonLabel>Local Notifications</IonLabel>
+                  <IonBadge color={notificationStatus.localEnabled ? 'success' : 'warning'}>
+                    {notificationStatus.localEnabled ? 'Available' : 'Not Available'}
+                  </IonBadge>
+                </IonItem>
+                <IonItem>
+                  <IonLabel>In-App Notifications</IonLabel>
+                  <IonBadge color="success">
+                    Always Available
+                  </IonBadge>
+                </IonItem>
+                <IonItem>
+                  <IonLabel>Push Notifications (FCM)</IonLabel>
+                  <IonBadge color={pushToken ? 'success' : 'warning'}>
+                    {pushToken ? 'Token Available' : 'Web - Not Required'}
+                  </IonBadge>
+                </IonItem>
+                {pushToken && (
+                  <IonItem>
+                    <IonLabel>FCM Token</IonLabel>
+                    <IonLabel className="ion-text-wrap" style={{ fontSize: '0.8em' }}>
+                      {pushToken.substring(0, 20) + '...'}
+                    </IonLabel>
+                  </IonItem>
+                )}
+              </>
+            )}
+            <IonButton fill="outline" size="small" onClick={refreshStatus}>
+              Refresh Status
+            </IonButton>
+          </IonCardContent>
+        </IonCard>
+
+        {/* Test Actions */}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Test Notifications</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <IonButton expand="block" onClick={testBasicNotification} className="ion-margin-bottom">
+              Test Basic Notification
+            </IonButton>
+            
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold mb-2">Order Status Notifications:</h4>
+              <div className="space-y-2">
+                <IonButton expand="block" fill="outline" onClick={testOrderReceived} className="ion-margin-bottom">
+                  Test Order Received
+                </IonButton>
+                <IonButton expand="block" fill="outline" onClick={testOrderAccepted} className="ion-margin-bottom">
+                  Test Order Accepted
+                </IonButton>
+                <IonButton expand="block" fill="outline" onClick={testOrderRejected} className="ion-margin-bottom">
+                  Test Order Rejected
+                </IonButton>
+                <IonButton expand="block" fill="outline" onClick={testOrderCancelled} className="ion-margin-bottom">
+                  Test Order Cancelled
+                </IonButton>
+                <IonButton expand="block" fill="outline" onClick={testOrderStatusUpdate} className="ion-margin-bottom">
+                  Test Order Status Update
+                </IonButton>
+              </div>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+        {/* Last Notification */}
+        {lastNotification && (
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle>Last Notification Action</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <IonItem>
+                <IonLabel>Title</IonLabel>
+                <IonLabel>{lastNotification.title || 'N/A'}</IonLabel>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Body</IonLabel>
+                <IonLabel>{lastNotification.body || 'N/A'}</IonLabel>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Action ID</IonLabel>
+                <IonLabel>{lastNotification.actionId || 'N/A'}</IonLabel>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Data</IonLabel>
+                <IonLabel className="ion-text-wrap">
+                  {JSON.stringify(lastNotification.data)}
+                </IonLabel>
+              </IonItem>
+            </IonCardContent>
+          </IonCard>
+        )}
+
+        {/* Notification Bell Component Examples */}
+        {/* <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Notification Bell Components</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <NotificationBucketList />
+          </IonCardContent>
+        </IonCard> */}
+
+        {/* API Integration Tests */}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>🚀 Production API Integration</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <div className="space-y-4">
+              {/* Auth Token Input */}
+              <div>
+                <IonLabel className="font-semibold">
+                  Auth0 JWT Token: 
+                  {idToken && <span className="text-green-600 text-sm ml-2">✅ Auto-detected</span>}
+                </IonLabel>
+                <IonInput 
+                  value={authToken}
+                  onIonInput={(e) => setAuthToken(e.detail.value!)}
+                  placeholder={idToken ? "Using authenticated session token..." : "Paste your Auth0 JWT token here..."}
+                  className="mt-2"
+                  fill="outline"
+                  readonly={!!idToken}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {idToken 
+                    ? "Token automatically detected from your login session" 
+                    : "Get this from browser dev tools → Network → Authorization header after login"
+                  }
+                </p>
+              </div>
+
+              {/* User ID Input */}
+              <div>
+                <IonLabel className="font-semibold">
+                  User/Service Provider ID:
+                  {userContext?.sub && <span className="text-green-600 text-sm ml-2">✅ Auto-detected</span>}
+                </IonLabel>
+                <IonInput 
+                  value={userId}
+                  onIonInput={(e) => setUserId(e.detail.value!)}
+                  placeholder="6abc3caa-a411-49ff-9ff7-c142a002033c"
+                  className="mt-2"
+                  fill="outline"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {userContext?.email && `Logged in as: ${userContext.email}`}
+                </p>
+              </div>
+
+              {/* API Test Buttons */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  onClick={testDeviceRegistration}
+                  disabled={!authToken && !idToken}
+                >
+                  📱 Register Device
+                </IonButton>
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  onClick={testCreateOrder}
+                  disabled={!authToken && !idToken}
+                >
+                  📦 Create Test Order
+                </IonButton>
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  onClick={testCreateCustomOrder}
+                  disabled={!authToken && !idToken}
+                >
+                  🎯 Create Custom Order
+                </IonButton>
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  onClick={testFetchOrders}
+                  disabled={!authToken && !idToken}
+                >
+                  📋 Fetch Orders
+                </IonButton>
+              </div>
+
+              {/* API Results */}
+              {apiResults && (
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">
+                    {apiResults.error ? '❌ Error' : '✅ Success'} - {apiResults.type}
+                  </h4>
+                  <pre className="text-xs bg-white dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                    {JSON.stringify(apiResults.result || apiResults.error, null, 2)}
+                  </pre>
+                  {apiResults.timestamp && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(apiResults.timestamp).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+        {/* Instructions */}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Notification Types & Setup</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-green-600 mb-2">✅ Currently Working (No Firebase needed):</h4>
+                <ul className="text-sm space-y-1 ml-4">
+                  <li><strong>• Local Notifications:</strong> Click test buttons above - works in browser and mobile apps</li>
+                  <li><strong>• In-App Notifications:</strong> Real-time updates while app is open (see navigation bell)</li>
+                  <li><strong>• Notification Bell UI:</strong> Interactive dropdown with notification management</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-amber-600 mb-2">🔧 Push Notifications (Optional - Requires Firebase):</h4>
+                <ul className="text-sm space-y-1 ml-4">
+                  <li><strong>• Remote Push:</strong> Notifications when app is closed/background</li>
+                  <li><strong>• Setup needed:</strong> Firebase project + web app configuration</li>
+                  <li><strong>• Use case:</strong> Marketing, urgent alerts, offline notifications</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-600 mb-2">🎯 Recommendation:</h4>
+                <p className="text-sm">
+                  Your current setup handles 90% of notification needs. Only add Firebase if you specifically 
+                  need to send notifications when users aren't actively using the app.
+                </p>
+              </div>
+            </div>
+          </IonCardContent>
+        </IonCard>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default NotificationTestPage;

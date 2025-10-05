@@ -315,7 +315,8 @@ export async function showLocalNotification(
   }
 
   try {
-    const id = Date.now();
+    // Generate a proper Java integer ID (max 2147483647) to prevent crashes
+    const id = Math.floor(Math.random() * 2147483647);
     const result = await LocalNotifications.schedule({
       notifications: [
         {

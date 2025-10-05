@@ -20,9 +20,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { NotificationProvider } from "./context/NotificationContext";
-import { initNotificationService } from './services/notificationService';
-// Import the order notification tester to make orderTest globally available
-import './services/orderNotificationTester';
+
 
 // Utils and Config
 import * as config from "./auth_config.json";
@@ -190,22 +188,21 @@ function MyApp() {
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     const initializeApp = async () => {
-      // Initialize status bar for mobile platforms
-      await StatusBarManager.initialize();
-      // Initialize push/local notification handlers for native platforms
-      const notificationResult = await initNotificationService((payload) => {
-        console.log('In-app notification received:', payload);
-        // Emit a local-notification event which InAppNotificationProvider listens to
-        window.dispatchEvent(new CustomEvent('local-notification', { detail: payload }));
-      });
+      console.log('STEP 1: Testing StatusBar initialization...');
       
-      if (!notificationResult.success) {
-        console.warn('Notification init failed:', notificationResult.error);
-      } else {
-        console.log('Notification service initialized successfully');
+      // Test StatusBar first
+      try {
+        await StatusBarManager.initialize();
+        console.log('STEP 1: StatusBar initialized successfully');
+      } catch (error) {
+        console.error('STEP 1: StatusBar initialization failed:', error);
       }
       
-      timer = setTimeout(() => setIsLoading(false), 500);
+      // Finish initialization
+      timer = setTimeout(() => {
+        console.log('STEP 1: App initialization complete with StatusBar');
+        setIsLoading(false);
+      }, 500);
     };
 
     initializeApp();

@@ -26,6 +26,14 @@ const config: CapacitorConfig = {
       backgroundColor: "#e11d48",
       overlaysWebView: false,
       androidStatusBarColor: "#e11d48"
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
+    },
+    LocalNotifications: {
+      smallIcon: "ic_stat_icon_config_sample",
+      iconColor: "#e11d48",
+      sound: "beep.wav"
     }
   }
 };

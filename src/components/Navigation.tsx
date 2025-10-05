@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { Scissors, Heart, ShoppingCart, User } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { Scissors, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { usePlatform } from "../hooks/usePlatform";
@@ -8,7 +7,6 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { NotificationBell } from "./ui/NotificationBell";
 import { NotificationPanel } from "./NotificationPanel";
-
 
 
 export function Navigation() {

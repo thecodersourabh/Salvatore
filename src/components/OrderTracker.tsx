@@ -220,7 +220,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
         
         {/* Desktop: Horizontal Progress Bar */}
         <div className="hidden md:block">
-          <div className="relative flex items-center justify-between">
+          <div className="relative flex items-start justify-between">
             {ORDER_STEPS.map((step, index) => {
               const stepStatus = getStepStatus(index);
               const styles = getStepStyles(stepStatus);
@@ -232,15 +232,15 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                   {/* Connection line to next step */}
                   {!isLastStep && (
                     <div
-                      className={`absolute top-6 left-1/2 w-full h-0.5 z-0 ${
+                      className={`absolute w-full h-0.5 z-0 ${
                         getStepStatus(index + 1) === 'completed' || stepStatus === 'completed'
                           ? 'bg-green-500'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}
                       style={{ 
+                        top: '24px',
                         left: '50%', 
-                        right: '-50%',
-                        transform: 'translateY(-50%)'
+                        right: '-50%'
                       }}
                     />
                   )}

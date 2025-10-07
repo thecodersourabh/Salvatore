@@ -183,17 +183,17 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
       />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+        <div className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-xl mx-2 sm:mx-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-4">
-              <Package className="h-6 w-6 text-rose-600" />
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                   Order {order.orderNumber || `#${order.id?.substring(0, 8) || 'N/A'}`}
                 </h2>
-                <div className="flex items-center space-x-3 mt-1">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0 mt-1">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status || 'pending')}`}>
                     {(order.status || 'pending').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
@@ -213,7 +213,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
 
           {/* Content */}
           <div className="max-h-[80vh] overflow-y-auto">
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               
               {/* Error Message */}
               {error && (
@@ -236,7 +236,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                 className="mb-6"
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 
                 {/* Customer Information */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -406,17 +406,18 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-lg">
-            <div className="flex flex-wrap gap-2 justify-between">
-              <div className="flex flex-wrap gap-2">
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-900 rounded-b-lg">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-between">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 {canAccept && (
                   <button
                     onClick={() => handleStatusUpdate('confirmed')}
                     disabled={loading}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Accept Order
+                    <span className="hidden sm:inline">Accept Order</span>
+                    <span className="sm:hidden">Accept</span>
                   </button>
                 )}
                 
@@ -424,7 +425,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                   <button
                     onClick={() => setShowRejectForm(true)}
                     disabled={loading}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Reject
@@ -435,9 +436,10 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                   <button
                     onClick={() => handleStatusUpdate('in-progress')}
                     disabled={loading}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Start Work
+                    <span className="hidden sm:inline">Start Work</span>
+                    <span className="sm:hidden">Start</span>
                   </button>
                 )}
 
@@ -445,20 +447,22 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                   <button
                     onClick={() => handleStatusUpdate('completed')}
                     disabled={loading}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Complete Order
+                    <span className="hidden sm:inline">Complete Order</span>
+                    <span className="sm:hidden">Complete</span>
                   </button>
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                 <button
                   onClick={() => setShowMessageForm(true)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Message Customer
+                  <span className="hidden sm:inline">Message Customer</span>
+                  <span className="sm:hidden">Message</span>
                 </button>
               </div>
             </div>

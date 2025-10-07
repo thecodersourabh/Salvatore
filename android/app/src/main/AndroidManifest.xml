@@ -51,17 +51,17 @@
         </provider>
 
         <!-- Firebase Cloud Messaging Service -->
-        <service
+        <!-- <service
             android:name="com.getcapacitor.plugin.pushnotifications.MessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
-        </service>
+        </service> -->
 
         <!-- Notification click receiver -->
         <receiver 
-            android:name="com.getcapacitor.plugin.pushnotifications.NotificationReceiver"
+            android:name="com.getcapacitor.plugin.localnotifications.LocalNotificationReceiver"
             android:exported="false" />
 
         <!-- Boot completed receiver for notifications -->

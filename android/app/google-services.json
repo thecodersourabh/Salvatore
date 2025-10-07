@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261796722127",
+    "project_id": "salvatore-7c479",
+    "storage_bucket": "salvatore-7c479.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261796722127:android:3ebac6b9423e9f687f4eba",
+        "android_client_info": {
+          "package_name": "com.salvatore.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQVzVj4a2vTXgXWMhhqIrkO3WJo1diR-0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

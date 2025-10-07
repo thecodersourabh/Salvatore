@@ -3,37 +3,35 @@ import { NotificationPayload, Notification } from '../services/notificationServi
 
 // Helper function to convert NotificationPayload to Notification
 function createNotificationFromPayload(payload: NotificationPayload & { actionId?: string }): Notification {
-  const now = Date.now();
-  
-  // Determine notification type from payload data
-  let type: Notification['type'] = 'system';
-  let priority: Notification['priority'] = 'medium';
-  
-  if (payload.data?.type) {
-    const orderStatuses = ['order_received', 'order_accepted', 'order_rejected', 'order_cancelled', 'order_status_update'];
-    if (orderStatuses.includes(payload.data.type)) {
-      type = 'order';
-      priority = payload.data.type === 'order_received' ? 'high' : 'medium';
+  // Determine notification type and priority from payload
+  const getNotificationType = (): Notification['type'] => {
+    if (payload.data?.type) {
+      const orderStatuses = ['order_received', 'order_accepted', 'order_rejected', 'order_cancelled', 'order_status_update'];
+      if (orderStatuses.includes(payload.data.type)) return 'order';
     }
-  }
-  
-  // Handle different payload types
-  if (payload.title?.toLowerCase().includes('message')) {
-    type = 'message';
-  } else if (payload.title?.toLowerCase().includes('payment')) {
-    type = 'payment';
-  } else if (payload.title?.toLowerCase().includes('review')) {
-    type = 'review';
-  }
+    
+    const titleLower = payload.title?.toLowerCase() || '';
+    if (titleLower.includes('message')) return 'message';
+    if (titleLower.includes('payment')) return 'payment';
+    if (titleLower.includes('review')) return 'review';
+    return 'system';
+  };
 
+  const getPriority = (type: Notification['type']): Notification['priority'] => {
+    if (type === 'order' && payload.data?.type === 'order_received') return 'high';
+    return type === 'order' ? 'medium' : 'low';
+  };
+
+  const type = getNotificationType();
+  
   return {
-    id: payload.id?.toString() || `notif-${now}-${Math.random().toString(36).substr(2, 9)}`,
+    id: payload.id?.toString() || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     type,
     title: payload.title || 'Notification',
     message: payload.body || 'You have a new notification',
     timestamp: new Date(),
     isRead: false,
-    priority,
+    priority: getPriority(type),
     data: payload.data
   };
 }
@@ -58,13 +56,26 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Listen for notifications from the service
   useEffect(() => {
+    console.log('🔔 NotificationContext: Setting up event listeners...');
+    
     // Listen for local notifications (in-app)
     const handleLocalNotification = (event: CustomEvent) => {
       const payload = event.detail as NotificationPayload;
       console.log('📧 NotificationContext: Local notification received:', payload);
       
-      const newNotification = createNotificationFromPayload(payload);
-      setNotifications(prev => [newNotification, ...prev]);
+      try {
+        const newNotification = createNotificationFromPayload(payload);
+        console.log('📧 NotificationContext: Created notification object:', newNotification);
+        
+        setNotifications(prev => {
+          console.log('📧 NotificationContext: Adding to notifications list. Current count:', prev.length);
+          const updated = [newNotification, ...prev];
+          console.log('📧 NotificationContext: New notifications count:', updated.length);
+          return updated;
+        });
+      } catch (error) {
+        console.error('📧 NotificationContext: Error creating notification:', error);
+      }
     };
 
     // Listen for notification actions (when user taps notification)
@@ -72,29 +83,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       const payload = event.detail as NotificationPayload & { actionId?: string };
       console.log('📧 NotificationContext: Notification action received:', payload);
       
-      const newNotification = createNotificationFromPayload(payload);
-      setNotifications(prev => [newNotification, ...prev]);
+      try {
+        const newNotification = createNotificationFromPayload(payload);
+        setNotifications(prev => [newNotification, ...prev]);
+      } catch (error) {
+        console.error('📧 NotificationContext: Error handling action:', error);
+      }
     };
 
-    // Add event listeners
+    // Add event listeners (unified for all notification sources)
     window.addEventListener('local-notification', handleLocalNotification as EventListener);
     window.addEventListener('notification-action', handleNotificationAction as EventListener);
+    
+    console.log('🔔 NotificationContext: Event listeners added successfully');
 
-    // Add some initial sample data for demo purposes
-    if (notifications.length === 0) {
-      const sampleNotifications: Notification[] = [
-        {
-          id: 'sample-1',
-          type: 'order',
-          title: 'Welcome to App!',
-          message: 'Welcome to service provider dashboard!!',
-          timestamp: new Date(Date.now() - 2 * 60 * 1000),
-          isRead: false,
-          priority: 'medium',
-          data: { type: 'system', source: 'demo' }
-        }
-      ];
-      setNotifications(sampleNotifications);
+    // Add initial welcome notification on first load
+    const hasWelcomeNotification = notifications.some(n => n.data?.source === 'welcome');
+    if (!hasWelcomeNotification) {
+      const welcomeNotification: Notification = {
+        id: 'welcome-1',
+        type: 'system',
+        title: 'Welcome to Salvatore!',
+        message: 'Your service provider dashboard is ready.',
+        timestamp: new Date(),
+        isRead: false,
+        priority: 'medium',
+        data: { type: 'system', source: 'welcome' }
+      };
+      setNotifications([welcomeNotification]);
     }
 
     // Cleanup

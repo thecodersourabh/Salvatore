@@ -6,111 +6,78 @@ import {
   ActionPerformed,
 } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import type { LocalNotificationSchema } from '@capacitor/local-notifications';
 
-// Order status types matching your API
-export type OrderStatus = 
-  | 'order_received' 
-  | 'order_status_update' 
-  | 'order_cancelled' 
-  | 'order_accepted' 
-  | 'order_rejected';
-// Notification interface - extended from NotificationPayload
-export interface Notification {
-  id: string;
-  type: 'order' | 'message' | 'payment' | 'review' | 'system';
-  title: string;
-  message: string;
-  timestamp: Date;
-  isRead: boolean;
-  priority: 'low' | 'medium' | 'high';
-  data?: Record<string, any>;
-}
+// Import all notification types
+import type {
+  OrderStatus,
+  Notification,
+  NotificationPayload,
+  NotificationCallback,
+  NotificationError,
+  DeviceRegistration,
+  OrderItem,
+  CustomerInfo,
+  CreateOrderRequest,
+  NotificationStatus,
+  PermissionResult,
+  TestNotificationResult,
+  OrderResult,
+  OrdersResult,
+  WebPushResult
+} from '../types/notification';
 
-export type NotificationPayload = {
-  id?: string | number;
-  title?: string;
-  body?: string;
-  data?: Record<string, any>;
+// Re-export types for backward compatibility
+export type {
+  OrderStatus,
+  Notification,
+  NotificationPayload,
+  NotificationCallback,
+  NotificationError,
+  DeviceRegistration,
+  OrderItem,
+  CustomerInfo,
+  CreateOrderRequest,
+  NotificationStatus,
+  PermissionResult,
+  TestNotificationResult,
+  OrderResult,
+  OrdersResult,
+  WebPushResult
 };
 
-export type NotificationCallback = (payload: NotificationPayload) => void;
 
-type NotificationError = {
-  message: string;
-  code?: string;
-};
-
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_NOTIFICATION_API_URL 
-
-// Device registration types
-export interface DeviceRegistration {
-  userId: string;
-  deviceToken: string;
-  platform: 'android' | 'ios' | 'web';
-  appVersion: string;
-}
-
-// Order types matching your API
-export interface OrderItem {
-  name: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface CustomerInfo {
-  contactInfo: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-}
-
-export interface CreateOrderRequest {
-  serviceProviderId: string;
-  customer: CustomerInfo;
-  items: OrderItem[];
-}
-
-// API notification payload types (matching your production system)
-export interface ApiNotificationPayload {
-  title: string;
-  body: string;
-  data: {
-    type: OrderStatus;
-    orderId: string;
-    serviceProviderId?: string;
-    customerId?: string;
-    customerName?: string;
-    totalAmount?: number;
-    currency?: string;
-    orderNumber?: string;
-    actions?: Array<{
-      id: string;
-      title: string;
-    }>;
-  };
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
 
 let lastToken: string | null = null;
 let onInAppCallback: ((payload: NotificationPayload) => void) | undefined;
 
 /**
- * Initialize push & local notifications.
- * - Requests permissions
- * - Registers push notifications
- * - Registers listeners for incoming notifications and actions
- *
- * Pass an optional callback that will be invoked when a notification is received
- * while the app is in the foreground (in-app notification UI can use this).
+ * Initialize web notifications (browser platform)
+ */
+async function initializeWebNotifications(): Promise<void> {
+  if (!('Notification' in window)) {
+    throw new Error('This browser does not support notifications');
+  }
+
+  console.log('[NotificationService] Initializing web notifications...');
+
+  // Check and request permission
+  let permission = Notification.permission;
+  if (permission === 'default') {
+    permission = await Notification.requestPermission();
+  }
+
+  // Generate web token
+  const webToken = `web_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  lastToken = webToken;
+  
+  console.log('[NotificationService] Web notifications initialized, permission:', permission);
+  window.dispatchEvent(new CustomEvent('push-token', { detail: webToken }));
+}
+
+/**
+ * Initialize push & local notifications
  */
 export async function initNotificationService(
   inAppCallback?: NotificationCallback,
@@ -121,73 +88,115 @@ export async function initNotificationService(
   const isNative = platform !== 'web';
 
   if (!isNative) {
-    console.log('[NotificationService] Running on web — skipping native registration.');
-    return { success: true };
+    try {
+      await initializeWebNotifications();
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: { 
+          message: error instanceof Error ? error.message : 'Web notification initialization failed',
+          code: 'WEB_INIT_ERROR'
+        }
+      };
+    }
   }
 
+  // Native platform initialization
   try {
-    // Request push notification permissions
-    const pushPermission = await PushNotifications.requestPermissions();
-    if ((pushPermission as any).receive !== 'granted') {
-      const error = {
-        message: 'Push notification permission not granted',
-        code: 'PERMISSION_DENIED'
-      };
-      console.warn('[NotificationService] Permission denied:', pushPermission);
-      return { success: false, error };
-    }
-
     // Request local notification permissions
     const localPermission = await LocalNotifications.requestPermissions();
-    if (localPermission.display !== 'granted') {
-      console.warn('[NotificationService] Local notification permission not granted:', localPermission);
+    if ((localPermission as any).display !== 'granted') {
+      console.warn('[NotificationService] Local notification permission not granted');
     }
 
-    // Register for push notifications
-    await PushNotifications.register();
+    // Try push notifications
+    try {
+      const pushStatus = await PushNotifications.checkPermissions();
+      if ((pushStatus as any).receive === 'granted' || (pushStatus as any).receive === 'prompt') {
+        if ((pushStatus as any).receive === 'prompt') {
+          await PushNotifications.requestPermissions();
+        }
+        await PushNotifications.register();
+      }
+    } catch (pushError) {
+      console.warn('[NotificationService] Push notification setup failed:', pushError);
+    }
 
     // Set up listeners
     await setupNotificationListeners();
-
-    console.log('[NotificationService] Successfully initialized');
     return { success: true };
   } catch (error) {
-    const notificationError: NotificationError = {
-      message: error instanceof Error ? error.message : 'Unknown initialization error',
-      code: 'INIT_ERROR'
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Initialization failed',
+        code: 'INIT_ERROR'
+      }
     };
-    console.error('[NotificationService] Initialization failed:', error);
-    return { success: false, error: notificationError };
   }
 }
 
+/**
+ * Set up notification event listeners
+ */
 async function setupNotificationListeners(): Promise<void> {
-  // Registration success
-  PushNotifications.addListener('registration', (token: Token) => {
-    console.log('[NotificationService] Registration token received:', token.value);
-    lastToken = token.value;
-    window.dispatchEvent(new CustomEvent('push-token', { detail: token.value }));
-  });
+  try {
+    // Push notification listeners
+    PushNotifications.addListener('registration', (token: Token) => {
+      console.log('[NotificationService] Token received:', token.value);
+      lastToken = token.value;
+      window.dispatchEvent(new CustomEvent('push-token', { detail: token.value }));
+    });
 
-  // Registration error
-  PushNotifications.addListener('registrationError', (error: any) => {
-    console.error('[NotificationService] Registration failed:', error);
-    window.dispatchEvent(new CustomEvent('push-registration-error', { detail: error }));
-  });
+    PushNotifications.addListener('registrationError', (error: any) => {
+      console.error('[NotificationService] Registration failed:', error);
+    });
 
-  // Received while app is in foreground
-  PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-    console.log('[NotificationService] Push notification received:', notification);
-    handleIncoming(notification);
-  });
+    PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+      handleIncoming(notification);
+    });
 
-  // User tapped on notification
-  PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-    console.log('[NotificationService] Push notification action performed:', action);
-    handleAction(action);
-  });
+    PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+      handleAction(action);
+    });
+
+    // Local notification listeners (native platforms)
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.addListener('localNotificationReceived', (notification: LocalNotificationSchema) => {
+        const payload: NotificationPayload = {
+          id: notification.id?.toString() || '',
+          title: notification.title,
+          body: notification.body,
+          data: notification.extra || {},
+        };
+        window.dispatchEvent(new CustomEvent('localNotification', { detail: payload }));
+      });
+
+      LocalNotifications.addListener('localNotificationActionPerformed', (action: any) => {
+        const payload: NotificationPayload = {
+          id: action.notification.id?.toString() || '',
+          title: action.notification.title,
+          body: action.notification.body,
+          data: action.notification.extra || {},
+        };
+        window.dispatchEvent(new CustomEvent('localNotificationAction', { 
+          detail: { notification: payload, actionId: action.actionId } 
+        }));
+      });
+    }
+  } catch (error) {
+    console.error('[NotificationService] Error setting up listeners:', error);
+  }
 }
 
+// ============================================================================
+// NOTIFICATION HANDLING
+// ============================================================================
+
+/**
+ * Handle incoming notifications
+ */
 async function handleIncoming(notification: PushNotificationSchema): Promise<void> {
   try {
     const payload: NotificationPayload = {
@@ -197,75 +206,66 @@ async function handleIncoming(notification: PushNotificationSchema): Promise<voi
       data: notification.data || {},
     };
 
-    // Handle API notification payloads (from your production system)
+    // Enhance order notifications
     const orderType = payload.data?.type as OrderStatus;
     if (orderType && ['order_received', 'order_status_update', 'order_cancelled', 'order_accepted', 'order_rejected'].includes(orderType)) {
-      const orderId = payload.data?.orderId || payload.data?.orderNumber || 'Unknown';
+      const orderId = payload.data?.orderId || 'Unknown';
       const customerName = payload.data?.customerName || 'Customer';
-      const totalAmount = payload.data?.totalAmount;
-      const currency = payload.data?.currency || 'USD';
       
-      // Use API-provided title and body if available, otherwise generate defaults
       switch (orderType) {
         case 'order_received':
           payload.title = payload.title || '🎯 New Order Received!';
-          payload.body = payload.body || (totalAmount 
-            ? `Order #${orderId} from ${customerName} - ${currency} ${totalAmount}`
-            : `Order #${orderId} from ${customerName} has been received.`);
+          payload.body = payload.body || `Order #${orderId} from ${customerName}`;
           break;
         case 'order_accepted':
           payload.title = payload.title || '✅ Order Accepted';
-          payload.body = payload.body || `Order #${orderId} has been accepted and will be processed.`;
+          payload.body = payload.body || `Order #${orderId} has been accepted`;
           break;
         case 'order_rejected':
           payload.title = payload.title || '❌ Order Rejected';
-          payload.body = payload.body || `Order #${orderId} has been rejected.`;
+          payload.body = payload.body || `Order #${orderId} has been rejected`;
           break;
         case 'order_cancelled':
           payload.title = payload.title || '🚫 Order Cancelled';
-          payload.body = payload.body || `Order #${orderId} has been cancelled.`;
+          payload.body = payload.body || `Order #${orderId} has been cancelled`;
           break;
         case 'order_status_update':
           payload.title = payload.title || '📋 Order Status Updated';
-          payload.body = payload.body || `Order #${orderId} status has been updated.`;
+          payload.body = payload.body || `Order #${orderId} status updated`;
           break;
       }
-      
-      // Log API notification details for debugging
-      console.log('[NotificationService] API notification details:', {
-        type: orderType,
-        orderId,
-        customerName,
-        totalAmount,
-        currency,
-        actions: payload.data?.actions
-      });
     }
 
-    console.log('[NotificationService] Processing notification payload:', payload);
-
-    // If an in-app callback is provided, call it for foreground display
-    if (onInAppCallback) {
-      try {
-        onInAppCallback(payload);
-        return;
-      } catch (error) {
-        console.error('[NotificationService] In-app callback error:', error);
-        // Continue to fallback local notification
+    // Dispatch event for UI components
+    window.dispatchEvent(new CustomEvent('local-notification', {
+      detail: {
+        title: payload.title || 'Notification',
+        body: payload.body || 'You have a new notification',
+        data: { ...payload.data, source: 'capacitor-push' }
       }
+    }));
+
+    // Call in-app callback if provided
+    if (onInAppCallback) {
+      onInAppCallback(payload);
     }
 
-    // Fallback: show a local notification
-    await showLocalNotification(
-      payload.title || 'Notification',
-      payload.body || 'You have a new notification',
-      payload.data
-    );
+    // Show local notification on mobile
+    if (Capacitor.getPlatform() !== 'web') {
+      await showLocalNotification(
+        payload.title || 'Notification',
+        payload.body || 'You have a new notification',
+        payload.data
+      );
+    }
   } catch (error) {
-    console.error('[NotificationService] Error handling incoming notification:', error);
+    console.error('[NotificationService] Error handling notification:', error);
   }
 }
 
+/**
+ * Handle notification actions (when user taps notification)
+ */
 function handleAction(action: ActionPerformed): void {
   try {
     const notification = action.notification;
@@ -276,12 +276,6 @@ function handleAction(action: ActionPerformed): void {
       data: notification.data || {},
     };
 
-    console.log('[NotificationService] Notification action performed:', {
-      actionId: action.actionId,
-      payload
-    });
-
-    // Emit event for the React app to handle navigation/state updates
     window.dispatchEvent(new CustomEvent('notification-action', {
       detail: {
         ...payload,
@@ -290,13 +284,16 @@ function handleAction(action: ActionPerformed): void {
       }
     }));
   } catch (error) {
-    console.error('[NotificationService] Error handling notification action:', error);
+    console.error('[NotificationService] Error handling action:', error);
   }
 }
 
+// ============================================================================
+// NOTIFICATION DISPLAY
+// ============================================================================
+
 /**
- * Schedule a local notification. Useful to show something when the app is backgrounded
- * or to convert a push into a local notification.
+ * Show a local notification
  */
 export async function showLocalNotification(
   title: string,
@@ -304,97 +301,48 @@ export async function showLocalNotification(
   data?: Record<string, any>
 ): Promise<{ success: boolean; error?: NotificationError }> {
   const platform = Capacitor.getPlatform();
-  const isNative = platform !== 'web';
+  
+  // Always dispatch event for UI
+  window.dispatchEvent(new CustomEvent('local-notification', {
+    detail: { title, body, data: data || {} }
+  }));
 
-  if (!isNative) {
-    // On web, emit a custom event for in-app toast
-    window.dispatchEvent(new CustomEvent('local-notification', {
-      detail: { title, body, data: data || {} }
-    }));
+  // For web, event is enough
+  if (platform === 'web') {
     return { success: true };
   }
 
+  // For mobile, schedule actual notification
   try {
-    // Generate a proper Java integer ID (max 2147483647) to prevent crashes
     const id = Math.floor(Math.random() * 2147483647);
-    const result = await LocalNotifications.schedule({
+    await LocalNotifications.schedule({
       notifications: [
         {
           title,
           body,
           id,
-          schedule: { at: new Date(Date.now() + 100) }, // Small delay to ensure proper scheduling
+          schedule: { at: new Date(Date.now() + 100) },
           extra: data || {},
           sound: 'default',
-          attachments: [],
-          actionTypeId: '',
           group: 'app-notifications',
         },
       ],
     });
-
-    console.log('[NotificationService] Local notification scheduled:', { id, title, result });
     return { success: true };
   } catch (error) {
-    const notificationError: NotificationError = {
-      message: error instanceof Error ? error.message : 'Failed to schedule local notification',
-      code: 'LOCAL_NOTIFICATION_ERROR'
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Failed to schedule notification',
+        code: 'LOCAL_NOTIFICATION_ERROR'
+      }
     };
-    console.error('[NotificationService] Local notification error:', error);
-    return { success: false, error: notificationError };
   }
 }
 
-export function getLastPushToken() {
-  return lastToken;
-}
-
-export async function unregister(): Promise<{ success: boolean; error?: NotificationError }> {
-  try {
-    const platform = Capacitor.getPlatform();
-    if (platform === 'web') {
-      console.log('[NotificationService] Web platform - no cleanup needed');
-      return { success: true };
-    }
-
-    // Remove all listeners
-    await PushNotifications.removeAllListeners();
-    await LocalNotifications.removeAllListeners();
-
-    // Cancel any pending local notifications
-    await LocalNotifications.cancel({ notifications: [] });
-
-    // Clear stored token
-    lastToken = null;
-    onInAppCallback = undefined;
-
-    console.log('[NotificationService] Successfully unregistered');
-    return { success: true };
-  } catch (error) {
-    const notificationError: NotificationError = {
-      message: error instanceof Error ? error.message : 'Failed to unregister notifications',
-      code: 'UNREGISTER_ERROR'
-    };
-    console.error('[NotificationService] Unregister error:', error);
-    return { success: false, error: notificationError };
-  }
-}
-
-// Simple helper for consumers to listen to in-app events without Hooks/Context
-export function onNotificationAction(handler: (payload: NotificationPayload & { actionId?: string }) => void) {
-  const listener = (ev: Event) => handler((ev as CustomEvent).detail);
-  window.addEventListener('notification-action', listener as EventListener);
-  return () => window.removeEventListener('notification-action', listener as EventListener);
-}
-
-// Helper to listen for push token updates
-export function onPushToken(handler: (token: string) => void) {
-  const listener = (ev: Event) => handler((ev as CustomEvent).detail);
-  window.addEventListener('push-token', listener as EventListener);
-  return () => window.removeEventListener('push-token', listener as EventListener);
-}
-
-// Order-specific notification helper
+/**
+ * Show order-specific notification
+ */
 export async function showOrderNotification(
   orderId: string,
   orderStatus: OrderStatus,
@@ -405,19 +353,18 @@ export async function showOrderNotification(
   
   const customer = customerName || 'Customer';
   
-  // Generate appropriate title and body based on order status
   switch (orderStatus) {
     case 'order_received':
       title = 'New Order Received!';
-      body = `Order #${orderId} from ${customer} has been received and is awaiting processing.`;
+      body = `Order #${orderId} from ${customer} has been received.`;
       break;
     case 'order_accepted':
       title = 'Order Accepted';
-      body = `Order #${orderId} has been accepted and will be processed shortly.`;
+      body = `Order #${orderId} has been accepted.`;
       break;
     case 'order_rejected':
       title = 'Order Rejected';
-      body = `Order #${orderId} has been rejected. Please check the details.`;
+      body = `Order #${orderId} has been rejected.`;
       break;
     case 'order_cancelled':
       title = 'Order Cancelled';
@@ -425,7 +372,7 @@ export async function showOrderNotification(
       break;
     case 'order_status_update':
       title = 'Order Status Updated';
-      body = `Order #${orderId} status has been updated. Check for latest information.`;
+      body = `Order #${orderId} status has been updated.`;
       break;
     default:
       title = 'Order Notification';
@@ -441,22 +388,29 @@ export async function showOrderNotification(
   });
 }
 
-// Check if notifications are supported and enabled
-export async function checkNotificationStatus(): Promise<{
-  supported: boolean;
-  pushEnabled: boolean;
-  localEnabled: boolean;
-  token?: string;
-}> {
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Get the last received push token
+ */
+export function getLastPushToken(): string | null {
+  return lastToken;
+}
+
+/**
+ * Check notification status
+ */
+export async function checkNotificationStatus(): Promise<NotificationStatus> {
   const platform = Capacitor.getPlatform();
-  const isNative = platform !== 'web';
   
-  if (!isNative) {
+  if (platform === 'web') {
     return {
-      supported: true,
+      supported: 'Notification' in window,
       pushEnabled: false,
-      localEnabled: true, // Web can show in-app notifications
-      token: undefined,
+      localEnabled: Notification.permission === 'granted',
+      token: lastToken || undefined,
     };
   }
 
@@ -471,36 +425,214 @@ export async function checkNotificationStatus(): Promise<{
       token: lastToken || undefined,
     };
   } catch (error) {
-    console.error('[NotificationService] Status check error:', error);
     return {
       supported: false,
       pushEnabled: false,
       localEnabled: false,
-      token: undefined,
+    };
+  }
+}
+
+/**
+ * Check if notifications are enabled
+ */
+export async function areNotificationsEnabled(): Promise<boolean> {
+  try {
+    const platform = Capacitor.getPlatform();
+    
+    if (platform === 'web') {
+      return Notification.permission === 'granted';
+    }
+    
+    const permission = await LocalNotifications.checkPermissions();
+    return (permission as any).display === 'granted';
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Enable notifications manually
+ */
+export async function enableNotificationsManually(): Promise<PermissionResult> {
+  try {
+    const platform = Capacitor.getPlatform();
+    
+    if (platform === 'web') {
+      if (!('Notification' in window)) {
+        return {
+          success: false,
+          alreadyEnabled: false,
+          permissionGranted: false,
+          error: 'Browser does not support notifications'
+        };
+      }
+
+      const currentPermission = Notification.permission;
+      
+      if (currentPermission === 'granted') {
+        await showLocalNotification('✅ Notifications Enabled', 'Notifications are working!');
+        return { success: true, alreadyEnabled: true, permissionGranted: true };
+      }
+      
+      if (currentPermission === 'denied') {
+        return {
+          success: false,
+          alreadyEnabled: false,
+          permissionGranted: false,
+          error: 'Notifications blocked. Please enable in browser settings.'
+        };
+      }
+      
+      const newPermission = await Notification.requestPermission();
+      if (newPermission === 'granted') {
+        await showLocalNotification('🎉 Notifications Enabled!', 'You will now receive notifications.');
+        return { success: true, alreadyEnabled: false, permissionGranted: true };
+      }
+      
+      return {
+        success: false,
+        alreadyEnabled: false,
+        permissionGranted: false,
+        error: 'Permission denied'
+      };
+    }
+
+    // Mobile platform
+    const currentPermission = await LocalNotifications.checkPermissions();
+    
+    if ((currentPermission as any).display === 'granted') {
+      await showLocalNotification('✅ Notifications Enabled', 'Notifications are working!');
+      return { success: true, alreadyEnabled: true, permissionGranted: true };
+    }
+
+    const permissionResult = await LocalNotifications.requestPermissions();
+    
+    if ((permissionResult as any).display === 'granted') {
+      await showLocalNotification('🎉 Notifications Enabled!', 'You will now receive notifications.');
+      return { success: true, alreadyEnabled: false, permissionGranted: true };
+    }
+
+    return {
+      success: false,
+      alreadyEnabled: false,
+      permissionGranted: false,
+      error: 'Permission denied'
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      alreadyEnabled: false,
+      permissionGranted: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Test notification functionality
+ */
+export async function testNotificationFunctionality(): Promise<TestNotificationResult> {
+  try {
+    const hasPermission = await areNotificationsEnabled();
+    
+    if (!hasPermission) {
+      return {
+        success: false,
+        permissionGranted: false,
+        notificationSent: false,
+        error: 'Notifications not enabled'
+      };
+    }
+
+    const result = await showLocalNotification(
+      '🔔 Test Notification',
+      'This is a test to verify notifications are working.',
+      { type: 'test', testId: `test_${Date.now()}` }
+    );
+
+    return {
+      success: result.success,
+      permissionGranted: true,
+      notificationSent: result.success,
+      error: result.error?.message
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      permissionGranted: false,
+      notificationSent: false,
+      error: error instanceof Error ? error.message : 'Test failed'
+    };
+  }
+}
+
+/**
+ * Cleanup and unregister
+ */
+export async function unregister(): Promise<{ success: boolean; error?: NotificationError }> {
+  try {
+    const platform = Capacitor.getPlatform();
+    
+    if (platform !== 'web') {
+      await PushNotifications.removeAllListeners();
+      await LocalNotifications.removeAllListeners();
+      await LocalNotifications.cancel({ notifications: [] });
+    }
+
+    lastToken = null;
+    onInAppCallback = undefined;
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Unregister failed',
+        code: 'UNREGISTER_ERROR'
+      }
     };
   }
 }
 
 // ============================================================================
-// API INTEGRATION FUNCTIONS
+// EVENT HELPERS
 // ============================================================================
 
 /**
- * Get the auth token from your Auth context or local storage
- * This should be implemented to match your authentication system
- * 
- * Note: This is a placeholder - in practice, you should pass the token
- * from your React component where you have access to the Auth context
+ * Listen for notification actions
+ */
+export function onNotificationAction(handler: (payload: NotificationPayload & { actionId?: string }) => void) {
+  const listener = (ev: Event) => handler((ev as CustomEvent).detail);
+  window.addEventListener('notification-action', listener as EventListener);
+  return () => window.removeEventListener('notification-action', listener as EventListener);
+}
+
+/**
+ * Listen for push token updates
+ */
+export function onPushToken(handler: (token: string) => void) {
+  const listener = (ev: Event) => handler((ev as CustomEvent).detail);
+  window.addEventListener('push-token', listener as EventListener);
+  return () => window.removeEventListener('push-token', listener as EventListener);
+}
+
+// ============================================================================
+// API INTEGRATION
+// ============================================================================
+
+/**
+ * Get auth token (helper)
  */
 async function getAuthToken(): Promise<string | null> {
-  // This function is mainly for fallback - prefer passing token explicitly
-  // from components that have access to the Auth context
   console.warn('[NotificationService] getAuthToken called - prefer passing token explicitly');
   return null;
 }
 
 /**
- * Register device with the push notification API
+ * Register device with API
  */
 export async function registerDevice(
   userId: string,
@@ -516,15 +648,14 @@ export async function registerDevice(
       };
     }
 
-    // Use the last FCM token if no device token provided
-    const finalDeviceToken = deviceToken || lastToken || `web_${Date.now()}`;
-    
     const platform = Capacitor.getPlatform();
     const devicePlatform = platform === 'ios' ? 'ios' : platform === 'android' ? 'android' : 'web';
+    
+    const finalDeviceToken = deviceToken || lastToken || `${platform}_${Date.now()}`;
 
-    const registrationData: DeviceRegistration = {
+    const registrationData = {
       userId,
-      deviceToken: finalDeviceToken,
+      token: finalDeviceToken,
       platform: devicePlatform,
       appVersion: '1.0.0'
     };
@@ -549,26 +680,70 @@ export async function registerDevice(
       };
     }
 
-    console.log('[NotificationService] Device registered successfully');
     return { success: true };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown registration error';
-    console.error('[NotificationService] Registration error:', error);
     return {
       success: false,
-      error: { message: errorMessage, code: 'REGISTRATION_ERROR' }
+      error: { 
+        message: error instanceof Error ? error.message : 'Registration error',
+        code: 'REGISTRATION_ERROR'
+      }
     };
   }
 }
 
 /**
- * Create an order through the API (automatically triggers push notifications)
+ * Register for web push notifications
+ */
+export async function registerForWebPushNotifications(
+  userId: string,
+  authToken?: string
+): Promise<WebPushResult> {
+  const platform = Capacitor.getPlatform();
+  
+  if (platform !== 'web') {
+    return {
+      success: false,
+      error: {
+        message: 'This function is only for web platform. Use registerDevice() for mobile.',
+        code: 'WRONG_PLATFORM'
+      }
+    };
+  }
+
+  try {
+    // Initialize if needed
+    if (!lastToken) {
+      await initializeWebNotifications();
+    }
+
+    // Register with backend
+    const result = await registerDevice(userId, lastToken || undefined, authToken);
+    
+    return {
+      success: result.success,
+      token: lastToken || undefined,
+      error: result.error
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Web registration failed',
+        code: 'WEB_REGISTRATION_ERROR'
+      }
+    };
+  }
+}
+
+/**
+ * Create order via API
  */
 export async function createOrder(
   orderData: CreateOrderRequest,
   authToken?: string
-): Promise<{ success: boolean; orderId?: string; error?: NotificationError }> {
+): Promise<OrderResult> {
   try {
     const token = authToken || await getAuthToken();
     if (!token) {
@@ -599,30 +774,29 @@ export async function createOrder(
     }
 
     const result = await response.json();
-    console.log('[NotificationService] Order created successfully:', result);
-    
     return { 
       success: true, 
       orderId: result.orderId || result.id 
     };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown order creation error';
-    console.error('[NotificationService] Order creation error:', error);
     return {
       success: false,
-      error: { message: errorMessage, code: 'ORDER_CREATION_ERROR' }
+      error: { 
+        message: error instanceof Error ? error.message : 'Order creation error',
+        code: 'ORDER_CREATION_ERROR'
+      }
     };
   }
 }
 
 /**
- * Fetch orders for a user (customer or service provider)
+ * Fetch orders from API
  */
 export async function fetchOrders(
   userId: string,
   authToken?: string
-): Promise<{ success: boolean; orders?: any[]; error?: NotificationError }> {
+): Promise<OrdersResult> {
   try {
     const token = authToken || await getAuthToken();
     if (!token) {
@@ -652,27 +826,26 @@ export async function fetchOrders(
     }
 
     const orders = await response.json();
-    console.log('[NotificationService] Orders fetched successfully:', orders);
-    
     return { success: true, orders };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown fetch error';
-    console.error('[NotificationService] Fetch orders error:', error);
     return {
       success: false,
-      error: { message: errorMessage, code: 'FETCH_ORDERS_ERROR' }
+      error: { 
+        message: error instanceof Error ? error.message : 'Fetch error',
+        code: 'FETCH_ORDERS_ERROR'
+      }
     };
   }
 }
 
 /**
- * Test order creation with sample data
+ * Create test order
  */
 export async function createTestOrder(
   serviceProviderId: string,
   authToken?: string
-): Promise<{ success: boolean; orderId?: string; error?: NotificationError }> {
+): Promise<OrderResult> {
   const testOrderData: CreateOrderRequest = {
     serviceProviderId,
     customer: {
@@ -692,7 +865,7 @@ export async function createTestOrder(
     items: [
       {
         name: "Test Service",
-        description: "Test notification service delivery",
+        description: "Test notification service",
         quantity: 1,
         unitPrice: 25.00
       }
@@ -703,7 +876,7 @@ export async function createTestOrder(
 }
 
 /**
- * Helper to create order with dynamic data
+ * Create order with custom data
  */
 export async function createOrderWithData({
   serviceProviderId,
@@ -723,7 +896,7 @@ export async function createOrderWithData({
   serviceDescription: string;
   price: number;
   authToken?: string;
-}): Promise<{ success: boolean; orderId?: string; error?: NotificationError }> {
+}): Promise<OrderResult> {
   
   const orderData: CreateOrderRequest = {
     serviceProviderId,

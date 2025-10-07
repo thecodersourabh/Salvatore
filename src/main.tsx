@@ -6,6 +6,9 @@ import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 
+// Import notification service for initial setup
+import { initNotificationService } from './services/notificationService';
+
 // AG Grid styles
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
@@ -33,8 +36,24 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 // Initialize Capacitor for mobile platforms
 if (Capacitor.isNativePlatform()) {
   console.log('Running on native platform:', Capacitor.getPlatform());
+  
+  // Initialize notification service immediately for first-time installation
+  (async () => {
+    console.log('🔔 MAIN: Initializing notification service for first-time setup...');
+    try {
+      const result = await initNotificationService();
+      if (result.success) {
+        console.log('🔔 MAIN: Notification service initialized successfully');
+      } else {
+        console.warn('🔔 MAIN: Notification initialization failed:', result.error?.message);
+        // Don't block app startup even if notifications fail
+      }
+    } catch (error) {
+      console.error('🔔 MAIN: Notification initialization error:', error);
+      // Don't block app startup even if notifications fail
+    }
+  })();
 }
-
 
 const AppComponent = App;
 

@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonLabel, IonBadge, IonInput, IonButtons, IonIcon } from '@ionic/react';
-import { useNavigate } from 'react-router-dom';
+// Enhanced Firebase Web Push Notification Test Component
+// This component provides a comprehensive testing interface for Firebase push notifications
+
+import React, { useState, useEffect } from 'react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonItem, IonLabel, IonIcon, IonBadge, IonButtons, IonInput, IonText } from '@ionic/react';
 import { close } from 'ionicons/icons';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   showLocalNotification, 
   showOrderNotification, 
@@ -12,9 +16,12 @@ import {
   registerDevice,
   createTestOrder,
   createOrderWithData,
-  fetchOrders
+  fetchOrders,
+  registerForWebPushNotifications,
+  enableNotificationsManually,
+  testNotificationFunctionality,
+  areNotificationsEnabled
 } from '../services/notificationService';
-import { useAuth } from '../context/AuthContext';
 
 const NotificationTestPage: React.FC = () => {
   const { idToken, userContext } = useAuth();
@@ -25,6 +32,18 @@ const NotificationTestPage: React.FC = () => {
   const [authToken, setAuthToken] = useState<string>('');
   const [userId, setUserId] = useState<string>('6abc3caa-a411-49ff-9ff7-c142a002033c');
   const [apiResults, setApiResults] = useState<any>(null);
+  
+  // Firebase Web Push specific state
+  const [firebaseStatus, setFirebaseStatus] = useState<{
+    enabled: boolean;
+    token?: string;
+    isLoading: boolean;
+    error?: string;
+  }>({
+    enabled: false,
+    isLoading: false
+  });
+  const [firebaseResult, setFirebaseResult] = useState<any>(null);
 
   const handleClose = () => {
     navigate('/');
@@ -37,6 +56,9 @@ const NotificationTestPage: React.FC = () => {
     // Get current push token
     const token = getLastPushToken();
     setPushToken(token);
+
+    // Check Firebase notification status
+    checkFirebaseStatus();
 
     // Listen for new tokens
     const unsubscribeToken = onPushToken((token) => {
@@ -56,6 +78,15 @@ const NotificationTestPage: React.FC = () => {
     };
   }, []);
 
+  const checkFirebaseStatus = async () => {
+    try {
+      const enabled = await areNotificationsEnabled();
+      setFirebaseStatus(prev => ({ ...prev, enabled }));
+    } catch (error) {
+      console.error('Error checking Firebase notification status:', error);
+    }
+  };
+
   // Auto-populate auth token from context
   useEffect(() => {
     if (idToken && !authToken) {
@@ -67,12 +98,35 @@ const NotificationTestPage: React.FC = () => {
   }, [idToken, userContext, authToken, userId]);
 
   const testBasicNotification = async () => {
+    console.log('🧪 Testing basic notification...');
     const result = await showLocalNotification(
       'Test Notification',
       'This is a basic test notification',
       { testId: Date.now() }
     );
     console.log('Basic notification result:', result);
+  };
+
+  const testDirectEvent = () => {
+    console.log('🧪 Testing direct event dispatch to notification bell...');
+    
+    const eventDetail = {
+      title: '🧪 Direct Test Notification',
+      body: 'This notification was dispatched directly to test the bell',
+      data: { 
+        testType: 'direct-event',
+        timestamp: Date.now(),
+        source: 'manual-test'
+      }
+    };
+    
+    console.log('🧪 Dispatching event with detail:', eventDetail);
+    
+    window.dispatchEvent(new CustomEvent('local-notification', {
+      detail: eventDetail
+    }));
+    
+    console.log('🧪 Direct event dispatched - check notification bell!');
   };
 
   const testOrderNotification = async (status: 'order_received' | 'order_status_update' | 'order_cancelled' | 'order_accepted' | 'order_rejected') => {
@@ -94,6 +148,102 @@ const NotificationTestPage: React.FC = () => {
   const refreshStatus = async () => {
     const status = await checkNotificationStatus();
     setNotificationStatus(status);
+    await checkFirebaseStatus();
+  };
+
+  // Firebase Web Push handler functions
+  const handleEnableFirebaseNotifications = async () => {
+    setFirebaseStatus(prev => ({ ...prev, isLoading: true, error: undefined }));
+    
+    try {
+      const result = await enableNotificationsManually();
+      
+      setFirebaseResult(result);
+      setFirebaseStatus(prev => ({
+        ...prev,
+        enabled: result.success,
+        isLoading: false,
+        error: result.success ? undefined : result.error
+      }));
+
+      if (result.success) {
+        await showLocalNotification(
+          '🎉 Firebase Notifications Enabled!',
+          'You can now receive Firebase push notifications from Salvatore.',
+          { type: 'firebase-success' }
+        );
+      } else if ((result as any).permissionState === 'denied') {
+        setFirebaseStatus(prev => ({
+          ...prev,
+          error: 'Permission denied - see recovery instructions below'
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setFirebaseStatus(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
+      }));
+    }
+  };
+
+  const handleTestFirebaseNotification = async () => {
+    setFirebaseStatus(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const result = await testNotificationFunctionality();
+      setFirebaseResult(result);
+      
+      setFirebaseStatus(prev => ({ ...prev, isLoading: false }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setFirebaseStatus(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
+      }));
+    }
+  };
+
+  const handleRegisterFirebasePush = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setFirebaseStatus(prev => ({
+        ...prev,
+        error: 'Authentication token required for Firebase registration'
+      }));
+      return;
+    }
+
+    setFirebaseStatus(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const result = await registerForWebPushNotifications(userId, token);
+      setFirebaseResult(result);
+      
+      setFirebaseStatus(prev => ({
+        ...prev,
+        token: result.token,
+        isLoading: false,
+        error: result.success ? undefined : result.error?.message
+      }));
+
+      if (result.success) {
+        await showLocalNotification(
+          '🚀 Firebase Registration Complete!',
+          `Firebase Web Push token registered successfully.`,
+          { type: 'firebase-success', token: result.token }
+        );
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setFirebaseStatus(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
+      }));
+    }
   };
 
   // API Test Functions
@@ -246,6 +396,10 @@ const NotificationTestPage: React.FC = () => {
               Test Basic Notification
             </IonButton>
             
+            <IonButton expand="block" fill="outline" onClick={testDirectEvent} className="ion-margin-bottom" color="secondary">
+              🧪 Test Direct Bell Event
+            </IonButton>
+            
             <div className="mt-4">
               <h4 className="text-sm font-semibold mb-2">Order Status Notifications:</h4>
               <div className="space-y-2">
@@ -307,6 +461,137 @@ const NotificationTestPage: React.FC = () => {
             <NotificationBucketList />
           </IonCardContent>
         </IonCard> */}
+
+        {/* Enhanced Firebase Web Push Demo */}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>🔥 Firebase Web Push Demo</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            {/* Current Status */}
+            <IonItem>
+              <IonLabel>Notifications Enabled</IonLabel>
+              <IonBadge color={firebaseStatus.enabled ? 'success' : 'warning'}>
+                {firebaseStatus.enabled ? 'Yes' : 'No'}
+              </IonBadge>
+            </IonItem>
+
+            {firebaseStatus.token && (
+              <IonItem>
+                <IonLabel>Firebase Token</IonLabel>
+                <IonText style={{ fontSize: '0.8em' }}>
+                  {firebaseStatus.token.substring(0, 20)}...
+                </IonText>
+              </IonItem>
+            )}
+
+            {firebaseStatus.error && (
+              <IonItem color="danger">
+                <IonLabel>
+                  <h3>Error</h3>
+                  <p>{firebaseStatus.error}</p>
+                </IonLabel>
+              </IonItem>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <IonButton 
+                expand="block" 
+                onClick={handleEnableFirebaseNotifications}
+                disabled={firebaseStatus.isLoading}
+                color={firebaseStatus.enabled ? 'success' : 'primary'}
+              >
+                {firebaseStatus.isLoading ? 'Processing...' : (firebaseStatus.enabled ? '✅ Notifications Enabled' : '🔔 Enable Notifications')}
+              </IonButton>
+
+              {firebaseStatus.enabled && (
+                <IonButton 
+                  expand="block" 
+                  fill="outline"
+                  onClick={handleTestFirebaseNotification}
+                  disabled={firebaseStatus.isLoading}
+                >
+                  {firebaseStatus.isLoading ? 'Testing...' : '🧪 Test Notification'}
+                </IonButton>
+              )}
+
+              {firebaseStatus.enabled && (authToken || idToken) && (
+                <IonButton 
+                  expand="block" 
+                  color="secondary"
+                  onClick={handleRegisterFirebasePush}
+                  disabled={firebaseStatus.isLoading || !!firebaseStatus.token}
+                >
+                  {firebaseStatus.isLoading ? 'Registering...' : (firebaseStatus.token ? '✅ Firebase Registered' : '🚀 Register Firebase Push')}
+                </IonButton>
+              )}
+
+              {/* Retry button for denied permissions */}
+              {!firebaseStatus.enabled && firebaseResult && (firebaseResult as any).canRetry && (
+                <IonButton 
+                  expand="block" 
+                  fill="outline"
+                  color="warning"
+                  onClick={handleEnableFirebaseNotifications}
+                  disabled={firebaseStatus.isLoading}
+                >
+                  🔄 Try Again
+                </IonButton>
+              )}
+            </div>
+
+            {/* Permission Denied Instructions */}
+            {firebaseResult && (firebaseResult as any).permissionState === 'denied' && (firebaseResult as any).instructions && (
+              <div style={{ 
+                marginTop: '16px', 
+                padding: '16px', 
+                backgroundColor: '#fff3cd', 
+                borderRadius: '8px', 
+                border: '1px solid #ffeaa7' 
+              }}>
+                <IonText>
+                  <h4 style={{ color: '#856404', marginBottom: '8px' }}>📋 How to Enable Notifications:</h4>
+                  <pre style={{ 
+                    fontSize: '0.85em', 
+                    whiteSpace: 'pre-wrap', 
+                    color: '#856404',
+                    fontFamily: 'inherit',
+                    margin: 0
+                  }}>
+                    {(firebaseResult as any).instructions}
+                  </pre>
+                </IonText>
+              </div>
+            )}
+
+            {/* Last Result Debug Info */}
+            {firebaseResult && (
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <IonText>
+                  <h4>Last Firebase Result:</h4>
+                  <pre style={{ fontSize: '0.75em', overflow: 'auto' }}>
+                    {JSON.stringify(firebaseResult, null, 2)}
+                  </pre>
+                </IonText>
+              </div>
+            )}
+
+            {/* Usage Instructions */}
+            <div style={{ marginTop: '16px' }}>
+              <IonText color="medium">
+                <h4>Quick Firebase Test Steps:</h4>
+                <ol style={{ paddingLeft: '20px', fontSize: '0.9em' }}>
+                  <li>Click "Enable Notifications" (browser will ask for permission)</li>
+                  <li>Click "Test Notification" to verify it works</li>
+                  <li>Click "Register Firebase Push" to connect to your API</li>
+                </ol>
+              </IonText>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+       
 
         {/* API Integration Tests */}
         <IonCard>

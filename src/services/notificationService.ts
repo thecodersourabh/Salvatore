@@ -10,39 +10,27 @@ import type { LocalNotificationSchema } from '@capacitor/local-notifications';
 
 // Import all notification types
 import type {
-  OrderStatus,
   Notification,
   NotificationPayload,
   NotificationCallback,
   NotificationError,
   DeviceRegistration,
-  OrderItem,
-  CustomerInfo,
-  CreateOrderRequest,
   NotificationStatus,
   PermissionResult,
   TestNotificationResult,
-  OrderResult,
-  OrdersResult,
   WebPushResult
 } from '../types/notification';
 
 // Re-export types for backward compatibility
 export type {
-  OrderStatus,
   Notification,
   NotificationPayload,
   NotificationCallback,
   NotificationError,
   DeviceRegistration,
-  OrderItem,
-  CustomerInfo,
-  CreateOrderRequest,
   NotificationStatus,
   PermissionResult,
   TestNotificationResult,
-  OrderResult,
-  OrdersResult,
   WebPushResult
 };
 
@@ -207,31 +195,40 @@ async function handleIncoming(notification: PushNotificationSchema): Promise<voi
     };
 
     // Enhance order notifications
-    const orderType = payload.data?.type as OrderStatus;
-    if (orderType && ['order_received', 'order_status_update', 'order_cancelled', 'order_accepted', 'order_rejected'].includes(orderType)) {
+    const orderType = payload.data?.type as string;
+    if (orderType && ['pending', 'confirmed', 'rejected', 'cancelled', 'processing', 'in-progress', 'ready', 'completed'].includes(orderType)) {
       const orderId = payload.data?.orderId || 'Unknown';
       const customerName = payload.data?.customerName || 'Customer';
       
       switch (orderType) {
-        case 'order_received':
+        case 'pending':
           payload.title = payload.title || '🎯 New Order Received!';
           payload.body = payload.body || `Order #${orderId} from ${customerName}`;
           break;
-        case 'order_accepted':
+        case 'confirmed':
           payload.title = payload.title || '✅ Order Accepted';
           payload.body = payload.body || `Order #${orderId} has been accepted`;
           break;
-        case 'order_rejected':
+        case 'rejected':
           payload.title = payload.title || '❌ Order Rejected';
           payload.body = payload.body || `Order #${orderId} has been rejected`;
           break;
-        case 'order_cancelled':
+        case 'cancelled':
           payload.title = payload.title || '🚫 Order Cancelled';
           payload.body = payload.body || `Order #${orderId} has been cancelled`;
           break;
-        case 'order_status_update':
+        case 'processing':
+        case 'in-progress':
           payload.title = payload.title || '📋 Order Status Updated';
-          payload.body = payload.body || `Order #${orderId} status updated`;
+          payload.body = payload.body || `Order #${orderId} is now ${orderType}`;
+          break;
+        case 'ready':
+          payload.title = payload.title || '🎉 Order Ready';
+          payload.body = payload.body || `Order #${orderId} is ready for pickup/delivery`;
+          break;
+        case 'completed':
+          payload.title = payload.title || '✅ Order Completed';
+          payload.body = payload.body || `Order #${orderId} has been completed`;
           break;
       }
     }
@@ -340,53 +337,7 @@ export async function showLocalNotification(
   }
 }
 
-/**
- * Show order-specific notification
- */
-export async function showOrderNotification(
-  orderId: string,
-  orderStatus: OrderStatus,
-  customerName?: string
-): Promise<{ success: boolean; error?: NotificationError }> {
-  let title: string;
-  let body: string;
-  
-  const customer = customerName || 'Customer';
-  
-  switch (orderStatus) {
-    case 'order_received':
-      title = 'New Order Received!';
-      body = `Order #${orderId} from ${customer} has been received.`;
-      break;
-    case 'order_accepted':
-      title = 'Order Accepted';
-      body = `Order #${orderId} has been accepted.`;
-      break;
-    case 'order_rejected':
-      title = 'Order Rejected';
-      body = `Order #${orderId} has been rejected.`;
-      break;
-    case 'order_cancelled':
-      title = 'Order Cancelled';
-      body = `Order #${orderId} has been cancelled.`;
-      break;
-    case 'order_status_update':
-      title = 'Order Status Updated';
-      body = `Order #${orderId} status has been updated.`;
-      break;
-    default:
-      title = 'Order Notification';
-      body = `Order #${orderId} - Status: ${orderStatus}`;
-  }
-  
-  return await showLocalNotification(title, body, {
-    type: orderStatus,
-    orderId,
-    orderStatus,
-    customerName,
-    timestamp: new Date().toISOString(),
-  });
-}
+
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -737,192 +688,9 @@ export async function registerForWebPushNotifications(
   }
 }
 
-/**
- * Create order via API
- */
-export async function createOrder(
-  orderData: CreateOrderRequest,
-  authToken?: string
-): Promise<OrderResult> {
-  try {
-    const token = authToken || await getAuthToken();
-    if (!token) {
-      return {
-        success: false,
-        error: { message: 'Authentication token required', code: 'AUTH_REQUIRED' }
-      };
-    }
 
-    const response = await fetch(`${API_BASE_URL}/api/orders`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(orderData)
-    });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      return {
-        success: false,
-        error: { 
-          message: `Order creation failed: ${response.status} - ${errorData}`,
-          code: 'ORDER_CREATION_FAILED'
-        }
-      };
-    }
 
-    const result = await response.json();
-    return { 
-      success: true, 
-      orderId: result.orderId || result.id 
-    };
 
-  } catch (error) {
-    return {
-      success: false,
-      error: { 
-        message: error instanceof Error ? error.message : 'Order creation error',
-        code: 'ORDER_CREATION_ERROR'
-      }
-    };
-  }
-}
 
-/**
- * Fetch orders from API
- */
-export async function fetchOrders(
-  userId: string,
-  authToken?: string
-): Promise<OrdersResult> {
-  try {
-    const token = authToken || await getAuthToken();
-    if (!token) {
-      return {
-        success: false,
-        error: { message: 'Authentication token required', code: 'AUTH_REQUIRED' }
-      };
-    }
 
-    const response = await fetch(`${API_BASE_URL}/api/orders?userId=${encodeURIComponent(userId)}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      return {
-        success: false,
-        error: { 
-          message: `Fetch orders failed: ${response.status} - ${errorData}`,
-          code: 'FETCH_ORDERS_FAILED'
-        }
-      };
-    }
-
-    const orders = await response.json();
-    return { success: true, orders };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: { 
-        message: error instanceof Error ? error.message : 'Fetch error',
-        code: 'FETCH_ORDERS_ERROR'
-      }
-    };
-  }
-}
-
-/**
- * Create test order
- */
-export async function createTestOrder(
-  serviceProviderId: string,
-  authToken?: string
-): Promise<OrderResult> {
-  const testOrderData: CreateOrderRequest = {
-    serviceProviderId,
-    customer: {
-      contactInfo: {
-        name: "Test Customer",
-        email: "test.customer@example.com",
-        phone: "+1-555-123-4567"
-      },
-      address: {
-        street: "123 Test Street",
-        city: "Test City",
-        state: "TS",
-        zipCode: "12345",
-        country: "USA"
-      }
-    },
-    items: [
-      {
-        name: "Test Service",
-        description: "Test notification service",
-        quantity: 1,
-        unitPrice: 25.00
-      }
-    ]
-  };
-
-  return await createOrder(testOrderData, authToken);
-}
-
-/**
- * Create order with custom data
- */
-export async function createOrderWithData({
-  serviceProviderId,
-  customerName,
-  customerEmail,
-  customerPhone,
-  serviceName,
-  serviceDescription,
-  price,
-  authToken
-}: {
-  serviceProviderId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  serviceName: string;
-  serviceDescription: string;
-  price: number;
-  authToken?: string;
-}): Promise<OrderResult> {
-  
-  const orderData: CreateOrderRequest = {
-    serviceProviderId,
-    customer: {
-      contactInfo: {
-        name: customerName,
-        email: customerEmail,
-        phone: customerPhone
-      },
-      address: {
-        street: "123 Service Street",
-        city: "Service City", 
-        state: "SC",
-        zipCode: "12345",
-        country: "USA"
-      }
-    },
-    items: [
-      {
-        name: serviceName,
-        description: serviceDescription,
-        quantity: 1,
-        unitPrice: price
-      }
-    ]
-  };
-
-  return await createOrder(orderData, authToken);
-}

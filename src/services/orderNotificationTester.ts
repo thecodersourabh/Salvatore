@@ -6,13 +6,10 @@
  */
 
 import { 
-  showOrderNotification, 
-  registerDevice, 
-  createTestOrder, 
-  createOrderWithData,
-  fetchOrders,
-  type OrderStatus 
+  registerDevice
 } from './notificationService';
+import { orderService } from './orderService';
+import type { OrderStatus } from '../types/order';
 
 // Global testing functions for dev console access
 declare global {
@@ -34,7 +31,7 @@ window.orderTest = {
   showNotification: async (orderId: string, status: OrderStatus, customerName?: string) => {
     console.log(`[OrderTest] Testing ${status} notification for order ${orderId}`);
     try {
-      const result = await showOrderNotification(orderId, status, customerName);
+      const result = await orderService.showOrderNotification(orderId, status, customerName);
       console.log('[OrderTest] Notification result:', result);
     } catch (error) {
       console.error('[OrderTest] Notification error:', error);
@@ -56,7 +53,7 @@ window.orderTest = {
   createOrder: async (serviceProviderId: string, authToken?: string) => {
     console.log('[OrderTest] Testing order creation for provider:', serviceProviderId);
     try {
-      const result = await createTestOrder(serviceProviderId, authToken);
+      const result = await orderService.createTestOrder(serviceProviderId, authToken);
       console.log('[OrderTest] Order creation result:', result);
     } catch (error) {
       console.error('[OrderTest] Order creation error:', error);
@@ -67,7 +64,7 @@ window.orderTest = {
   createCustomOrder: async (data: any, authToken?: string) => {
     console.log('[OrderTest] Testing custom order creation with data:', data);
     try {
-      const result = await createOrderWithData({ ...data, authToken });
+      const result = await orderService.createOrderWithData({ ...data, authToken });
       console.log('[OrderTest] Custom order result:', result);
     } catch (error) {
       console.error('[OrderTest] Custom order error:', error);
@@ -78,7 +75,7 @@ window.orderTest = {
   fetchOrders: async (userId: string, authToken?: string) => {
     console.log('[OrderTest] Testing fetch orders for user:', userId);
     try {
-      const result = await fetchOrders(userId, authToken);
+      const result = await orderService.fetchOrdersViaAPI(userId, authToken);
       console.log('[OrderTest] Fetch orders result:', result);
     } catch (error) {
       console.error('[OrderTest] Fetch orders error:', error);
@@ -91,14 +88,15 @@ window.orderTest = {
     
     const testOrderId = `TEST-${Date.now()}`;
     const statuses: OrderStatus[] = [
-      'order_received',
-      'order_accepted', 
-      'order_rejected',
-      'order_cancelled',
-      'order_status_update'
-    ];
-
-    for (const status of statuses) {
+      'pending',
+      'confirmed',
+      'rejected',
+      'cancelled',
+      'processing',
+      'in-progress',
+      'ready',
+      'completed'
+    ];    for (const status of statuses) {
       try {
         await window.orderTest.showNotification(testOrderId, status, 'Test Customer');
         // Wait 1 second between notifications

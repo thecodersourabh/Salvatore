@@ -1,4 +1,4 @@
-// Enhanced Firebase Web Push Notification Test Component
+
 // This component provides a comprehensive testing interface for Firebase push notifications
 
 import React, { useState, useEffect } from 'react';
@@ -8,20 +8,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   showLocalNotification, 
-  showOrderNotification, 
   checkNotificationStatus,
   onNotificationAction,
   onPushToken,
   getLastPushToken,
   registerDevice,
-  createTestOrder,
-  createOrderWithData,
-  fetchOrders,
   registerForWebPushNotifications,
   enableNotificationsManually,
   testNotificationFunctionality,
   areNotificationsEnabled
 } from '../services/notificationService';
+import { orderService } from '../services/orderService';
 
 const NotificationTestPage: React.FC = () => {
   const { idToken, userContext } = useAuth();
@@ -129,9 +126,9 @@ const NotificationTestPage: React.FC = () => {
     console.log('🧪 Direct event dispatched - check notification bell!');
   };
 
-  const testOrderNotification = async (status: 'order_received' | 'order_status_update' | 'order_cancelled' | 'order_accepted' | 'order_rejected') => {
+  const testOrderNotification = async (status: 'pending' | 'confirmed' | 'rejected' | 'cancelled' | 'processing' | 'in-progress' | 'ready' | 'completed') => {
     const orderId = `ORD-${Date.now()}`;
-    const result = await showOrderNotification(
+    const result = await orderService.showOrderNotification(
       orderId,
       status,
       'John Doe'
@@ -139,11 +136,11 @@ const NotificationTestPage: React.FC = () => {
     console.log('Order notification result:', result);
   };
 
-  const testOrderReceived = () => testOrderNotification('order_received');
-  const testOrderAccepted = () => testOrderNotification('order_accepted');
-  const testOrderRejected = () => testOrderNotification('order_rejected');
-  const testOrderCancelled = () => testOrderNotification('order_cancelled');
-  const testOrderStatusUpdate = () => testOrderNotification('order_status_update');
+  const testOrderReceived = () => testOrderNotification('pending');
+  const testOrderAccepted = () => testOrderNotification('confirmed');
+  const testOrderRejected = () => testOrderNotification('rejected');
+  const testOrderCancelled = () => testOrderNotification('cancelled');
+  const testOrderStatusUpdate = () => testOrderNotification('processing');
 
   const refreshStatus = async () => {
     const status = await checkNotificationStatus();
@@ -272,7 +269,7 @@ const NotificationTestPage: React.FC = () => {
     }
 
     console.log('Testing order creation...');
-    const result = await createTestOrder(userId, token);
+    const result = await orderService.createTestOrder(userId, token);
     setApiResults({ 
       type: 'Create Order',
       result,
@@ -289,7 +286,7 @@ const NotificationTestPage: React.FC = () => {
     }
 
     console.log('Testing custom order creation...');
-    const result = await createOrderWithData({
+    const result = await orderService.createOrderWithData({
       serviceProviderId: userId,
       customerName: 'Jane Smith',
       customerEmail: 'jane.smith@test.com',
@@ -315,7 +312,7 @@ const NotificationTestPage: React.FC = () => {
     }
 
     console.log('Testing fetch orders...');
-    const result = await fetchOrders(userId, token);
+    const result = await orderService.fetchOrdersViaAPI(userId, token);
     setApiResults({ 
       type: 'Fetch Orders',
       result,

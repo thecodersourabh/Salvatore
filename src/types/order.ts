@@ -10,6 +10,57 @@ export type OrderStatus =
 
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 
+// Customer information structure for order creation
+export interface CustomerInfo {
+  contactInfo: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+}
+
+// Order creation request payload
+export interface CreateOrderRequest {
+  serviceProviderId: string;
+  customer: CustomerInfo;
+  items: OrderCreationItem[];
+}
+
+// Order item structure for order creation (different from main OrderItem)
+export interface OrderCreationItem {
+  name: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+// Order creation result
+export interface OrderResult {
+  success: boolean;
+  orderId?: string;
+  error?: {
+    message: string;
+    code?: string;
+  };
+}
+
+// Orders fetch result
+export interface OrdersResult {
+  success: boolean;
+  orders?: any[];
+  error?: {
+    message: string;
+    code?: string;
+  };
+}
+
 export interface Address {
   street: string;
   city: string;

@@ -8,8 +8,15 @@ import {
   OrderAcceptRequest,
   OrderRejectRequest,
   OrderStats,
-  OrderStatus
+  OrderStatus,
+  CreateOrderRequest,
+  OrderResult,
+  OrdersResult
 } from '../types/order';
+import {
+  NotificationError
+} from '../types/notification';
+import { showLocalNotification } from './notificationService';
 
 const ordersUrl = import.meta.env.VITE_API_ORDERS_URL;
 
@@ -286,6 +293,268 @@ class OrderService extends ApiService {
   }>> {
     this.validateUserContext();
     return api.get(`${ordersUrl}/orders/${orderId}/timeline`, this.getConfig(options));
+  }
+
+  // ============================================================================
+  // ORDER NOTIFICATION FUNCTIONS (moved from notificationService)
+  // ============================================================================
+
+  /**
+   * Show order-specific notification
+   */
+  async showOrderNotification(
+    orderId: string,
+    orderStatus: OrderStatus,
+    customerName?: string
+  ): Promise<{ success: boolean; error?: NotificationError }> {
+    let title: string;
+    let body: string;
+    
+    const customer = customerName || 'Customer';
+    
+    switch (orderStatus) {
+      case 'pending':
+        title = 'New Order Received!';
+        body = `Order #${orderId} from ${customer} has been received.`;
+        break;
+      case 'confirmed':
+        title = 'Order Accepted';
+        body = `Order #${orderId} has been accepted.`;
+        break;
+      case 'rejected':
+        title = 'Order Rejected';
+        body = `Order #${orderId} has been rejected.`;
+        break;
+      case 'cancelled':
+        title = 'Order Cancelled';
+        body = `Order #${orderId} has been cancelled.`;
+        break;
+      case 'processing':
+      case 'in-progress':
+        title = 'Order Status Updated';
+        body = `Order #${orderId} is now ${orderStatus}.`;
+        break;
+      case 'ready':
+        title = 'Order Ready';
+        body = `Order #${orderId} is ready for pickup/delivery.`;
+        break;
+      case 'completed':
+        title = 'Order Completed';
+        body = `Order #${orderId} has been completed.`;
+        break;
+      default:
+        title = 'Order Notification';
+        body = `Order #${orderId} - Status: ${orderStatus}`;
+    }
+    
+    return await showLocalNotification(title, body, {
+      type: 'order_notification',
+      orderId,
+      orderStatus,
+      customerName,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+
+  /**
+   * Get auth token (helper)
+   */
+  private async getAuthToken(): Promise<string | null> {
+    console.warn('[OrderService] getAuthToken called - prefer passing token explicitly');
+    return null;
+  }
+
+  /**
+   * Create order via API
+   */
+  async createOrderViaAPI(
+    orderData: CreateOrderRequest,
+    authToken?: string
+  ): Promise<OrderResult> {
+    try {
+      const token = authToken || await this.getAuthToken();
+      if (!token) {
+        return {
+          success: false,
+          error: { message: 'Authentication token required', code: 'AUTH_REQUIRED' }
+        };
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        return {
+          success: false,
+          error: { 
+            message: `Order creation failed: ${response.status} - ${errorData}`,
+            code: 'ORDER_CREATION_FAILED'
+          }
+        };
+      }
+
+      const result = await response.json();
+      return { 
+        success: true, 
+        orderId: result.orderId || result.id 
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: { 
+          message: error instanceof Error ? error.message : 'Order creation error',
+          code: 'ORDER_CREATION_ERROR'
+        }
+      };
+    }
+  }
+
+  /**
+   * Fetch orders from API
+   */
+  async fetchOrdersViaAPI(
+    userId: string,
+    authToken?: string
+  ): Promise<OrdersResult> {
+    try {
+      const token = authToken || await this.getAuthToken();
+      if (!token) {
+        return {
+          success: false,
+          error: { message: 'Authentication token required', code: 'AUTH_REQUIRED' }
+        };
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
+      const response = await fetch(`${API_BASE_URL}/api/orders?userId=${encodeURIComponent(userId)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        return {
+          success: false,
+          error: { 
+            message: `Fetch orders failed: ${response.status} - ${errorData}`,
+            code: 'FETCH_ORDERS_FAILED'
+          }
+        };
+      }
+
+      const orders = await response.json();
+      return { success: true, orders };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: { 
+          message: error instanceof Error ? error.message : 'Fetch error',
+          code: 'FETCH_ORDERS_ERROR'
+        }
+      };
+    }
+  }
+
+  /**
+   * Create test order
+   */
+  async createTestOrder(
+    serviceProviderId: string,
+    authToken?: string
+  ): Promise<OrderResult> {
+    const testOrderData: CreateOrderRequest = {
+      serviceProviderId,
+      customer: {
+        contactInfo: {
+          name: "Test Customer",
+          email: "test.customer@example.com",
+          phone: "+1-555-123-4567"
+        },
+        address: {
+          street: "123 Test Street",
+          city: "Test City",
+          state: "TS",
+          zipCode: "12345",
+          country: "USA"
+        }
+      },
+      items: [
+        {
+          name: "Test Service",
+          description: "Test notification service",
+          quantity: 1,
+          unitPrice: 25.00
+        }
+      ]
+    };
+
+    return await this.createOrderViaAPI(testOrderData, authToken);
+  }
+
+  /**
+   * Create order with custom data
+   */
+  async createOrderWithData({
+    serviceProviderId,
+    customerName,
+    customerEmail,
+    customerPhone,
+    serviceName,
+    serviceDescription,
+    price,
+    authToken
+  }: {
+    serviceProviderId: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    serviceName: string;
+    serviceDescription: string;
+    price: number;
+    authToken?: string;
+  }): Promise<OrderResult> {
+    
+    const orderData: CreateOrderRequest = {
+      serviceProviderId,
+      customer: {
+        contactInfo: {
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone
+        },
+        address: {
+          street: "123 Service Street",
+          city: "Service City", 
+          state: "SC",
+          zipCode: "12345",
+          country: "USA"
+        }
+      },
+      items: [
+        {
+          name: serviceName,
+          description: serviceDescription,
+          quantity: 1,
+          unitPrice: price
+        }
+      ]
+    };
+
+    return await this.createOrderViaAPI(orderData, authToken);
   }
 }
 

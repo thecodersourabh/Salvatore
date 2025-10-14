@@ -1,3 +1,5 @@
+import { api } from './api';
+
 const API_BASE_URL = import.meta.env.VITE_CDN_API_URL;
 const CDN_URL = import.meta.env.VITE_CDN_URL;
 export interface PresignedUrlResponse {
@@ -40,11 +42,16 @@ export class ImageService {
       }
       
       const key = `${username}/${folder}/${filename}`;
-      const response = await fetch(`${API_BASE_URL}/upload/presigned-url?key=${encodeURIComponent(key)}&username=${encodeURIComponent(username)}&contentType=${encodeURIComponent(contentType)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      const presignUrl = `${API_BASE_URL}/upload/presigned-url?key=${encodeURIComponent(key)}&username=${encodeURIComponent(username)}&contentType=${encodeURIComponent(contentType)}`;
+
+      // Log resolved API base and presign URL for easier debugging in WebView/device logs
+      // eslint-disable-next-line no-console
+      console.debug('[ImageService] API_BASE_URL =', API_BASE_URL);
+      // eslint-disable-next-line no-console
+      console.debug('[ImageService] presignUrl =', presignUrl);
+
+      const response = await fetch(presignUrl, {
+        method: 'GET'
       });
       
       const result = await response.json();
@@ -55,7 +62,14 @@ export class ImageService {
       
       return result;
     } catch (error) {
-      console.error('Error getting presigned URL:', error);
+      // Provide extra context so the device/WebView logs show the exact failing URL and env
+      // eslint-disable-next-line no-console
+      console.error('Error getting presigned URL:', {
+        message: error instanceof Error ? error.message : String(error),
+        filename,
+        username,
+        apiBaseUrl: API_BASE_URL
+      });
       throw error;
     }
   }
@@ -111,30 +125,44 @@ export class ImageService {
       if (!API_BASE_URL) {
         throw new Error('API_BASE_URL is not configured. Please check your environment variables.');
       }
-      
       const prefix = `${username}/${folder}/`;
-      const timestamp = new Date().getTime();
-      
-      const response = await fetch(`${API_BASE_URL}/upload/list?prefix=${encodeURIComponent(prefix)}&_t=${timestamp}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
+      // Use cached GET via central api instance. Short TTL by default (30s) to avoid stale lists.
+      try {
+        const fullListUrl = `${API_BASE_URL.replace(/\/$/, '')}/upload/list`;
+        const result = await api.get<ImageListResponse>(fullListUrl, {
+          params: { prefix },
+          cacheOptions: { ttlMs: 30_000 }
+        });
+
+        if (!result || !result.success) {
+          const msg = (result && ((result as any).message || result.error)) || 'Failed to list images';
+          throw new Error(msg as string);
         }
-      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('List API response not OK:', response.status, response.statusText, errorText);
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        return result;
+      } catch (getError) {
+        // Some backends (or misconfigured lambda/API Gateway) return HTML or 404 for GET on this path.
+        // Try a POST fallback with JSON body { prefix } which some servers expect.
+        // Log the original GET failure for debugging.
+        // eslint-disable-next-line no-console
+        console.warn('[ImageService] GET /upload/list failed, attempting POST fallback. Error:', getError);
+
+        try {
+          const fullListUrl = `${API_BASE_URL.replace(/\/$/, '')}/upload/list`;
+          const postResult = await api.post<ImageListResponse>(fullListUrl, { prefix });
+          if (!postResult || !postResult.success) {
+            const msg = (postResult && ((postResult as any).message || postResult.error)) || 'Failed to list images via POST fallback';
+            throw new Error(msg as string);
+          }
+          return postResult;
+        } catch (postError) {
+          // If POST fallback fails too, throw a combined error for easier tracing.
+          const combined = new Error(`Failed to list images. GET error: ${getError instanceof Error ? getError.message : String(getError)}; POST error: ${postError instanceof Error ? postError.message : String(postError)}`);
+          // eslint-disable-next-line no-console
+          console.error('[ImageService] Both GET and POST attempts to /upload/list failed:', combined);
+          throw combined;
+        }
       }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to list images');
-      }
-
-      return result;
     } catch (error) {
       console.error('Error listing images:', error);
       throw error;

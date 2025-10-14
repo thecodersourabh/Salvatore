@@ -1,10 +1,17 @@
 import { ApiError, ApiErrorHandler, ErrorType } from './apiErrorHandler';
+import { cacheService } from './cacheService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface ApiOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, any>;
   body?: any;
+  // Optional caching controls for GET
+  cacheOptions?: {
+    ttlMs?: number; // time-to-live in ms. If omitted, caching disabled.
+    persist?: boolean; // persist to localStorage
+    force?: boolean; // force refresh and ignore cache
+  } | null;
 }
 
 export interface ApiInstance {
@@ -53,8 +60,24 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
       );
     }
 
-    const { params, ...init } = options;
+  const { params, cacheOptions, ...init } = options as any;
     const url = buildUrl(endpoint, params);
+
+    const method = ((init.method as string) || 'GET').toUpperCase();
+    const isGet = method === 'GET';
+
+    // Try cache for GET requests (only when ttl provided)
+    if (isGet && cacheOptions && !cacheOptions.force && cacheOptions.ttlMs) {
+      try {
+        const cacheKey = `GET:${url}`;
+        const cached = cacheService.get<any>(cacheKey);
+        if (cached !== null && cached !== undefined) {
+          return cached as T;
+        }
+      } catch (e) {
+        // ignore cache errors and continue to fetch
+      }
+    }
 
     // Get token from localStorage (Auth0 default)
   let token = (init as any).idToken || localStorage.getItem('auth_id_token') || localStorage.getItem('id_token');
@@ -98,7 +121,18 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
 
 export const api: ApiInstance = {
   get: async <T>(url: string, options: ApiOptions = {}): Promise<T> => {
-    return makeRequest<T>(url, { ...options, method: 'GET' });
+    const opts = { ...options, method: 'GET' } as ApiOptions & { cacheOptions?: any };
+    const result = await makeRequest<T>(url, opts);
+    try {
+      const cacheOpts = (opts as any).cacheOptions;
+      if (cacheOpts && cacheOpts.ttlMs) {
+        const cacheKey = `GET:${buildUrl(url, opts.params)}`;
+        cacheService.set(cacheKey, result, cacheOpts.ttlMs, !!cacheOpts.persist);
+      }
+    } catch (e) {
+      // ignore cache write errors
+    }
+    return result;
   },
   post: async <T>(url: string, data: any, options: ApiOptions = {}): Promise<T> => {
     return makeRequest<T>(url, {

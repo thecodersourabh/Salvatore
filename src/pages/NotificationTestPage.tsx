@@ -19,6 +19,8 @@ import {
   areNotificationsEnabled
 } from '../services/notificationService';
 import { orderService } from '../services/orderService';
+import ProviderSearch from '../components/ProviderSearch';
+import { useCart } from '../context/CartContext';
 
 const NotificationTestPage: React.FC = () => {
   const { idToken, userContext } = useAuth();
@@ -27,7 +29,7 @@ const NotificationTestPage: React.FC = () => {
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [lastNotification, setLastNotification] = useState<any>(null);
   const [authToken, setAuthToken] = useState<string>('');
-  const [userId, setUserId] = useState<string>('6abc3caa-a411-49ff-9ff7-c142a002033c');
+  const [userId, setUserId] = useState<string>('');
   const [apiResults, setApiResults] = useState<any>(null);
   
   // Firebase Web Push specific state
@@ -146,6 +148,50 @@ const NotificationTestPage: React.FC = () => {
     const status = await checkNotificationStatus();
     setNotificationStatus(status);
     await checkFirebaseStatus();
+  };
+
+  // Place order using items in cart
+  const { items } = useCart();
+
+  const placeOrderFromCart = async () => {
+    const token = authToken || idToken;
+    if (!token) {
+      setApiResults({ error: 'Authentication required to place an order' });
+      return;
+    }
+
+    if (!items || items.length === 0) {
+      setApiResults({ error: 'Cart is empty' });
+      return;
+    }
+
+    try {
+      // Build a minimal create order payload using first item provider id encoded in id
+      const item = items[0];
+      const [providerId] = (item.id || '').split('||');
+      const effectiveProviderId = providerId || userContext?.sub || userId;
+
+      const result = await orderService.createOrderWithData({
+        serviceProviderId: effectiveProviderId,
+        customerName: userContext?.name || '',
+        customerEmail: userContext?.email || '',
+        customerPhone: (userContext as any)?.phone || '',
+        serviceName: item.name,
+        serviceDescription: `Order placed via NotificationTestPage`,
+        price: item.price,
+        authToken: token
+      });
+
+      setApiResults({ type: 'Place Order', result, timestamp: new Date().toISOString() });
+
+      if ((result as any)?.success) {
+        // trigger local notification for provider
+        await orderService.showOrderNotification((result as any).orderId || 'ORD-TEST', 'pending', userContext?.name || 'Customer');
+      }
+    } catch (error) {
+      console.error('placeOrderFromCart error:', error);
+      setApiResults({ type: 'Place Order', error: error instanceof Error ? error.message : String(error), timestamp: new Date().toISOString() });
+    }
   };
 
   // Firebase Web Push handler functions
@@ -587,7 +633,22 @@ const NotificationTestPage: React.FC = () => {
             </div>
           </IonCardContent>
         </IonCard>
+        {/* Provider Search + Cart Ordering */}
+        <ProviderSearch />
 
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Place Order from Cart</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <p className="text-sm text-gray-600">You can add services from the search results to the cart and place a quick test order here.</p>
+            <div className="mt-3">
+              <IonButton expand="block" onClick={placeOrderFromCart} disabled={!items || items.length === 0 || !(authToken || idToken)}>
+                Place Order from Cart (Test)
+              </IonButton>
+            </div>
+          </IonCardContent>
+        </IonCard>
        
 
         {/* API Integration Tests */}

@@ -4,26 +4,51 @@ import { NotificationPayload, Notification } from '../services/notificationServi
 // Helper function to convert NotificationPayload to Notification
 function createNotificationFromPayload(payload: NotificationPayload & { actionId?: string }): Notification {
   // Determine notification type and priority from payload
+  try {
+    // eslint-disable-next-line no-console
+    console.debug('NotificationContext: createNotificationFromPayload payload:', payload);
+  } catch (e) {}
   const getNotificationType = (): Notification['type'] => {
-    if (payload.data?.type) {
-      const orderStatuses = ['order_received', 'order_accepted', 'order_rejected', 'order_cancelled', 'order_status_update'];
-      if (orderStatuses.includes(payload.data.type)) return 'order';
+    const titleLower = (typeof payload.title === 'string' ? payload.title : '').toLowerCase();
+    const bodyLower = (typeof payload.body === 'string' ? payload.body : '').toLowerCase();
+
+    // 1) If payload.data.type explicitly mentions order
+    const dataType = (payload.data?.type || '').toString().toLowerCase();
+    if (dataType && dataType.includes('order')) return 'order';
+
+    // 2) If payload.data contains order identifiers
+    if (payload.data && (payload.data.orderId || payload.data.order_id || payload.data.orderNumber || payload.data.order_number)) {
+      return 'order';
     }
-    
-    const titleLower = payload.title?.toLowerCase() || '';
-    if (titleLower.includes('message')) return 'message';
-    if (titleLower.includes('payment')) return 'payment';
-    if (titleLower.includes('review')) return 'review';
+
+    // 3) Inspect title/body for order-related keywords
+    const orderIndicators = ['order', 'order received', 'new order', 'order #', 'order:'];
+    if (orderIndicators.some(k => titleLower.includes(k) || bodyLower.includes(k))) return 'order';
+
+    if (titleLower.includes('message') || bodyLower.includes('message')) return 'message';
+    if (titleLower.includes('payment') || bodyLower.includes('payment')) return 'payment';
+    if (titleLower.includes('review') || bodyLower.includes('review')) return 'review';
     return 'system';
   };
 
   const getPriority = (type: Notification['type']): Notification['priority'] => {
-    if (type === 'order' && payload.data?.type === 'order_received') return 'high';
-    return type === 'order' ? 'medium' : 'low';
+    if (type === 'order') {
+      const dataType = (payload.data?.type || '').toString().toLowerCase();
+      const titleLower = (payload.title || '').toString().toLowerCase();
+      const bodyLower = (payload.body || '').toString().toLowerCase();
+      if (dataType.includes('order_received') || titleLower.includes('order received') || bodyLower.includes('order received') || titleLower.includes('new order') || bodyLower.includes('new order')) return 'high';
+      return 'medium';
+    }
+    return 'low';
   };
 
   const type = getNotificationType();
-  
+  // DEBUG: log chosen type and priority
+  try {
+    // eslint-disable-next-line no-console
+    console.debug('NotificationContext: classified notification type=', type);
+  } catch (e) {}
+
   return {
     id: payload.id?.toString() || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     type,
@@ -54,7 +79,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
-  // Listen for notifications from the service
+  // Set up event listeners once on mount
   useEffect(() => {
     console.log('🔔 NotificationContext: Setting up event listeners...');
     
@@ -97,28 +122,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     
     console.log('🔔 NotificationContext: Event listeners added successfully');
 
-    // Add initial welcome notification on first load
-    const hasWelcomeNotification = notifications.some(n => n.data?.source === 'welcome');
-    if (!hasWelcomeNotification) {
-      const welcomeNotification: Notification = {
-        id: 'welcome-1',
-        type: 'system',
-        title: 'Welcome to Salvatore!',
-        message: 'Your service provider dashboard is ready.',
-        timestamp: new Date(),
-        isRead: false,
-        priority: 'medium',
-        data: { type: 'system', source: 'welcome' }
-      };
-      setNotifications([welcomeNotification]);
-    }
-
     // Cleanup
     return () => {
       window.removeEventListener('local-notification', handleLocalNotification as EventListener);
       window.removeEventListener('notification-action', handleNotificationAction as EventListener);
     };
-  }, [notifications.length]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Mark notification as read
   const markAsRead = (id: string) => {

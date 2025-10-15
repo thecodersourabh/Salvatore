@@ -18,7 +18,9 @@ import {
 } from '../types/notification';
 import { showLocalNotification } from './notificationService';
 
-const ordersUrl = import.meta.env.VITE_API_ORDERS_URL;
+
+// Prefer explicit orders URL from env; fall back to VITE_API_URL + /api, or relative '/api' when not provided
+const ordersUrl = import.meta.env.VITE_API_ORDERS_URL || (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api');
 
 class OrderService extends ApiService {
   constructor() {
@@ -346,14 +348,25 @@ class OrderService extends ApiService {
         title = 'Order Notification';
         body = `Order #${orderId} - Status: ${orderStatus}`;
     }
-    
-    return await showLocalNotification(title, body, {
-      type: 'order_notification',
+    const payload = {
+      type: 'order',
+      subtype: 'order_notification',
       orderId,
       orderStatus,
-      customerName,
-      timestamp: new Date().toISOString(),
-    });
+      customerName: customer,
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      await showLocalNotification(title, body, payload);
+      return { success: true };
+    } catch (err) {
+      console.error('OrderService.showOrderNotification error:', err);
+      return {
+        success: false,
+        error: { message: err instanceof Error ? err.message : String(err), code: 'NOTIFICATION_ERROR' }
+      };
+    }
   }
 
 
@@ -371,7 +384,7 @@ class OrderService extends ApiService {
   async createOrderViaAPI(
     orderData: CreateOrderRequest,
     authToken?: string
-  ): Promise<OrderResult> {
+  ): Promise<OrderResult<any>> {
     try {
       const token = authToken || await this.getAuthToken();
       if (!token) {
@@ -381,8 +394,10 @@ class OrderService extends ApiService {
         };
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
-      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+  // Use configured ordersUrl (VITE_API_ORDERS_URL) when available, otherwise fall back to VITE_API_URL or '/api'
+  const base = ordersUrl;
+  const url = `${base}/orders`;
+  const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -403,9 +418,13 @@ class OrderService extends ApiService {
       }
 
       const result = await response.json();
-      return { 
-        success: true, 
-        orderId: result.orderId || result.id 
+      // Normalize known wrapper shape: { success: true, data: { id, orderNumber, ... } }
+      const normalizedOrderId = result.orderId || result.id || (result.data && (result.data.orderId || result.data.id));
+      const normalizedOrderNumber = (result.data && result.data.orderNumber) || result.orderNumber;
+      return {
+        success: true,
+        orderId: normalizedOrderId || normalizedOrderNumber || undefined,
+        raw: result
       };
 
     } catch (error) {
@@ -435,8 +454,9 @@ class OrderService extends ApiService {
         };
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
-      const response = await fetch(`${API_BASE_URL}/api/orders?userId=${encodeURIComponent(userId)}`, {
+  const base = ordersUrl;
+  const url = `${base}/orders?userId=${encodeURIComponent(userId)}`;
+  const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -475,7 +495,7 @@ class OrderService extends ApiService {
   async createTestOrder(
     serviceProviderId: string,
     authToken?: string
-  ): Promise<OrderResult> {
+  ): Promise<OrderResult<any>> {
     const testOrderData: CreateOrderRequest = {
       serviceProviderId,
       customer: {
@@ -508,26 +528,29 @@ class OrderService extends ApiService {
   /**
    * Create order with custom data
    */
-  async createOrderWithData({
-    serviceProviderId,
-    customerName,
-    customerEmail,
-    customerPhone,
-    serviceName,
-    serviceDescription,
-    price,
-    authToken
-  }: {
-    serviceProviderId: string;
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    serviceName: string;
-    serviceDescription: string;
-    price: number;
-    authToken?: string;
-  }): Promise<OrderResult> {
-    
+  async createOrderWithData(
+    params: {
+      serviceProviderId: string;
+      customerName: string;
+      customerEmail: string;
+      customerPhone: string;
+      serviceName: string;
+      serviceDescription: string;
+      price: number;
+      authToken?: string;
+    }
+  ): Promise<OrderResult<any>> {
+    const {
+      serviceProviderId,
+      customerName,
+      customerEmail,
+      customerPhone,
+      serviceName,
+      serviceDescription,
+      price,
+      authToken
+    } = params;
+
     const orderData: CreateOrderRequest = {
       serviceProviderId,
       customer: {

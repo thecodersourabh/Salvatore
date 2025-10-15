@@ -6,13 +6,16 @@ interface CartItem {
   price: number;
   quantity: number;
   image: string;
+  providerId?: string; // optional provider id for services
+  description?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: Omit<CartItem, 'quantity'> & { providerId?: string; description?: string }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
 }
@@ -38,6 +41,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsCartOpen(true);
   };
 
+  const clearCart = () => setItems([]);
+
   const removeItem = (id: string) => {
     setItems(currentItems => currentItems.filter(item => item.id !== id));
   };
@@ -61,6 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
+        clearCart,
         isCartOpen,
         setIsCartOpen,
       }}

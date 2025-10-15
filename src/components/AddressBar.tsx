@@ -56,6 +56,18 @@ export const AddressBar = () => {
     };
   }, [userId]); // Include userId as dependency to ensure loadAddress has access to current userId
 
+  // Listen for address selection from Cart and update the bar immediately
+  useEffect(() => {
+    const handleAddressSelected = (event: Event) => {
+      const customEvent = event as CustomEvent<any>;
+      const addr = customEvent.detail;
+      if (addr) setAddress(addr);
+    };
+
+    window.addEventListener('addressSelected', handleAddressSelected as EventListener);
+    return () => window.removeEventListener('addressSelected', handleAddressSelected as EventListener);
+  }, []);
+
   if (!userId) return null;
 
   const handleAddressClick = () => {

@@ -42,9 +42,10 @@ export interface OrderCreationItem {
 }
 
 // Order creation result
-export interface OrderResult {
+export interface OrderResult<T> {
   success: boolean;
   orderId?: string;
+  raw?: T;
   error?: {
     message: string;
     code?: string;
@@ -54,7 +55,7 @@ export interface OrderResult {
 // Orders fetch result
 export interface OrdersResult {
   success: boolean;
-  orders?: any[];
+  orders?: Order[];
   error?: {
     message: string;
     code?: string;

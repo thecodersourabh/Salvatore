@@ -30,7 +30,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { cameraOutline } from "ionicons/icons";
 import type { Profile } from "../../types/profile";
-import { Navigation } from "../../components/Navigation";
 import { useAuth } from "../../context/AuthContext";
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
@@ -377,7 +376,6 @@ export const ProfileView = () => {
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex-1">
           <IonPage>
-            <Navigation />
             <IonContent className="ion-content-scroll-host">
               <main className="bg-white dark:bg-gray-900">
                 <div className="max-w-7xl mx-auto px-4">

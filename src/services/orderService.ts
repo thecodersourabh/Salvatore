@@ -538,6 +538,14 @@ class OrderService extends ApiService {
       serviceDescription: string;
       price: number;
       authToken?: string;
+      // optional address to avoid hardcoded values
+      customerAddress?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+      };
     }
   ): Promise<OrderResult<any>> {
     const {
@@ -551,22 +559,24 @@ class OrderService extends ApiService {
       authToken
     } = params;
 
+    const { customerAddress } = params;
+
+    // Build customer object; include address only when provided to avoid hardcoded values
+    const customerObj: any = {
+      contactInfo: {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone
+      }
+    };
+
+    if (customerAddress && Object.keys(customerAddress).length > 0) {
+      customerObj.address = customerAddress;
+    }
+
     const orderData: CreateOrderRequest = {
       serviceProviderId,
-      customer: {
-        contactInfo: {
-          name: customerName,
-          email: customerEmail,
-          phone: customerPhone
-        },
-        address: {
-          street: "123 Service Street",
-          city: "Service City", 
-          state: "SC",
-          zipCode: "12345",
-          country: "USA"
-        }
-      },
+      customer: customerObj,
       items: [
         {
           name: serviceName,

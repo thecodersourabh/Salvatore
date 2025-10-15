@@ -17,7 +17,7 @@ export class StatusBarManager {
       await StatusBar.show();
       
     } catch (error) {
-      console.warn('⚠️ Status bar initialization failed:', error);
+      console.warn('Status bar initialization failed:', error);
     }
   }
 
@@ -36,7 +36,7 @@ export class StatusBarManager {
         await StatusBar.setBackgroundColor({ color: '#e11d48' }); // rose-600
       }
     } catch (error) {
-      console.warn('⚠️ Status bar theme update failed:', error);
+      console.warn('Status bar theme update failed:', error);
     }
   }
 

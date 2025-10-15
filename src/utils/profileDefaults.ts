@@ -67,6 +67,7 @@ export const createDefaultProfile = (
   sector: ServiceSector
 ): User => ({
   id,
+  userName: "",
   name: "",
   description: "",
   avatar: "",
@@ -79,7 +80,11 @@ export const createDefaultProfile = (
     weekends: false,
     hours: { ...defaultHours },
   },
-  serviceAreas: { ...defaultServiceAreas },
+  serviceAreas: {
+    ...defaultServiceAreas,
+    radius: 0,
+    unit: "km"
+  },
   pricing: { ...defaultPricing },
 });
 
@@ -105,6 +110,8 @@ export const ensureRequiredProfileFields = (
     serviceAreas: {
       ...defaultServiceAreas,
       ...profile.serviceAreas,
+      radius: profile.serviceAreas?.radius ?? 0,
+      unit: profile.serviceAreas?.unit ?? "km",
     },
     pricing: {
       ...defaultPricing,

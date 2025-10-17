@@ -35,7 +35,8 @@ export type {
 };
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.salvatore.app';
+
+const PUSH_REGISTER_URL = import.meta.env.VITE_NOTIFICATION_API_URL || '';
 
 let lastToken: string | null = null;
 let onInAppCallback: ((payload: NotificationPayload) => void) | undefined;
@@ -611,21 +612,59 @@ export async function registerDevice(
       appVersion: '1.0.0'
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/push/register`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(registrationData)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
+    // Quick offline check to provide a clearer error when there's no network
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
       return {
         success: false,
-        error: { 
-          message: `Registration failed: ${response.status} - ${errorData}`,
+        error: {
+          message: 'No network connection',
+          code: 'NETWORK_OFFLINE'
+        }
+      };
+    }
+
+  // Attempt registration with the backend. Do not log auth tokens.
+  // Use explicit PUSH_REGISTER_URL if provided, otherwise fall back to API_BASE_URL
+  const url = PUSH_REGISTER_URL || `${PUSH_REGISTER_URL}/api/push/register`;
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(registrationData)
+      });
+    } catch (fetchErr) {
+      // Typical fetch errors include network issues or CORS failures which surface as TypeError: Failed to fetch
+      console.error('[NotificationService] Fetch exception during device registration', fetchErr);
+      return {
+        success: false,
+        error: {
+          message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+          code: 'REGISTRATION_ERROR'
+        }
+      };
+    }
+
+    if (!response.ok) {
+      // Try to extract structured error from response
+      let errorText: string;
+      try {
+        const json = await response.json();
+        errorText = json?.message || JSON.stringify(json);
+      } catch (e) {
+        errorText = await response.text().catch(() => `Status ${response.status}`);
+      }
+
+      console.warn('[NotificationService] Registration failed response:', response.status, errorText);
+
+      return {
+        success: false,
+        error: {
+          message: `Registration failed: ${response.status} - ${errorText}`,
           code: 'REGISTRATION_FAILED'
         }
       };

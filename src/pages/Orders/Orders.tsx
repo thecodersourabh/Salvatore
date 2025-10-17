@@ -308,36 +308,6 @@ export const Orders = () => {
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">My Orders</h1>
           </div>
 
-          {/* Summary Stats */}
-          {/* {state.summary && (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {state.summary?.totalOrders || 0}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Orders</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {state.summary?.pendingOrders || 0}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {state.summary?.completedOrders || 0}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Completed</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-rose-600">
-                  {state.summary?.currency || 'USD'} {(state.summary?.totalRevenue || 0).toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Revenue</p>
-              </div>
-            </div>
-          )} */}
-          
           {/* Search and Filter */}
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="relative flex-1 max-w-md">
@@ -432,42 +402,66 @@ export const Orders = () => {
                 </div>
               </div>
             ) : (
-              state.orders.map((order: Order) => (
-                <div 
-                  key={order.id}
-                  onClick={() => handleOrderClick(order)}
-                  className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                          {order.orderNumber || order.id}
-                        </h3>
-                        <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+              state.orders.map((order: Order) => {
+                // Debug: log timeline and status
+                console.log('Order Timeline:', order.timeline);
+                const currentStatus: OrderStatus = order.timeline && order.timeline.length > 0
+                  ? order.timeline[order.timeline.length - 1].status
+                  : order.status || 'pending';
+                return (
+                  <div 
+                    key={order.id}
+                    onClick={() => handleOrderClick(order)}
+                    className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
+                          {order.items && order.items.length > 0 && order.items[0].images && order.items[0].images.length > 0 ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={order.items[0].images![0]} alt={order.items[0].name || 'Item image'} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center space-x-3">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                              {order.items && order.items.length > 0 ? (order.items[0].name || order.serviceProviderName) : order.serviceProviderName || order.id}
+                            </h3>
+                          </div>
+
+                          <div className="mt-2">
+                            {(() => {
+                              const time = order.updatedAt ? new Date(order.updatedAt).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : null);
+                              return (
+                                <div>
+                                  {time && <p className="text-xs text-gray-400 mt-1">{time}</p>}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm text-gray-500 dark:text-gray-300">
-                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
-                          </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status || 'pending')}`}> 
-                            {(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
-                          </span>
-                        </div>
+
+                      <div className="flex items-center space-x-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentStatus || 'pending')}`}> 
+                          {(currentStatus || 'pending').charAt(0).toUpperCase() + (currentStatus || 'pending').slice(1)}
+                        </span>
+                        {/* Raw status for visibility/debugging */}
+
                         <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            ${((order.pricing as any)?.totalAmount || order.pricing?.total || 0).toFixed(2)}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-300">
-                            {order.items?.length || 0} {(order.items?.length || 0) === 1 ? 'item' : 'items'}
-                          </p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">${((order.pricing as any)?.totalAmount || order.pricing?.total || 0).toFixed(2)}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-300">{order.items?.length || 0} {(order.items?.length || 0) === 1 ? 'item' : 'items'}</p>
                         </div>
+
+                        <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

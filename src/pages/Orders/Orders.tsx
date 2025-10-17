@@ -228,10 +228,17 @@ export const Orders = () => {
 
   // Handle status filter change
   const handleStatusChange = (status: OrderStatus | 'all') => {
+    // Local-only filter: do not call the API when changing the status filter.
     setSelectedStatus(status);
+    // Keep pagination where it is for now, but reset to first page if switching filters
     setCurrentPage(1);
     setShowFilters(false);
   };
+
+  // Derive filtered orders locally based on selectedStatus (client-side filtering)
+  const filteredOrders = selectedStatus === 'all'
+    ? state.orders
+    : state.orders.filter(o => o.status === selectedStatus);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -271,7 +278,7 @@ export const Orders = () => {
     if (isAuthenticated && idToken) {
       fetchOrders();
     }
-  }, [currentPage, selectedStatus, isAuthenticated, idToken]);
+  }, [currentPage, isAuthenticated, idToken]);
 
   // Update search when dependencies change
   useEffect(() => {
@@ -282,7 +289,7 @@ export const Orders = () => {
         fetchOrders({ page: currentPage, limit });
       }
     }
-  }, [selectedStatus, debouncedSearch, searchQuery, currentPage, isAuthenticated, idToken]);
+  }, [debouncedSearch, searchQuery, currentPage, isAuthenticated, idToken]);
 
   // Show loading if not authenticated
   if (!isAuthenticated || !userContext) {
@@ -385,7 +392,7 @@ export const Orders = () => {
         {/* Orders List */}
         {!state.loading && !state.error && (
           <div className="divide-y divide-gray-200">
-            {state.orders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">No orders yet</h3>
@@ -402,7 +409,7 @@ export const Orders = () => {
                 </div>
               </div>
             ) : (
-              state.orders.map((order: Order) => {
+              filteredOrders.map((order: Order) => {
                 // Debug: log timeline and status
                 console.log('Order Timeline:', order.timeline);
                 const currentStatus: OrderStatus = order.timeline && order.timeline.length > 0

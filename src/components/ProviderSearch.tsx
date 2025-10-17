@@ -51,7 +51,28 @@ export const ProviderSearch: React.FC = () => {
       if (query) params.location = query; // server may interpret differently, but useful
       if (maxDistance) params.maxDistance = maxDistance;
 
-  const res = await ServiceProviderService.search(params);
+      // Request a focused set of fields to reduce payload where possible.
+      const fields = [
+        'id',
+        'name',
+        'displayName',
+        'pricing.baseRate as pricingBase',
+        'pricing.base',
+        'baseRate',
+        'rate',
+        'ratings as rating',
+        'avatar as avatar',
+        'image as image',
+        'profileImage as profileImage',
+        'services',
+        'portfolio',
+        'skills',
+        'serviceAreas.locations.city as city',
+        'serviceAreas.radius as radius',
+        'distanceKm'
+      ].join(',');
+
+      const res = await ServiceProviderService.searchProjected(params, fields);
 
   // Normalize common wrapper shapes: array or { items: [], pagination } or { data: [...] }
   const resAny: any = res;
@@ -65,13 +86,24 @@ export const ProviderSearch: React.FC = () => {
 
       // Map to normalized provider objects used by the UI
       const normalized = list.map((p: any) => {
-        const pricingBase = p?.pricing?.baseRate || p?.pricing?.base || p?.baseRate || p?.rate || null;
-        const rating = p?.ratings || p?.rating || p?.averageRating || null;
-        const avatar = p?.avatar || p?.image || p?.profileImage || '';
+        // projected helpers may have produced alias fields or arrays (e.g., city could be ['CityA'])
+        const pricingBase = p?.pricingBase ?? p?.pricing?.baseRate ?? p?.pricing?.base ?? p?.baseRate ?? p?.rate ?? null;
+        const rating = p?.rating ?? p?.ratings ?? p?.averageRating ?? null;
+        const avatar = p?.avatar ?? p?.image ?? p?.profileImage ?? '';
+        // city may be an array (from projection of nested arrays) or string
+        // prefer direct p.city, then first serviceAreas.locations city, then addresses[0].city, finally empty string
+        let city = p?.city ?? (p?.serviceAreas?.locations ? p.serviceAreas.locations[0]?.city : undefined) ?? (p?.addresses && p.addresses[0]?.city) ?? '';
+        if (Array.isArray(city)) city = city.length > 0 ? city[0] : '';
         // derive services from explicit services, portfolio, or skills
-        const services = p.services || p.portfolio || (p.skills ? p.skills.map((s: any) => ({ name: s.name || s })) : []);
-        const city = p?.serviceAreas?.locations?.[0]?.city || p?.city || (p?.addresses && p.addresses[0]?.city) || '';
-        const distanceKm = p.distanceKm || p.serviceAreas?.radius || null;
+        let services: any[] = [];
+        if (Array.isArray(p.services)) services = p.services;
+        else if (Array.isArray(p.portfolio)) services = p.portfolio;
+        else if (Array.isArray(p.skills)) services = p.skills.map((s: any) => ({ name: s.name || s }));
+        else if (p.services && typeof p.services === 'object') {
+          // convert keyed service objects to array
+          services = Object.values(p.services).map((s: any) => (typeof s === 'string' ? { name: s } : s));
+        }
+        const distanceKm = p.distanceKm ?? p.radius ?? p.serviceAreas?.radius ?? null;
 
         return {
           ...p,
@@ -177,7 +209,7 @@ export const ProviderSearch: React.FC = () => {
                       <IonNote>Distance: {provider.distanceKm || Math.round(Math.random() * 50)} km</IonNote>
                     </div>
                     {/* Render top services (if available) */}
-                    {provider.services && provider.services.length > 0 && (
+                    {Array.isArray(provider.services) && provider.services.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {provider.services.slice(0, 3).map((s: any) => (
                           <div key={s.name} className="flex items-center justify-between">

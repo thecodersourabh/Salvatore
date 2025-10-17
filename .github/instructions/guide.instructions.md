@@ -23,3 +23,24 @@ Provide project context and coding guidelines that AI should follow when generat
 	- Ensure all backgrounds, borders, and text are readable in both themes.
 	- Test responsiveness for mobile and web.
 	- Prefer minimal, reusable code and follow the existing theme structure.
+
+---
+API search (brief)
+
+Quick examples for `/api/users/search` and a short note about the client-side projection helper.
+
+- PowerShell (basic):
+
+	Invoke-RestMethod -Method Get -Uri 'http://localhost:3001/api/users/search?fields=availability,pricing'
+
+- PowerShell (location):
+
+	Invoke-RestMethod -Method Get -Uri 'http://localhost:3001/api/users/search?lat=25.33168&lng=74.60723&maxDistance=0.1'
+
+- Node (count by sector):
+
+	node -e "const http=require('http'); const url='http://localhost:3001/api/users/search?sector=Technology'; http.get(url,res=>{let d='';res.on('data',c=>d+=c);res.on('end',()=>{console.log('QUERY sector=Technology TOTAL',JSON.parse(d).pagination.total);});});"
+
+- Client helper (fallback):
+
+	Use `ServiceProviderService.searchProjected(searchParams, fields)` in `src/services/serviceProviderService.ts` to project fields client-side when the server doesn't support `fields`/GraphQL. Prefer server-side projection when available.

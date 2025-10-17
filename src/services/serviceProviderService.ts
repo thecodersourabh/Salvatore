@@ -104,6 +104,84 @@ export class ServiceProviderService {
     return api.get('/api/users/search', { params: searchParams });
   }
 
+  /**
+   * Helper to parse a fields expression into path/alias pairs.
+   * Accepts strings like:
+   *  - 'availability,pricing'
+   *  - 'serviceAreas.locations.coordinates.latitude as latitudes'
+   */
+  private static parseFields(fields: string | string[]) {
+    const list = Array.isArray(fields) ? fields : (typeof fields === 'string' ? fields.split(',') : []);
+    return list.map(f => {
+      const part = f.trim();
+      if (!part) return null;
+      // support 'path.to.prop as alias'
+      const m = part.match(/^(.+?)\s+as\s+(.+)$/i);
+      if (m) {
+        return { path: m[1].trim(), alias: m[2].trim() };
+      }
+      return { path: part, alias: undefined };
+    }).filter(Boolean) as Array<{ path: string; alias?: string }>;
+  }
+
+  /**
+   * Safely get nested value by dot path. If any segment is an array, it will map into an array of values.
+   */
+  private static getByPath(obj: any, path: string): any {
+    if (!obj || !path) return undefined;
+    const parts = path.split('.');
+    let current: any = obj;
+    for (const p of parts) {
+      if (current === undefined || current === null) return undefined;
+      if (Array.isArray(current)) {
+        // map remaining path over the array
+        return current.map(item => ServiceProviderService.getByPath(item, parts.slice(parts.indexOf(p)).join('.')));
+      }
+      current = current[p];
+    }
+    return current;
+  }
+
+  /**
+   * Project an object to the requested fields. Fields may include aliases via 'as'.
+   */
+  private static projectObject<T = any>(obj: any, fields: string | string[]): Partial<T> {
+    const parsed = ServiceProviderService.parseFields(fields);
+    const out: any = {};
+    for (const f of parsed) {
+      const val = ServiceProviderService.getByPath(obj, f.path);
+      const key = f.alias ?? f.path.split('.').pop() ?? f.path;
+      out[key] = val;
+    }
+    return out;
+  }
+
+  /**
+   * Convenience method: call the REST search endpoint and return only the requested projected fields.
+   * This lets callers use complex projection expressions client-side without changing server API.
+   */
+  static async searchProjected(searchParams: {
+    sector?: string;
+    location?: string;
+    skills?: string[];
+    availability?: string;
+    rating?: number;
+    maxDistance?: number;
+    serviceTypes?: string[];
+  }, fields: string | string[]): Promise<Array<Partial<User>>> {
+    const users = await ServiceProviderService.search(searchParams);
+    // Normalize possible wrapper shapes returned by the API
+    let list: any[] = [];
+    if (Array.isArray(users)) list = users;
+    else if (users && Array.isArray((users as any).items)) list = (users as any).items;
+    else if (users && Array.isArray((users as any).data)) list = (users as any).data;
+    else if (users && Array.isArray((users as any).users)) list = (users as any).users;
+    else if (users && (users as any).data && Array.isArray((users as any).data.users)) list = (users as any).data.users;
+    else list = [];
+
+    return list.map(u => ServiceProviderService.projectObject(u, fields));
+  }
+
   static async getServiceRequests(
     email: string,
     status?: ServiceRequest['status']

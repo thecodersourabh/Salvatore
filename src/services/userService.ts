@@ -76,6 +76,22 @@ export class UserService {
     }
   }
 
+    static async searchUsers(params: { email?: string; username?: string; q?: string }, fields?: string[]): Promise<User[]> {
+      try {
+        const qsParts: string[] = [];
+        if (params.email) qsParts.push(`email=${encodeURIComponent(params.email)}`);
+        if (params.username) qsParts.push(`username=${encodeURIComponent(params.username)}`);
+        if (params.q) qsParts.push(`q=${encodeURIComponent(params.q)}`);
+        if (fields && fields.length) qsParts.push(`fields=${encodeURIComponent(fields.join(','))}`);
+        const qs = qsParts.length ? `?${qsParts.join('&')}` : '';
+        const result = await api.get<User[]>(`/api/users/search${qs}`);
+        return result || [];
+      } catch (error) {
+        console.error('UserService.searchUsers failed:', error);
+        return [];
+      }
+    }
+
   static async updateUser(email: string, profile: Partial<User>): Promise<User | null> {
     try {
       const profileData = {

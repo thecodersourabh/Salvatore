@@ -264,14 +264,53 @@ export const ProfileView = () => {
         console.log('Fetching profile for:', username || currentUser?.email);
 
         let userData;
-        if (username) {
-          // Fetch by username for other profiles
-          userData = await UserService.getUserByUsername(username);
-        } else {
-          // Fetch by email for own profile
-          userData = currentUser && currentUser.email ? await UserService.getUserByEmail(currentUser.email) : null;
-        }
+        const requiredFields = [
+          'name',
+          'userName',
+          'avatar',
+          'coverImage',
+          'email',
+          'description',
+          'skills',
+          'rating',
+          'serviceAreas'
+        ];
 
+        if (username) {
+          // 1) Try search by username
+          let results = await UserService.searchUsers({ username }, requiredFields);
+          if (results && results.length) {
+            userData = results[0];
+          }
+
+          // 2) If not found, username might be an encoded email (e.g., contains %40)
+          if (!userData) {
+            try {
+              const decoded = decodeURIComponent(username);
+              if (decoded && decoded.includes('@')) {
+                const emailResults = await UserService.searchUsers({ email: decoded }, requiredFields);
+                if (emailResults && emailResults.length) {
+                  userData = emailResults[0];
+                }
+              }
+            } catch (e) {
+              // ignore decode errors
+            }
+          }
+
+          // 3) Final fallback: use service helper which prefers search then v2 endpoint
+          if (!userData) {
+            userData = await UserService.getUserByUsername(username);
+          }
+        } else {
+          // Fetch by email for own profile using the search endpoint
+          if (currentUser && currentUser.email) {
+            const results = await UserService.searchUsers({ email: currentUser.email }, requiredFields);
+            userData = results && results.length ? results[0] : null;
+          } else {
+            userData = null;
+          }
+        }
         if (userData) {
           // Process avatar URL if it exists
           let avatarUrl = userData.avatar || '';
@@ -382,7 +421,7 @@ export const ProfileView = () => {
                   {/* Profile Header Card */}
                   {/* Profile Completion Alert */}
                   {isOwnProfile && profileCompletion < 100 && (
-                  <div className="mb-6">
+                  <div className="mb-6 mt-16">
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">

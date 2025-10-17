@@ -3,7 +3,7 @@ import { Scissors, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { usePlatform } from "../hooks/usePlatform";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { NotificationBell } from "./ui/NotificationBell";
 import { NotificationPanel } from "./NotificationPanel";
@@ -24,8 +24,15 @@ export function Navigation() {
     ${isIOS ? 'ios-status-bar' : ''}
   `.trim().replace(/\s+/g, ' ');
 
+  useEffect(() => {
+    return () => {};
+  }, []);
+
+  // Keep nav in normal flow but ensure it appears above ion-page content
+  const finalNavClasses = `${navClasses} relative z-20 w-full`;
+
   return (
-    <nav className={navClasses}>
+    <nav className={finalNavClasses}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
@@ -39,27 +46,10 @@ export function Navigation() {
             <Link to="/about" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
               About
             </Link>
-            
           </div>
         </div>
+
         <div className="flex items-center space-x-6">
-          {/* <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-            <Heart className="h-5 w-5" />
-          </button> */}
-          
-         
-          
-          {/* <button
-            onClick={() => setIsCartOpen(true)}
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white relative"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {items.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {items.length}
-              </span>
-            )}
-          </button> */}
           {/* Notification Bell */}
           <NotificationBell
             count={unreadCount}
@@ -67,6 +57,7 @@ export function Navigation() {
             onClick={() => setIsNotificationPanelOpen(true)}
             ariaLabel={`${unreadCount} unread notifications`}
           />
+
           {isAuthenticated ? (
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -75,6 +66,7 @@ export function Navigation() {
               <img
                 src={(user as any)?.picture}
                 className="h-8 w-8 rounded-full border-2 border-rose-200 dark:border-rose-700"
+                alt="avatar"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300 hidden md:inline">{(user as any)?.name}</span>
             </button>
@@ -95,9 +87,10 @@ export function Navigation() {
           />
         </div>
       </div>
-      
+
       {/* Notification Panel */}
       <NotificationPanel />
     </nav>
   );
 }
+

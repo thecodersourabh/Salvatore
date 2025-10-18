@@ -74,7 +74,13 @@ class OrderService extends ApiService {
   // Update order status and details
   async updateOrder(orderId: string, updates: OrderUpdateRequest): Promise<Order> {
     this.validateUserContext();
-    const data = this.addUserContext(updates);
+    const data = this.addUserContext(updates as any);
+
+    // Ensure serviceProviderId is present so server can validate ownership
+    if (!(data as any).serviceProviderId) {
+      (data as any).serviceProviderId = this.userContext!.id;
+    }
+
     return api.put(`${ordersUrl}/orders/${orderId}`, data, this.getConfig());
   }
 
@@ -85,7 +91,22 @@ class OrderService extends ApiService {
       status: 'confirmed' as OrderStatus,
       ...acceptData
     });
-    return api.post(`${ordersUrl}/orders/${orderId}/accept`, data, this.getConfig());
+
+    // Ensure serviceProviderId is present (backend validation requires it). Prefer provided value,
+    // otherwise default to the authenticated user context id.
+    if (!(data as any).serviceProviderId) {
+      (data as any).serviceProviderId = this.userContext!.id;
+    }
+
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/accept`, data, this.getConfig());
+    // If API returns wrapper with success:false, throw with provided message so client can display it
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to accept order';
+      throw new Error(errMsg);
+    }
+
+    // Prefer wrapped data, otherwise return the response directly
+    return response?.data ? response.data as Order : response as Order;
   }
 
   // Reject an order
@@ -95,7 +116,12 @@ class OrderService extends ApiService {
       status: 'rejected' as OrderStatus,
       ...rejectData
     });
-    return api.post(`${ordersUrl}/orders/${orderId}/reject`, data, this.getConfig());
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/reject`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to reject order';
+      throw new Error(errMsg);
+    }
+    return response?.data ? response.data as Order : response as Order;
   }
 
   // Mark order as in progress
@@ -121,7 +147,12 @@ class OrderService extends ApiService {
       status: 'completed' as OrderStatus,
       ...completionData
     });
-    return api.post(`${ordersUrl}/orders/${orderId}/complete`, data, this.getConfig());
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/complete`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to complete order';
+      throw new Error(errMsg);
+    }
+    return response?.data ? response.data as Order : response as Order;
   }
 
   // Request order modification
@@ -282,7 +313,12 @@ class OrderService extends ApiService {
       message,
       attachments
     });
-    return api.post(`${ordersUrl}/orders/${orderId}/message`, data, this.getConfig());
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/message`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to send message';
+      throw new Error(errMsg);
+    }
+    return response;
   }
 
   // Get order timeline/history

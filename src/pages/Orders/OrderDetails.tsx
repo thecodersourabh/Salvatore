@@ -65,6 +65,18 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
     }
   };
 
+  // Quick check whether current user matches order's service provider
+  const ensureOwnerOrProvider = () => {
+    const currentUserId = orderService.getUserContext()?.id;
+    const providerId = order.serviceProviderId as string | undefined;
+    if (!currentUserId) {
+      throw new Error('User authentication required');
+    }
+    if (providerId && currentUserId !== providerId) {
+      throw new Error('Access denied: Cannot access other customers\' orders');
+    }
+  };
+
   // Fetch order timeline
   useEffect(() => {
     if (isOpen && order.id) {
@@ -75,10 +87,17 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
   const fetchOrderTimeline = async () => {
     try {
       ensureUserContext();
+      ensureOwnerOrProvider();
       const timelineData = await orderService.getOrderTimeline(order.id, { idToken: idToken || undefined });
       setTimeline(timelineData);
     } catch (error) {
       console.error('Failed to fetch timeline:', error);
+      // Surface API error message if available
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch timeline.');
+      }
     }
   };
 
@@ -88,11 +107,20 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
 
     try {
       ensureUserContext();
+      ensureOwnerOrProvider();
       let updatedOrder: Order;
 
       switch (newStatus) {
         case 'confirmed':
-          updatedOrder = await orderService.acceptOrder(order.id, additionalData);
+          // Include customer information if available — backend sometimes requires it for accept endpoint
+          const currentUserId = orderService.getUserContext()?.id;
+          updatedOrder = await orderService.acceptOrder(order.id, {
+            customer: (order.customer as any) || undefined,
+            serviceProviderId: order.serviceProviderId,
+            items: (order.items as any) || undefined,
+            userId: currentUserId,
+            ...additionalData
+          });
           break;
         case 'rejected':
           updatedOrder = await orderService.rejectOrder(order.id, {
@@ -117,7 +145,11 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
       fetchOrderTimeline(); // Refresh timeline
     } catch (error) {
       console.error('Failed to update order:', error);
-      setError('Failed to update order status. Please try again.');
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to update order status. Please try again.');
+      } else {
+        setError('Failed to update order status. Please try again.');
+      }
     } finally {
       setLoading(false);
       setShowRejectForm(false);
@@ -137,7 +169,11 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
       // You might want to refresh messages or show success notification
     } catch (error) {
       console.error('Failed to send message:', error);
-      setError('Failed to send message. Please try again.');
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to send message. Please try again.');
+      } else {
+        setError('Failed to send message. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

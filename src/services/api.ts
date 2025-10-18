@@ -101,18 +101,46 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    try {
-      const response = await fetch(url, {
-        headers,
-        ...init,
-      });
-      return await handleResponse<T>(response);
-    } catch (fetchError) {
-      throw new ApiError(
-        'Unable to connect to the server. Please check your internet connection and try again.',
-        undefined,
-        ErrorType.NETWORK
-      );
+    // Simple retry strategy for transient server/network errors
+    const maxRetries = ((init as any).retryCount as number | undefined) ?? (isGet ? 0 : 1);
+    let attempt = 0;
+    while (true) {
+      try {
+        const response = await fetch(url, {
+          headers,
+          ...init,
+        });
+
+        // If successful, parse and return
+        if (response.ok) {
+          return await handleResponse<T>(response);
+        }
+
+        // For server errors, optionally retry
+        if (response.status >= 500 && response.status < 600 && attempt < maxRetries) {
+          attempt++;
+          const backoff = 300 * attempt;
+          await new Promise((res) => setTimeout(res, backoff));
+          continue;
+        }
+
+        // No retry or non-server error - let handler throw the appropriate ApiError
+        await ApiErrorHandler.handleResponseError(response);
+      } catch (fetchError) {
+        // Network-level error - retry if attempts left
+        if (attempt < maxRetries) {
+          attempt++;
+          const backoff = 300 * attempt;
+          await new Promise((res) => setTimeout(res, backoff));
+          continue;
+        }
+
+        throw new ApiError(
+          'Unable to connect to the server. Please check your internet connection and try again.',
+          undefined,
+          ErrorType.NETWORK
+        );
+      }
     }
   } catch (error) {
     throw ApiErrorHandler.handleError(error);

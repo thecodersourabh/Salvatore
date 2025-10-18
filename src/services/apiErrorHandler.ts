@@ -75,13 +75,16 @@ export class ApiErrorHandler {
       case 500:
       case 502:
       case 503:
-      case 504:
+      case 504: {
+        // Prefer any server-provided message, but fall back to a generic server error.
+        const serverMessage = errorData.message || errorData.error || 'Server error. Please try again later.';
         throw new ApiError(
-          'Server error. Please try again later.',
+          serverMessage,
           response.status,
           ErrorType.SERVER,
           errorData.details
         );
+      }
       default:
         throw new ApiError(
           message,

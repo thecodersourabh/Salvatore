@@ -116,6 +116,7 @@ async function submitOrder(
   const payload = {
     serviceProviderId: providerId || '',
     customer,
+    status: 'pending' as const,
     items: items.map(i => ({
       name: i.name,
       description: i.description || i.name,
@@ -159,6 +160,7 @@ async function submitOrder(
       const payloadPerProvider = {
         serviceProviderId: pid,
         customer,
+        status: 'pending' as const,
         items: providerItems.map(i => ({ name: i.name, description: i.description || i.name, quantity: i.quantity, unitPrice: i.price }))
       };
 

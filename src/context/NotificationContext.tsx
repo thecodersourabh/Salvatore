@@ -69,6 +69,7 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
   clearAllNotifications: () => void;
+  updateNotification: (id: string, patch: Partial<Notification>) => void;
   addTestNotification: (type: Notification['type'], title: string, message: string) => void;
   unreadCount: number;
 }
@@ -166,6 +167,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
+  // Update a notification by id (partial patch)
+  const updateNotification = (id: string, patch: Partial<Notification>) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, ...patch } : n));
+  };
+
   // Calculate unread notifications count
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -178,6 +184,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAsRead,
         markAllAsRead,
         deleteNotification,
+        updateNotification,
         clearAllNotifications,
         addTestNotification,
         unreadCount,

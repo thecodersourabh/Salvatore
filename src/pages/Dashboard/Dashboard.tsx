@@ -61,7 +61,7 @@ export const Dashboard = () => {
   const { language } = useLanguage();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showProfileAlert, setShowProfileAlert] = useState(true);
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [networkError, setNetworkError] = useState<{ type: ErrorType; message: string } | null>(null);
 

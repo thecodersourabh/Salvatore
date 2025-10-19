@@ -66,9 +66,9 @@ class OrderService extends ApiService {
   }
 
   // Get order details by ID
-  async getOrderById(orderId: string): Promise<Order> {
+  async getOrderById(orderId: string, options?: { idToken?: string }): Promise<Order> {
     this.validateUserContext();
-    return api.get(`${ordersUrl}/orders/${orderId}`, this.getConfig());
+    return api.get(`${ordersUrl}/orders/${orderId}`, this.getConfig(options));
   }
 
   // Update order status and details

@@ -13,6 +13,7 @@ import {
   Clock
 } from "lucide-react";
 import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
+import StatSkeleton from '../../components/ui/StatSkeleton';
 import { ErrorType } from "../../services/apiErrorHandler";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
@@ -304,7 +305,7 @@ export const Dashboard = () => {
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">Active Orders</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {statsLoading ? 'Loading...' : (activeOrdersCount !== null ? activeOrdersCount : safeActiveOrders)}
+                      {statsLoading ? <StatSkeleton widthClass="w-12" /> : (activeOrdersCount !== null ? activeOrdersCount : safeActiveOrders)}
                     </p>
                   </div>
                   <TrendingUp className="h-6 w-6 text-rose-600" />
@@ -315,7 +316,7 @@ export const Dashboard = () => {
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">Total Earnings</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {statsLoading ? 'Loading...' : formatCurrency(safeRevenueNumber)}
+                      {statsLoading ? <StatSkeleton widthClass="w-20" /> : formatCurrency(safeRevenueNumber)}
                     </p>
                   </div>
                    <DollarSign className="h-6 w-6 text-rose-600" />
@@ -325,7 +326,7 @@ export const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">This Month</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{statsLoading ? 'Loading...' : `${totalCompletedJobs} Jobs`}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{statsLoading ? <StatSkeleton widthClass="w-12" /> : `${totalCompletedJobs} Jobs`}</p>
                   </div>
                   <Calendar className="h-6 w-6 text-rose-600" />
                 </div>
@@ -362,8 +363,15 @@ export const Dashboard = () => {
         </div>
 
         {services.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 py-8">
-            No services found. Please complete your service provider profile.
+          <div className="max-w-xl mx-auto">
+            <div className="card p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No services yet</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">You haven't added any services. Create a listing to start receiving bookings.</p>
+              <div className="flex items-center justify-center gap-3">
+                <button onClick={() => navigate('/profile/edit')} className="button-primary px-4 py-2">Complete Profile</button>
+                <button onClick={() => navigate('/services/new')} className="button-secondary px-4 py-2">Add Service</button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

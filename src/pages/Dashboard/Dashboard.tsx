@@ -318,11 +318,7 @@ export const Dashboard = () => {
                       {statsLoading ? 'Loading...' : formatCurrency(safeRevenueNumber)}
                     </p>
                   </div>
-                  {currency === 'USD' ? (
-                    <DollarSign className="h-6 w-6 text-rose-600" />
-                  ) : (
-                    <div className="text-rose-600 font-semibold text-lg">₹</div>
-                  )}
+                   <DollarSign className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">

@@ -85,6 +85,7 @@ export type Location = {
     avatar: string;
     documents: Documents;
     skills: Skill[];
+    selectedServices?: string[];
     availability: {
       weekdays: boolean;
       weekends: boolean;

@@ -21,7 +21,7 @@ import {
 import { UserService } from '../../services/userService';
 import { ImageService } from '../../services/imageService';
 import { ServiceSector } from '../../types/user';
-import { getSectorSkills } from '../../utils/sectorServices';
+import { getSectorSkills, getSectorServicesWithSkills } from '../../utils/sectorServices';
 import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import { Modal } from '../../components/ui/Modal';
 import { FormDataType, DocumentType, Document, Skill } from './types';
@@ -84,6 +84,8 @@ export const ProfileCompletion = () => {
   };
   const [availableSectors] = useState<string[]>(() => getSectorNames());
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [availableServices, setAvailableServices] = useState<Array<{ name: string; description: string }>>([]);
+  const [serviceSearch, setServiceSearch] = useState<string>('');
 
   // Form state
   const [error, setError] = useState<string | null>(null);
@@ -458,6 +460,8 @@ export const ProfileCompletion = () => {
             sector: userData.sector || prev.sector,
             phoneNumber: userData.phone || prev.phoneNumber,
             skills: userData.skills || prev.skills,
+            // Load selected services from user specializations
+            selectedServices: Array.isArray(userData.specializations) ? userData.specializations : prev.selectedServices,
             availability: userData.availability || prev.availability,
             serviceAreas: {
               ...prev.serviceAreas,
@@ -539,6 +543,22 @@ export const ProfileCompletion = () => {
     }
   }, [currentStep]); // Only run when step changes
 
+  // Update available services when sector changes
+  useEffect(() => {
+    if (formData.sector) {
+      const services = getSectorServicesWithSkills(formData.sector as ServiceSector);
+      setAvailableServices(services.map(s => ({ name: s.name, description: s.description })));
+      // Clear selectedServices if they don't belong to the new sector
+      setFormData(prev => ({
+        ...prev,
+        selectedServices: (prev.selectedServices || []).filter(s => services.some(serv => serv.name === s))
+      }));
+    } else {
+      setAvailableServices([]);
+      setFormData(prev => ({ ...prev, selectedServices: [] }));
+    }
+  }, [formData.sector]);
+
 
   useEffect(() => {
     console.log('Error state changed:', error);
@@ -562,13 +582,28 @@ export const ProfileCompletion = () => {
 
   // Load initial skills based on selected sector
   useEffect(() => {
+    // If user selected specific services (specializations), derive skills from them
+    if (formData.selectedServices && formData.selectedServices.length > 0 && formData.sector) {
+      try {
+        const services = getSectorServicesWithSkills(formData.sector as ServiceSector);
+        const selected = services.filter(svc => (formData.selectedServices || []).includes(svc.name));
+        const skillsSet = new Set<string>();
+        selected.forEach(svc => svc.skills.forEach(sk => skillsSet.add(sk)));
+        setAvailableSkills(Array.from(skillsSet));
+        return;
+      } catch (err) {
+        console.warn('Failed to derive skills from selected specializations', err);
+      }
+    }
+
+    // Fallback: use sector-level skills
     if (formData.sector) {
       const skills = getSectorSkills(formData.sector);
       setAvailableSkills(skills);
     } else {
       setAvailableSkills([]);
     }
-  }, [formData.sector]);
+  }, [formData.sector, formData.selectedServices]);
 
   const handleFieldChange = (field: keyof FormDataType, value: any) => {
     if (field === 'sector') {
@@ -793,7 +828,8 @@ export const ProfileCompletion = () => {
               phone: formData.phoneNumber,
               avatar: avatarUrl,
               // Include skills to preserve them
-              skills: formData.skills
+              skills: formData.skills,
+              specializations: formData.selectedServices || []
             };
             console.log('📤 Submitting basic info data:', dataToUpdate);
             break;
@@ -813,6 +849,7 @@ export const ProfileCompletion = () => {
                 yearsOfExperience: parseInt(String(skill.yearsOfExperience)) || 0
               }))
             };
+            dataToUpdate.specializations = formData.selectedServices || [];
             console.log('📤 Submitting skills data:', dataToUpdate.skills);
             break;
             
@@ -820,7 +857,8 @@ export const ProfileCompletion = () => {
             dataToUpdate = {
               availability: formData.availability,
               // Include skills to preserve them
-              skills: formData.skills
+              skills: formData.skills,
+              specializations: formData.selectedServices || []
             };
             console.log('📤 Submitting availability data:', dataToUpdate);
             break;
@@ -829,7 +867,8 @@ export const ProfileCompletion = () => {
             dataToUpdate = {
               serviceAreas: formData.serviceAreas,
               // Include skills to preserve them
-              skills: formData.skills
+              skills: formData.skills,
+              specializations: formData.selectedServices || []
             };
             console.log('📤 Submitting service areas data:', dataToUpdate);
             break;
@@ -838,7 +877,8 @@ export const ProfileCompletion = () => {
             dataToUpdate = {
               pricing: formData.pricing,
               // Include skills to preserve them
-              skills: formData.skills
+              skills: formData.skills,
+              specializations: formData.selectedServices || []
             };
             console.log('📤 Submitting pricing data:', dataToUpdate);
             break;
@@ -863,6 +903,7 @@ export const ProfileCompletion = () => {
               phone: formData.phoneNumber,
               avatar: finalAvatarUrl,
               skills: formData.skills,
+              specializations: formData.selectedServices || [],
               availability: formData.availability,
               serviceAreas: formData.serviceAreas,
               pricing: formData.pricing,
@@ -890,6 +931,7 @@ export const ProfileCompletion = () => {
           phone: formData.phoneNumber,
           avatar: finalAvatarUrl,
           skills: formData.skills,
+          specializations: formData.selectedServices || [],
           availability: formData.availability,
           serviceAreas: formData.serviceAreas,
           pricing: formData.pricing,
@@ -1177,7 +1219,21 @@ export const ProfileCompletion = () => {
                         required
                         readonly
                       />
-                      
+                       <IonInput
+                        type="tel"
+                        label="Phone Number"
+                        labelPlacement="floating"
+                        value={formData.phoneNumber}
+                        className="w-full"
+                        onIonInput={e => {
+                          const value = e.detail.value!;
+                          if (formData.phoneNumber !== value) {
+                            setFormData(prev => ({ ...prev, phoneNumber: value }));
+                          }
+                        }}
+                        placeholder="Enter your phone number"
+                        required
+                      />
                       <IonSelect
                         value={translateSector(formData.sector)}
                         label="Service Sector"
@@ -1199,22 +1255,52 @@ export const ProfileCompletion = () => {
                           </IonSelectOption>
                         ))}
                       </IonSelect>
+                      {/* Modern multi-select for services belonging to the selected sector */}
+                      <div className="w-full mt-2">
+                        <label className="text-xs text-gray-600 mb-1 inline-block">Services (choose one or more)</label>
+                        <div className="border rounded-md p-2 bg-white">
+                          <input
+                            type="text"
+                            placeholder={availableServices.length ? 'Search services...' : 'Select a sector to see services'}
+                            className="w-full p-2 text-sm border rounded-md focus:outline-none"
+                            value={serviceSearch}
+                            onChange={e => setServiceSearch(e.target.value)}
+                            disabled={availableServices.length === 0}
+                          />
+
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {availableServices
+                              .filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
+                              .map(s => {
+                                const selected = (formData.selectedServices || []).includes(s.name);
+                                return (
+                                  <button
+                                    key={s.name}
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData(prev => {
+                                        const current = prev.selectedServices || [];
+                                        if (current.includes(s.name)) {
+                                          return { ...prev, selectedServices: current.filter(x => x !== s.name) };
+                                        }
+                                        return { ...prev, selectedServices: [...current, s.name] };
+                                      });
+                                    }}
+                                    className={`px-3 py-1.5 text-sm rounded-full transition-colors border ${selected ? 'bg-rose-600 text-white border-rose-600' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}`}
+                                    title={s.description}
+                                  >
+                                    {s.name}
+                                  </button>
+                                );
+                              })}
+                          </div>
+                          {availableServices.length > 0 && (formData.selectedServices || []).length === 0 && (
+                            <div className="mt-2 text-xs text-gray-400">No services selected</div>
+                          )}
+                        </div>
+                      </div>
                     
-                      <IonInput
-                        type="tel"
-                        label="Phone Number"
-                        labelPlacement="floating"
-                        value={formData.phoneNumber}
-                        className="w-full"
-                        onIonInput={e => {
-                          const value = e.detail.value!;
-                          if (formData.phoneNumber !== value) {
-                            setFormData(prev => ({ ...prev, phoneNumber: value }));
-                          }
-                        }}
-                        placeholder="Enter your phone number"
-                        required
-                      />
+                     
                     </div>
                   </div>
                 </div>

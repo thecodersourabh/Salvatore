@@ -16,6 +16,8 @@ import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
 import { ErrorType } from "../../services/apiErrorHandler";
 import { ServiceCard } from "../../components/ServiceCard";
 import { UserService } from "../../services";
+import { orderService } from "../../services/orderService";
+import { OrderStats } from "../../types/order";
 import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import {useLanguage } from '../../context/LanguageContext';
 import { ServiceSector, User } from "../../types/user";
@@ -64,6 +66,9 @@ export const Dashboard = () => {
   const [showProfileAlert, setShowProfileAlert] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [networkError, setNetworkError] = useState<{ type: ErrorType; message: string } | null>(null);
+  const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [activeOrdersCount, setActiveOrdersCount] = useState<number | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -142,6 +147,74 @@ export const Dashboard = () => {
     fetchUserProfile();
   }, [user]);
 
+  // Fetch provider order stats (status wise) for dashboard metrics
+  useEffect(() => {
+    const loadOrderStats = async () => {
+      if (!user) {
+        setStatsLoading(false);
+        return;
+      }
+
+      try {
+        // Map auth0 sub to internal user id if present (same pattern used elsewhere)
+        const mappedId = (user as any)?.sub ? (localStorage.getItem(`auth0_${(user as any).sub}`) || (user as any).sub) : (user as any).id || '';
+        if (!mappedId) {
+          setStatsLoading(false);
+          return;
+        }
+
+        orderService.setUserContext({ id: mappedId, email: user.email || mappedId, name: user.name });
+
+        // Get stats (default period = month)
+        const stats = await orderService.getOrderStats('month');
+        setOrderStats(stats);
+        // Compute active orders from available stats fields when possible
+        if (typeof stats?.totalOrders === 'number') {
+          const total = stats.totalOrders || 0;
+          const completed = typeof stats.completedOrders === 'number' ? stats.completedOrders : 0;
+          const cancelled = typeof stats.cancelledOrders === 'number' ? stats.cancelledOrders : 0;
+          // Active = total - completed - cancelled (includes pending, confirmed, in-progress)
+          const activeFromTotals = Math.max(0, total - completed - cancelled);
+          setActiveOrdersCount(activeFromTotals);
+        } else if (Array.isArray(stats?.statusBreakdown) && stats.statusBreakdown.length > 0) {
+          const computedActive = stats.statusBreakdown
+            .filter(s => ['pending', 'confirmed', 'in-progress'].includes(s.status))
+            .reduce((sum, s) => sum + (s.count || 0), 0);
+          setActiveOrdersCount(computedActive);
+        } else {
+          // Fallback: fetch provider orders with those statuses and read pagination.total
+          try {
+            // Request a larger page size to ensure pagination metadata is returned
+            const listResp = await orderService.getOrders({ status: ['pending', 'confirmed', 'in-progress'], page: 1, limit: 100 });
+            const totalFromPagination = listResp?.pagination?.total;
+            const ordersArrayLen = Array.isArray(listResp?.orders) ? listResp.orders.length : 0;
+            let total = 0;
+            if (typeof totalFromPagination === 'number') {
+              total = totalFromPagination;
+            } else if (ordersArrayLen > 0) {
+              // If pagination not present, use returned array length
+              total = ordersArrayLen;
+            }
+            // Extra safety: if pagination says 1 but the array contains more, prefer array length
+            if (total === 1 && ordersArrayLen > 1) total = ordersArrayLen;
+            setActiveOrdersCount(total);
+          } catch (e) {
+            console.warn('[Dashboard] Failed to compute active orders via fallback list', e);
+            setActiveOrdersCount(null);
+          }
+        }
+        setNetworkError(null);
+      } catch (err) {
+        console.error('Failed to load order stats:', err);
+        setNetworkError({ type: ErrorType.NETWORK, message: 'Unable to load order metrics.' });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadOrderStats();
+  }, [user]);
+
   const toggleServiceStatus = (serviceId: number): void => {
     setServices(prev => 
       prev.map(service => 
@@ -157,6 +230,16 @@ export const Dashboard = () => {
     (sum, service) => sum + (service.totalJobs * 45),
     0
   );
+
+  // Count completed jobs: prefer backend-provided stats when available
+  const totalCompletedJobs = orderStats && typeof orderStats.completedOrders === 'number'
+    ? orderStats.completedOrders
+    : activeServices.reduce((sum, s) => sum + (s.totalJobs || 0), 0);
+
+  // Use orderStats when available for dashboard metrics (values used directly in JSX)
+  const hasNumericStats = !!orderStats && typeof orderStats.totalRevenue === 'number' && typeof orderStats.pendingOrders === 'number' && typeof orderStats.inProgressOrders === 'number';
+  const safeActiveOrders = hasNumericStats ? (orderStats!.pendingOrders + orderStats!.inProgressOrders) : activeServices.length;
+  const safeRevenueNumber = hasNumericStats ? orderStats!.totalRevenue : totalEarnings || 0;
 
   if (loading) {
     return (
@@ -218,7 +301,9 @@ export const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">Active Orders</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{activeServices.length}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {statsLoading ? 'Loading...' : (activeOrdersCount !== null ? activeOrdersCount : safeActiveOrders)}
+                    </p>
                   </div>
                   <TrendingUp className="h-6 w-6 text-rose-600" />
                 </div>
@@ -227,7 +312,9 @@ export const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">Total Earnings</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">${totalEarnings.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {statsLoading ? 'Loading...' : `$${safeRevenueNumber.toLocaleString()}`}
+                    </p>
                   </div>
                   <DollarSign className="h-6 w-6 text-rose-600" />
                 </div>
@@ -236,7 +323,7 @@ export const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">This Month</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">23 Jobs</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{statsLoading ? 'Loading...' : `${totalCompletedJobs} Jobs`}</p>
                   </div>
                   <Calendar className="h-6 w-6 text-rose-600" />
                 </div>

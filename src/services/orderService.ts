@@ -179,7 +179,27 @@ class OrderService extends ApiService {
       ...this.getConfig(),
       params: { period }
     };
-    return api.get(`${ordersUrl}/orders/provider/${providerId}/stats`, config);
+    const response: any = await api.get(`${ordersUrl}/orders/provider/${providerId}/stats`, config);
+
+    // Normalize possible API wrapper
+    const raw = response?.data && response?.success ? response.data : response;
+
+    // Provide safe defaults so UI doesn't receive undefined values for new providers
+    const normalized: OrderStats = {
+      totalOrders: typeof raw?.totalOrders === 'number' ? raw.totalOrders : (raw?.summary?.totalOrders ?? 0),
+      pendingOrders: typeof raw?.pendingOrders === 'number' ? raw.pendingOrders : (raw?.summary?.pendingOrders ?? 0),
+      inProgressOrders: typeof raw?.inProgressOrders === 'number' ? raw.inProgressOrders : (raw?.summary?.inProgressOrders ?? 0),
+      completedOrders: typeof raw?.completedOrders === 'number' ? raw.completedOrders : (raw?.summary?.completedOrders ?? 0),
+      cancelledOrders: typeof raw?.cancelledOrders === 'number' ? raw.cancelledOrders : (raw?.summary?.cancelledOrders ?? 0),
+      totalRevenue: typeof raw?.totalRevenue === 'number' ? raw.totalRevenue : (raw?.summary?.totalRevenue ?? 0),
+      averageOrderValue: typeof raw?.averageOrderValue === 'number' ? raw.averageOrderValue : 0,
+      currency: raw?.currency || (raw?.summary && raw.summary.currency) || 'USD',
+      period: raw?.period || { start: '', end: '' },
+      statusBreakdown: Array.isArray(raw?.statusBreakdown) ? raw.statusBreakdown : [],
+      revenueBreakdown: Array.isArray(raw?.revenueBreakdown) ? raw.revenueBreakdown : []
+    };
+
+    return normalized;
   }
 
   // Get recent orders (last 10)

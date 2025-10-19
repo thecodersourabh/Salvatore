@@ -112,7 +112,7 @@ async function submitOrder(
     return { success: false, error: 'Orders can only contain items from one service provider at a time.' };
   }
 
-  const providerId = providerIds[0] || items[0].providerId || '';
+  const providerId = localStorage.getItem('x-user-id');
   const payload = {
     serviceProviderId: providerId || '',
     customer,
@@ -158,7 +158,7 @@ async function submitOrder(
     for (const pid of providerIdsKeys) {
       const providerItems = grouped[pid];
       const payloadPerProvider = {
-        serviceProviderId: pid,
+        serviceProviderId: providerId || '', //will change to pid later only for testing later map with pid
         customer,
         status: 'pending' as const,
         items: providerItems.map(i => ({ name: i.name, description: i.description || i.name, quantity: i.quantity, unitPrice: i.price }))

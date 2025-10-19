@@ -23,7 +23,7 @@ import ProviderSearch from '../components/ProviderSearch';
 import { useCart } from '../context/CartContext';
 
 const NotificationTestPage: React.FC = () => {
-  const { idToken, userContext } = useAuth();
+  const { idToken, userContext, apiUser } = useAuth();
   const navigate = useNavigate();
   const [notificationStatus, setNotificationStatus] = useState<any>(null);
   const [pushToken, setPushToken] = useState<string | null>(null);
@@ -91,8 +91,9 @@ const NotificationTestPage: React.FC = () => {
     if (idToken && !authToken) {
       setAuthToken(idToken);
     }
-    if (userContext?.sub && userId === '6abc3caa-a411-49ff-9ff7-c142a002033c') {
-      setUserId(userContext.sub);
+    if (userContext?.sub) {
+      let providerId = localStorage.getItem('x-user-id');
+      setUserId(providerId ?? '');
     }
   }, [idToken, userContext, authToken, userId]);
 
@@ -168,8 +169,8 @@ const NotificationTestPage: React.FC = () => {
     try {
       // Build a minimal create order payload using first item provider id encoded in id
       const item = items[0];
-      const [providerId] = (item.id || '').split('||');
-      const effectiveProviderId = providerId || userContext?.sub || userId;
+      const effectiveProviderId =  userId;
+      console.log('Using provider ID for order:', effectiveProviderId);
 
       const result = await orderService.createOrderWithData({
         serviceProviderId: effectiveProviderId,

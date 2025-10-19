@@ -22,6 +22,7 @@ import {useSectorTranslation } from '../../hooks/useSectorTranslation';
 import {useLanguage } from '../../context/LanguageContext';
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
+import { useCurrency } from '../../context/CurrencyContext';
 
 interface ServiceItem {
   id: number;
@@ -61,6 +62,7 @@ export const Dashboard = () => {
   const { getCurrentSectors, translateSector } = useSectorTranslation();
   const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
   const { language } = useLanguage();
+  const { formatCurrency, currency } = useCurrency();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(false);
@@ -313,10 +315,14 @@ export const Dashboard = () => {
                   <div>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">Total Earnings</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {statsLoading ? 'Loading...' : `$${safeRevenueNumber.toLocaleString()}`}
+                      {statsLoading ? 'Loading...' : formatCurrency(safeRevenueNumber)}
                     </p>
                   </div>
-                  <DollarSign className="h-6 w-6 text-rose-600" />
+                  {currency === 'USD' ? (
+                    <DollarSign className="h-6 w-6 text-rose-600" />
+                  ) : (
+                    <div className="text-rose-600 font-semibold text-lg">₹</div>
+                  )}
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -413,9 +419,13 @@ export const Dashboard = () => {
             </div>
             
             <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow cursor-pointer">
-              <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <DollarSign className="h-6 w-6 text-rose-600" />
-              </div>
+                <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                  {currency === 'USD' ? (
+                    <DollarSign className="h-6 w-6 text-rose-600" />
+                  ) : (
+                    <div className="text-rose-600 font-semibold text-lg">₹</div>
+                  )}
+                </div>
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Payments</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-xs">Manage your earnings and payments</p>
             </div>

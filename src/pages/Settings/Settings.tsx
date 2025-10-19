@@ -3,11 +3,13 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { translations } from '../../utils/translations';
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
+import { useCurrency } from '../../context/CurrencyContext';
 
 export const Settings: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const t = translations[language];
+  const { currency, setCurrency } = useCurrency();
  
   return (
     <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">
@@ -40,6 +42,17 @@ export const Settings: React.FC = () => {
                   >
                     <IonSelectOption value="light">{t.settings.themeLight}</IonSelectOption>
                     <IonSelectOption value="dark">{t.settings.themeDark}</IonSelectOption>
+                  </IonSelect>
+
+                  {/* Currency Selector */}
+                  <IonSelect
+                    label="Currency"
+                    value={currency}
+                    className="w-full mt-2"
+                    onIonChange={e => setCurrency(e.detail.value as 'USD' | 'INR')}
+                  >
+                    <IonSelectOption value="USD">USD - $</IonSelectOption>
+                    <IonSelectOption value="INR">INR - ₹</IonSelectOption>
                   </IonSelect>
               </IonList>
             </div>

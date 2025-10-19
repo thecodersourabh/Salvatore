@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { setupIonicReact } from '@ionic/react';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 
 // Import notification service for initial setup
@@ -60,7 +61,9 @@ const AppComponent = App;
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <AppComponent />
+      <CurrencyProvider>
+        <AppComponent />
+      </CurrencyProvider>
     </ErrorBoundary>
   </StrictMode>
 );

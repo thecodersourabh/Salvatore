@@ -137,6 +137,71 @@ export const Home = () => {
                 All service providers are verified and background-checked for your safety and peace of mind.
               </p>
             </div>
+
+            {/* Split trusted-professional attributes into separate cards */}
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Skills & Expertise</h3>
+              <p className="text-gray-600 leading-relaxed">Significant experience working in relevant professional fields.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-rose-500 to-rose-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Star className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Quality Deliveries</h3>
+              <p className="text-gray-600 leading-relaxed">Impressive previous work, portfolio, and notable clients.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Work & Education</h3>
+              <p className="text-gray-600 leading-relaxed">Relevant work experience and accredited expertise.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Client Satisfaction</h3>
+              <p className="text-gray-600 leading-relaxed">Track record of positive client feedback.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Smartphone className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Active Digital Presence</h3>
+              <p className="text-gray-600 leading-relaxed">Up-to-date profiles across relevant networks following platform guidelines.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Language Proficiency</h3>
+              <p className="text-gray-600 leading-relaxed">Fluent communication in English and/or Hindi.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-rose-400 to-rose-500 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Zap className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">High Motivation</h3>
+              <p className="text-gray-600 leading-relaxed">Professionally motivated to work with businesses and deliver results.</p>
+            </div>
+
+            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Star className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Performance Metrics</h3>
+              <p className="text-gray-600 leading-relaxed">Top ratings and reviews demonstrating consistent excellence.</p>
+            </div>
             
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
               <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">

@@ -51,8 +51,8 @@ export const Settings: React.FC = () => {
                     className="w-full mt-2"
                     onIonChange={e => setCurrency(e.detail.value as 'USD' | 'INR')}
                   >
-                    <IonSelectOption value="USD">USD - $</IonSelectOption>
                     <IonSelectOption value="INR">INR - ₹</IonSelectOption>
+                    <IonSelectOption value="USD">USD - $</IonSelectOption>
                   </IonSelect>
               </IonList>
             </div>

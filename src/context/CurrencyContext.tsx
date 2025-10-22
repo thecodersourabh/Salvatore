@@ -20,7 +20,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       // ignore
     }
-    return 'USD';
+    return 'INR';
   });
 
   useEffect(() => {

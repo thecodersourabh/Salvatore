@@ -77,19 +77,3 @@ export class ApiService {
 }
 
 export const apiService = ApiService.getInstance();
-
-// Example usage in a specific service:
-/*
-class PaymentService extends ApiService {
-  async getTransactions() {
-    this.validateUserContext();
-    return api.get('/transactions', this.getConfig());
-  }
-
-  async savePaymentMethod(data: PaymentMethodData) {
-    this.validateUserContext();
-    const dataWithUser = this.addUserContext(data);
-    return api.post('/payment-methods', dataWithUser, this.getConfig());
-  }
-}
-*/

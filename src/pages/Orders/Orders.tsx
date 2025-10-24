@@ -410,8 +410,6 @@ export const Orders = () => {
               </div>
             ) : (
               filteredOrders.map((order: Order) => {
-                // Debug: log timeline and status
-                console.log('Order Timeline:', order.timeline);
                 const currentStatus: OrderStatus = order.timeline && order.timeline.length > 0
                   ? order.timeline[order.timeline.length - 1].status
                   : order.status || 'pending';

@@ -81,7 +81,16 @@ class OrderService extends ApiService {
       (data as any).serviceProviderId = this.userContext!.id;
     }
 
-    return api.put(`${ordersUrl}/orders/${orderId}`, data, this.getConfig());
+    const response: any = await api.put(`${ordersUrl}/orders/${orderId}`, data, this.getConfig());
+
+    // If API returns wrapper with success:false, throw with provided message so client can display it
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to update order';
+      throw new Error(errMsg);
+    }
+
+    // Prefer wrapped data, otherwise return the response directly
+    return response?.data ? response.data as Order : response as Order;
   }
 
   // Accept an order
@@ -147,11 +156,17 @@ class OrderService extends ApiService {
       status: 'completed' as OrderStatus,
       ...completionData
     });
+    // Ensure serviceProviderId is present for server-side validation
+    if (!(data as any).serviceProviderId) {
+      (data as any).serviceProviderId = this.userContext!.id;
+    }
+
     const response: any = await api.post(`${ordersUrl}/orders/${orderId}/complete`, data, this.getConfig());
     if (response && typeof response === 'object' && 'success' in response && response.success === false) {
       const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to complete order';
       throw new Error(errMsg);
     }
+
     return response?.data ? response.data as Order : response as Order;
   }
 

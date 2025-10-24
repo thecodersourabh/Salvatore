@@ -109,11 +109,11 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
       ensureUserContext();
       ensureOwnerOrProvider();
       let updatedOrder: Order;
-
+      console.log('Updating order status to:', newStatus);
+      const currentUserId = orderService.getUserContext()?.id;
       switch (newStatus) {
         case 'confirmed':
           // Include customer information if available — backend sometimes requires it for accept endpoint
-          const currentUserId = orderService.getUserContext()?.id;
           updatedOrder = await orderService.acceptOrder(order.id, {
             customer: (order.customer as any) || undefined,
             serviceProviderId: order.serviceProviderId,
@@ -130,9 +130,17 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           break;
         case 'in-progress':
           updatedOrder = await orderService.startOrder(order.id, additionalData?.notes);
+          console.log('Order started:', updatedOrder);
           break;
         case 'completed':
-          updatedOrder = await orderService.completeOrder(order.id, additionalData);
+          // Some backends require customer and related fields for the complete endpoint
+          updatedOrder = await orderService.completeOrder(order.id, {
+            customer: (order.customer as any) || undefined,
+            serviceProviderId: order.serviceProviderId,
+            items: (order.items as any) || undefined,
+            userId: currentUserId,
+            ...additionalData
+          });
           break;
         default:
           updatedOrder = await orderService.updateOrder(order.id, {

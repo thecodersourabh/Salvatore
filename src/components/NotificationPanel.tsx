@@ -218,7 +218,7 @@ export const NotificationPanel = () => {
         ${isNative ? 'pt-safe' : ''}
       `}>
         {/* Modern Header */}
-        <div className="relative p-6 bg-gradient-to-r from-rose-600 to-red-600 text-white">
+        <div className="relative px-4 py-3 bg-gradient-to-r from-rose-600 to-red-600 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">

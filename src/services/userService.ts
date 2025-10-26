@@ -84,13 +84,35 @@ export class UserService {
         if (params.q) qsParts.push(`q=${encodeURIComponent(params.q)}`);
         if (fields && fields.length) qsParts.push(`fields=${encodeURIComponent(fields.join(','))}`);
         const qs = qsParts.length ? `?${qsParts.join('&')}` : '';
-        const result = await api.get<User[]>(`/api/users/search${qs}`);
-        return result || [];
+        const result = await api.get<any>(`/api/users/search${qs}`);
+        // Handle both direct array and paginated response formats
+        if (result?.items) {
+          return result.items || [];
+        }
+        return Array.isArray(result) ? result : [];
       } catch (error) {
         console.error('UserService.searchUsers failed:', error);
         return [];
       }
     }
+
+  static async getAllUsers(limit: number = 20, fields?: string[]): Promise<User[]> {
+    try {
+      const qsParts: string[] = [];
+      qsParts.push(`limit=${limit}`);
+      if (fields && fields.length) qsParts.push(`fields=${encodeURIComponent(fields.join(','))}`);
+      const qs = qsParts.length ? `?${qsParts.join('&')}` : '';
+      const result = await api.get<any>(`/api/users${qs}`);
+      // Handle both direct array and paginated response formats
+      if (result?.items) {
+        return result.items || [];
+      }
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('UserService.getAllUsers failed:', error);
+      return [];
+    }
+  }
 
   static async updateUser(email: string, profile: Partial<User>): Promise<User | null> {
     try {

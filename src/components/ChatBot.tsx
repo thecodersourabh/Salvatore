@@ -537,9 +537,9 @@ export const ChatBot: React.FC = () => {
           <MessageCircle className="h-6 w-6 max-sm:h-5 max-sm:w-5" />
         </button>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:fixed max-sm:inset-0 flex">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[280px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:fixed max-sm:inset-0 flex">
           {/* Conversations List Component - Hidden on mobile when conversation is open */}
-          <div className={`w-full md:w-[460px] border-r dark:border-gray-700 flex flex-col ${viewMode === 'conversation' ? 'max-md:hidden' : ''}`}>
+          <div className={`w-full md:w-[280px] border-r dark:border-gray-700 flex flex-col ${viewMode === 'conversation' ? 'max-md:hidden' : ''}`}>
             <div className="p-3 bg-white dark:bg-gray-900 flex items-center justify-between border-b dark:border-gray-700">
               <div className="flex items-center space-x-2">
                 <MessageCircle className="h-5 w-5 text-rose-600" />

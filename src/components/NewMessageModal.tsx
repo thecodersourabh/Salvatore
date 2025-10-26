@@ -40,9 +40,8 @@ export const NewMessageModal: React.FC<NewMessageModalProps> = ({
       setLoading(true);
       // Load some suggested users - try to get all users with a limit
       const users = await UserService.getAllUsers(20, ['id', 'userName', 'name', 'avatar', 'email', 'displayName']);
-      console.log('Loaded suggested users:', users);
       // Filter out the current logged-in user
-      const filteredUsers = users.filter(u => u.id !== apiUser?.id && u.email !== apiUser?.email);
+      const filteredUsers = users.filter(u => u.id !== apiUser?.id);
       setSuggestedUsers(filteredUsers || []);
     } catch (error) {
       console.error('Failed to load suggested users:', error);
@@ -62,14 +61,12 @@ export const NewMessageModal: React.FC<NewMessageModalProps> = ({
     const delaySearch = setTimeout(async () => {
       try {
         setLoading(true);
-        console.log('Searching for users with query:', searchQuery);
         const users = await UserService.searchUsers(
           { q: searchQuery },
           ['id', 'userName', 'name', 'avatar', 'email', 'displayName']
         );
-        console.log('Search results:', users);
         // Filter out the current logged-in user
-        const filteredUsers = users.filter(u => u.id !== apiUser?.id && u.email !== apiUser?.email);
+        const filteredUsers = users.filter(u => u.id !== apiUser?.id);
         setSearchResults(filteredUsers);
       } catch (error) {
         console.error('Failed to search users:', error);
@@ -114,16 +111,17 @@ export const NewMessageModal: React.FC<NewMessageModalProps> = ({
   };
 
   const getUserInitials = (user: User) => {
-    const displayName = user.displayName || user.name || user.userName;
+    const displayName = user.displayName || user.name || user.userName || 'U';
     return displayName
       .split(' ')
+      .filter(word => word.length > 0)
       .map(word => word.charAt(0).toUpperCase())
       .slice(0, 2)
-      .join('');
+      .join('') || 'U';
   };
 
   const getUserDisplayName = (user: User) => {
-    return user.displayName || user.name || user.userName;
+    return user.displayName || user.name || user.userName || 'Unknown User';
   };
 
   const displayedUsers = searchQuery.trim() ? searchResults : suggestedUsers;

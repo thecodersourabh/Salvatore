@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, X, Search, PenSquare } from 'lucide-react';
 import { chatService } from '../services/chatService';
 import { aiService } from '../services/aiService';
+import { teamService } from '../services/teamService';
 import { NewMessageModal } from './NewMessageModal';
 import { ConversationDetailModal } from './ConversationDetailModal';
 import { User } from '../types/user';
@@ -15,6 +16,10 @@ type ConversationItem = {
   unread?: number;
   timestamp?: string;
   isAI?: boolean;
+  isGroup?: boolean;
+  isTeam?: boolean;
+  teamId?: string;
+  participantIds?: string[];
 };
 
 type ChatMessage = {
@@ -56,10 +61,11 @@ export const ChatBot: React.FC = () => {
     const load = async () => {
       setLoadingConversations(true);
       try {
-        // Fetch both direct messages and AI conversations in parallel
-        const [chatResult, aiResult] = await Promise.allSettled([
+        // Fetch direct messages, AI conversations, and teams in parallel
+        const [chatResult, aiResult, teamsResult] = await Promise.allSettled([
           chatService.getConversations(),
-          aiService.getConversations()
+          aiService.getConversations(),
+          teamService.getTeams()
         ]);
 
         const conversationMap = new Map<string, ConversationItem>();
@@ -137,6 +143,34 @@ export const ChatBot: React.FC = () => {
         } else {
           console.error('Failed to load AI conversations:', aiResult.reason);
         }
+
+        // Process team conversations
+        if (teamsResult.status === 'fulfilled') {
+          const teams = teamsResult.value || [];
+          
+          if (Array.isArray(teams)) {
+            teams.forEach((team: any) => {
+              const teamId = team.teamId || team.id;
+              // Use current timestamp to ensure teams appear in focused tab
+              const timestamp = new Date().toISOString();
+              
+              conversationMap.set(`team_${teamId}`, {
+                id: teamId,
+                recipientId: teamId,
+                teamId: teamId,
+                title: team.name || 'Team Chat',
+                lastMessage: team.lastMessage || undefined,
+                unread: team.unreadCount || 0,
+                timestamp: timestamp,
+                isAI: false,
+                isTeam: true,
+                participantIds: team.members?.map((m: any) => m.userId) || [],
+              });
+            });
+          }
+        } else {
+          console.error('Failed to load teams:', teamsResult.reason);
+        }
         
         const list = Array.from(conversationMap.values())
           .sort((a, b) => {
@@ -177,12 +211,16 @@ export const ChatBot: React.FC = () => {
     const load = async () => {
       setLoadingMessages(true);
       try {
-        // Use AI service for AI conversations, chat service for direct messages
-        const result: any = selectedConv.isAI
-          ? await aiService.getConversation(selectedConv.recipientId)
-          : await chatService.getConversation(selectedConv.recipientId, 100);
-        
-        console.log('Messages API response:', result);
+        // Use appropriate service based on conversation type
+        let result: any;
+        if (selectedConv.isAI) {
+          result = await aiService.getConversation(selectedConv.recipientId);
+        } else if (selectedConv.isTeam) {
+          const messages = await teamService.getTeamMessages({ teamId: selectedConv.teamId || selectedConv.recipientId, limit: 100 });
+          result = { data: messages };
+        } else {
+          result = await chatService.getConversation(selectedConv.recipientId, 100);
+        }
         
         // API returns {success: true, data: [...]}
         const data = result?.data || result?.messages || result;
@@ -197,12 +235,11 @@ export const ChatBot: React.FC = () => {
         
         // Sort messages by timestamp (oldest first)
         msgs.sort((a, b) => {
-          if (!a.createdAt) return 1;
-          if (!b.createdAt) return -1;
+          if (!a.createdAt) return -1;
+          if (!b.createdAt) return 1;
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
         
-        console.log('Parsed messages:', msgs);
         if (mounted) setMessages(msgs.length ? msgs : [{ content: "No messages yet. Say hello!" }]);
       } catch (e: any) {
         console.error('Failed to load conversation messages', e);
@@ -235,10 +272,12 @@ export const ChatBot: React.FC = () => {
   }, [conversations, searchQuery]);
 
   // Separate conversations by focused/other
-  // Focused: unread > 0 OR recent activity (within last 24 hours)
+  // Focused: teams OR unread > 0 OR recent activity (within last 24 hours)
   const focusedConversations = useMemo(() => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return filteredConversations.filter(c => {
+      // Always show teams in focused tab
+      if (c.isTeam) return true;
       if ((c.unread || 0) > 0) return true;
       if (c.timestamp && new Date(c.timestamp).getTime() > oneDayAgo) return true;
       return false;
@@ -248,6 +287,8 @@ export const ChatBot: React.FC = () => {
   const otherConversations = useMemo(() => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return filteredConversations.filter(c => {
+      // Don't show teams in other tab
+      if (c.isTeam) return false;
       if ((c.unread || 0) > 0) return false;
       if (c.timestamp && new Date(c.timestamp).getTime() > oneDayAgo) return false;
       return true;
@@ -292,7 +333,28 @@ export const ChatBot: React.FC = () => {
         });
         
         setMessages(msgs);
+      } else if (selectedConv.isTeam) {
+        // Send team message
+        await teamService.sendTeamMessage({ teamId: selectedConv.teamId || selectedConv.recipientId, content });
+        // Refresh team conversation messages
+        const teamMessages = await teamService.getTeamMessages({ teamId: selectedConv.teamId || selectedConv.recipientId, limit: 100 });
+        const msgs: ChatMessage[] = teamMessages.map((m: any) => ({ 
+          id: m.id || m.messageId, 
+          senderId: m.senderId || m.userId, 
+          content: m.content || m.message || m.body || m.text, 
+          createdAt: m.timestamp || m.createdAt 
+        }));
+        
+        // Sort messages by timestamp (oldest first)
+        msgs.sort((a, b) => {
+          if (!a.createdAt) return 1;
+          if (!b.createdAt) return -1;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
+        setMessages(msgs);
       } else {
+        // Send direct message
         await chatService.sendDirectMessage({ recipientId: selectedConv.recipientId, content });
         // Refresh conversation messages
         const result: any = await chatService.getConversation(selectedConv.recipientId, 100);
@@ -346,6 +408,21 @@ export const ChatBot: React.FC = () => {
     setMessages([]);
   };
 
+  // Handler for renaming a team
+  const handleRenameTeam = (teamId: string, newName: string) => {
+    // Update the conversation in the list
+    setConversations(prev => prev.map(conv => 
+      (conv.teamId === teamId || conv.id === teamId)
+        ? { ...conv, title: newName }
+        : conv
+    ));
+    
+    // Update selected conversation if it's the one being renamed
+    if (selectedConv && (selectedConv.teamId === teamId || selectedConv.id === teamId)) {
+      setSelectedConv(prev => prev ? { ...prev, title: newName } : null);
+    }
+  };
+
   // Handler for when a user is selected from NewMessageModal
   const handleSelectUser = (user: User) => {
     // Create or open a conversation with this user
@@ -371,24 +448,57 @@ export const ChatBot: React.FC = () => {
     }
   };
 
-  // Handler for group creation (optional feature)
-  const handleCreateGroup = (users: User[], groupName: string) => {
-    // Create a new group conversation
-    const groupConv: ConversationItem = {
-      id: `group_${Date.now()}`,
-      recipientId: `group_${Date.now()}`,
-      title: groupName,
-      lastMessage: undefined,
-      unread: 0,
-      timestamp: new Date().toISOString(),
-      isAI: false,
-    };
-    
-    setConversations(prev => [groupConv, ...prev]);
-    openConversation(groupConv);
-    
-    // Here you would also call an API to create the group
-    console.log('Creating group:', groupName, 'with users:', users);
+  // Handler for team/group creation
+  const handleCreateGroup = async (users: User[], groupName: string) => {
+    try {
+      // Extract participant IDs
+      const memberIds = users.map(u => u.id);
+      
+      // Call API to create the team
+      const result = await teamService.createTeam({
+        name: groupName,
+        memberIds,
+        description: `Team chat with ${users.length + 1} members`
+      });
+      
+      // Extract team ID from response
+      const teamId = result?.teamId || result?.id || `team_${Date.now()}`;
+      
+      // Create a new team conversation
+      const teamConv: ConversationItem = {
+        id: teamId,
+        recipientId: teamId,
+        teamId: teamId,
+        title: groupName,
+        lastMessage: undefined,
+        unread: 0,
+        timestamp: new Date().toISOString(),
+        isAI: false,
+        isTeam: true,
+        participantIds: memberIds,
+      };
+      
+      setConversations(prev => [teamConv, ...prev]);
+      openConversation(teamConv);
+    } catch (error) {
+      console.error('Failed to create team:', error);
+      // Still create a local conversation for testing/fallback
+      const teamConv: ConversationItem = {
+        id: `team_${Date.now()}`,
+        recipientId: `team_${Date.now()}`,
+        teamId: `team_${Date.now()}`,
+        title: groupName,
+        lastMessage: undefined,
+        unread: 0,
+        timestamp: new Date().toISOString(),
+        isAI: false,
+        isTeam: true,
+        participantIds: users.map(u => u.id),
+      };
+      
+      setConversations(prev => [teamConv, ...prev]);
+      openConversation(teamConv);
+    }
   };
 
   const renderAvatar = (title?: string) => (
@@ -556,6 +666,7 @@ export const ChatBot: React.FC = () => {
         onMessageChange={setNewMessage}
         onSendMessage={handleSendMessage}
         loadingMessages={loadingMessages}
+        onRenameTeam={handleRenameTeam}
       />
     </div>
   );

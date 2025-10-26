@@ -30,7 +30,6 @@ export function ServiceCard({
   services,
   skills = []
 }: ServiceCardProps) {
-  console.log(`ServiceCard ${title} received skills:`, skills);
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between mb-3">

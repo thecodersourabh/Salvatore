@@ -188,19 +188,15 @@ function MyApp() {
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     const initializeApp = async () => {
-      console.log('STEP 1: Testing StatusBar initialization...');
-      
       // Test StatusBar first
       try {
         await StatusBarManager.initialize();
-        console.log('STEP 1: StatusBar initialized successfully');
       } catch (error) {
         console.error('STEP 1: StatusBar initialization failed:', error);
       }
       
       // Finish initialization
       timer = setTimeout(() => {
-        console.log('STEP 1: App initialization complete with StatusBar');
         setIsLoading(false);
       }, 500);
     };

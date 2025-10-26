@@ -4,10 +4,6 @@ import { NotificationPayload, Notification } from '../services/notificationServi
 // Helper function to convert NotificationPayload to Notification
 function createNotificationFromPayload(payload: NotificationPayload & { actionId?: string }): Notification {
   // Determine notification type and priority from payload
-  try {
-    // eslint-disable-next-line no-console
-    console.debug('NotificationContext: createNotificationFromPayload payload:', payload);
-  } catch (e) {}
   const getNotificationType = (): Notification['type'] => {
     const titleLower = (typeof payload.title === 'string' ? payload.title : '').toLowerCase();
     const bodyLower = (typeof payload.body === 'string' ? payload.body : '').toLowerCase();
@@ -43,11 +39,6 @@ function createNotificationFromPayload(payload: NotificationPayload & { actionId
   };
 
   const type = getNotificationType();
-  // DEBUG: log chosen type and priority
-  try {
-    // eslint-disable-next-line no-console
-    console.debug('NotificationContext: classified notification type=', type);
-  } catch (e) {}
 
   return {
     id: payload.id?.toString() || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -82,21 +73,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Set up event listeners once on mount
   useEffect(() => {
-    console.log('🔔 NotificationContext: Setting up event listeners...');
-    
     // Listen for local notifications (in-app)
     const handleLocalNotification = (event: CustomEvent) => {
       const payload = event.detail as NotificationPayload;
-      console.log('📧 NotificationContext: Local notification received:', payload);
       
       try {
         const newNotification = createNotificationFromPayload(payload);
-        console.log('📧 NotificationContext: Created notification object:', newNotification);
         
         setNotifications(prev => {
-          console.log('📧 NotificationContext: Adding to notifications list. Current count:', prev.length);
           const updated = [newNotification, ...prev];
-          console.log('📧 NotificationContext: New notifications count:', updated.length);
           return updated;
         });
       } catch (error) {
@@ -107,7 +92,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // Listen for notification actions (when user taps notification)
     const handleNotificationAction = (event: CustomEvent) => {
       const payload = event.detail as NotificationPayload & { actionId?: string };
-      console.log('📧 NotificationContext: Notification action received:', payload);
       
       try {
         const newNotification = createNotificationFromPayload(payload);
@@ -120,8 +104,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // Add event listeners (unified for all notification sources)
     window.addEventListener('local-notification', handleLocalNotification as EventListener);
     window.addEventListener('notification-action', handleNotificationAction as EventListener);
-    
-    console.log('🔔 NotificationContext: Event listeners added successfully');
 
     // Cleanup
     return () => {

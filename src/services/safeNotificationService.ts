@@ -47,17 +47,11 @@ export async function initSafeNotificationService(
   }
 
   try {
-    // Step 1: Check if push notifications are available
-    console.log('[SafeNotificationService] Step 1: Checking push notification availability');
-    
-    // Step 2: Request permissions safely
-    console.log('[SafeNotificationService] Step 2: Requesting push permissions');
+    // Request permissions safely
     const pushPermission = await PushNotifications.requestPermissions();
-    console.log('[SafeNotificationService] Push permission result:', pushPermission);
 
     // Continue even if push permissions are denied
     if ((pushPermission as any).receive === 'granted') {
-      console.log('[SafeNotificationService] Push notifications granted');
       
       // Step 3: Register for push notifications (with error handling)
       try {

@@ -135,7 +135,7 @@ export const NewMessageModal: React.FC<NewMessageModalProps> = ({
   return (
     <div className="fixed bottom-6 right-6 z-50 max-sm:inset-0 max-sm:bottom-0 max-sm:right-0" style={{ marginRight: window.innerWidth < 640 ? '0px' : `${marginRight}px` }} onClick={handleClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[280px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[280px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

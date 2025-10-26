@@ -212,7 +212,7 @@ export const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-0 max-sm:max-w-full max-sm:h-full max-sm:rounded-none flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-0 max-sm:max-w-full max-sm:h-full max-sm:rounded-none max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -527,19 +527,19 @@ export const ChatBot: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 max-sm:bottom-4 max-sm:right-4 z-50">
       {!isChatOpen ? (
         <button
           onClick={() => setIsChatOpen(true)}
-          className="bg-rose-600 text-white p-4 rounded-full shadow-lg hover:bg-rose-700 transition"
+          className="bg-rose-600 text-white p-4 max-sm:p-3 rounded-full shadow-lg hover:bg-rose-700 transition"
           aria-label="Open chat"
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-6 w-6 max-sm:h-5 max-sm:w-5" />
         </button>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl h-[520px] flex">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:fixed max-sm:inset-0 flex">
           {/* Conversations List Component - Hidden on mobile when conversation is open */}
-          <div className={`w-full md:w-[280px] border-r dark:border-gray-700 flex flex-col ${viewMode === 'conversation' ? 'max-md:hidden' : ''}`}>
+          <div className={`w-full md:w-[460px] border-r dark:border-gray-700 flex flex-col ${viewMode === 'conversation' ? 'max-md:hidden' : ''}`}>
             <div className="p-3 bg-white dark:bg-gray-900 flex items-center justify-between border-b dark:border-gray-700">
               <div className="flex items-center space-x-2">
                 <MessageCircle className="h-5 w-5 text-rose-600" />

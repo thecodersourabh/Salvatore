@@ -212,7 +212,7 @@ export const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-2 max-sm:max-w-full max-sm:h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -237,7 +237,7 @@ export const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[60vh] max-sm:flex-1 overflow-y-auto">
           {/* Add Member Section */}
           {showAddMember ? (
             <div className="p-4 border-b dark:border-gray-700">

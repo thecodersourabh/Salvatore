@@ -104,9 +104,9 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   const marginRight = isNewMessageModalOpen ? 560 : 280; // 280 (ChatBot) + 280 (NewMessageModal) or just 280 (ChatBot)
 
   return (
-    <div className="fixed bottom-6 right-6 z-50" style={{ marginRight: `${marginRight}px` }} onClick={onClose}>
+    <div className="fixed bottom-6 right-6 z-50 max-sm:inset-0 max-sm:bottom-0 max-sm:right-0" style={{ marginRight: window.innerWidth < 640 ? '0px' : `${marginRight}px` }} onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Conversation Header */}
@@ -245,7 +245,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
             onClick={() => setShowRenameModal(false)}
           >
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-2 p-6 max-sm:p-4"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

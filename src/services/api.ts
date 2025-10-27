@@ -101,6 +101,15 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Add x-request-id for request tracking and logs
+    headers['x-request-id'] = crypto.randomUUID();
+
+    // Add x-user-id if available from localStorage
+    const userId = localStorage.getItem('x-user-id') || '';
+    if (userId) {
+      headers['x-user-id'] = userId;
+    }
+
     // Simple retry strategy for transient server/network errors
     const maxRetries = ((init as any).retryCount as number | undefined) ?? (isGet ? 0 : 1);
     let attempt = 0;

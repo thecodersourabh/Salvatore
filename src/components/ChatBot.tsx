@@ -7,6 +7,7 @@ import { NewMessageModal } from './NewMessageModal';
 import { ConversationDetailModal } from './ConversationDetailModal';
 import { User } from '../types/user';
 import { UserService } from '../services/userService';
+import { App } from '@capacitor/app';
 
 type ConversationItem = {
   id: string;
@@ -53,6 +54,87 @@ export const ChatBot: React.FC = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isChatOpen]);
+
+  // Listen for new WebSocket messages
+  useEffect(() => {
+    const handleNewMessage = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const incomingMessages = customEvent.detail.messages || [];
+      const isTeamMessage = customEvent.detail.isTeamMessage;
+
+      incomingMessages.forEach((message: any) => {
+        // Update messages if this conversation is currently open
+        if (selectedConv) {
+          const isForThisConversation = 
+            // Direct message to this conversation's recipient
+            (message.recipientId === selectedConv.recipientId && !isTeamMessage) ||
+            // Team message for this conversation's team
+            (message.teamId === selectedConv.teamId && isTeamMessage) ||
+            (message.teamId === selectedConv.recipientId && isTeamMessage);
+
+          if (isForThisConversation) {
+            const newMsg: ChatMessage = {
+              id: message.id,
+              senderId: message.senderId,
+              content: message.content,
+              createdAt: message.timestamp || new Date().toISOString()
+            };
+            handleNewWebSocketMessage(newMsg);
+          }
+        }
+
+        // Update conversation list with latest message
+        setConversations(prev => {
+          const recipientId = isTeamMessage 
+            ? message.teamId 
+            : (message.senderId !== (window as any).__USER_ID__ ? message.senderId : message.recipientId);
+
+          const existing = prev.find(c => 
+            c.recipientId === recipientId || 
+            c.teamId === recipientId
+          );
+
+          if (existing) {
+            // Update existing conversation
+            return prev.map(c => 
+              (c.recipientId === recipientId || c.teamId === recipientId)
+                ? { 
+                    ...c, 
+                    lastMessage: message.content, 
+                    timestamp: message.timestamp || new Date().toISOString(),
+                    unread: (c.unread || 0) + 1 
+                  }
+                : c
+            ).sort((a, b) => {
+              if (!a.timestamp) return 1;
+              if (!b.timestamp) return -1;
+              return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+            });
+          } else {
+            // Add new conversation
+            const newConv: ConversationItem = {
+              id: recipientId,
+              recipientId: recipientId,
+              teamId: isTeamMessage ? message.teamId : undefined,
+              title: message.senderName || recipientId,
+              lastMessage: message.content,
+              unread: 1,
+              timestamp: message.timestamp || new Date().toISOString(),
+              isAI: false,
+              isTeam: isTeamMessage,
+            };
+            return [newConv, ...prev];
+          }
+        });
+      });
+    };
+
+    window.addEventListener('new-messages', handleNewMessage);
+    
+    return () => {
+      window.removeEventListener('new-messages', handleNewMessage);
+    };
+  }, [selectedConv]);
 
   // Load conversations when opening the chat
   useEffect(() => {
@@ -202,6 +284,57 @@ export const ChatBot: React.FC = () => {
     return () => {
       mounted = false;
     };
+  }, [isChatOpen]);
+
+  // Reload conversations when app resumes on mobile (to catch missed messages)
+  useEffect(() => {
+    const handleAppStateChange = async (state: { isActive: boolean }) => {
+      if (state.isActive && isChatOpen) {
+        // Reload conversations when app comes to foreground
+        try {
+          const [chatResult, aiResult, teamsResult] = await Promise.allSettled([
+            chatService.getConversations(),
+            aiService.getConversations(),
+            teamService.getTeams()
+          ]);
+
+          const conversationMap = new Map<string, ConversationItem>();
+
+          // Process conversations (simplified version)
+          if (chatResult.status === 'fulfilled') {
+            const data = chatResult.value?.conversations || chatResult.value;
+            if (Array.isArray(data)) {
+              data.forEach((c: any) => {
+                const recipientId = c.recipientId || c.with || c.userId || c.id;
+                conversationMap.set(recipientId, {
+                  id: recipientId,
+                  recipientId: recipientId,
+                  title: c.recipientName || c.name || recipientId,
+                  lastMessage: c.lastMessage || c.content,
+                  unread: c.unread || c.unreadCount || 0,
+                  timestamp: c.timestamp || c.updatedAt,
+                  isAI: false,
+                });
+              });
+            }
+          }
+
+          setConversations(Array.from(conversationMap.values()));
+        } catch (error) {
+          console.error('Failed to reload conversations on app resume:', error);
+        }
+      }
+    };
+
+    // Listen for app state changes on mobile
+    try {
+      const listener = App.addListener('appStateChange', handleAppStateChange);
+      return () => {
+        listener.then(l => l.remove());
+      };
+    } catch (error) {
+      // Not on mobile, ignore
+    }
   }, [isChatOpen]);
 
   // Load messages when a conversation is selected
@@ -421,6 +554,24 @@ export const ChatBot: React.FC = () => {
     if (selectedConv && (selectedConv.teamId === teamId || selectedConv.id === teamId)) {
       setSelectedConv(prev => prev ? { ...prev, title: newName } : null);
     }
+  };
+
+  // Handler for incoming WebSocket messages
+  const handleNewWebSocketMessage = (message: ChatMessage) => {
+    // Add the message to the messages list if it's not already there
+    setMessages(prev => {
+      // Check if message already exists (by id or timestamp+content)
+      const exists = prev.some(m => 
+        (m.id && message.id && m.id === message.id) ||
+        (m.content === message.content && m.createdAt === message.createdAt)
+      );
+      
+      if (exists) {
+        return prev;
+      }
+      
+      return [...prev, message];
+    });
   };
 
   // Handler for when a user is selected from NewMessageModal
@@ -667,6 +818,7 @@ export const ChatBot: React.FC = () => {
         onSendMessage={handleSendMessage}
         loadingMessages={loadingMessages}
         onRenameTeam={handleRenameTeam}
+        onNewWebSocketMessage={handleNewWebSocketMessage}
       />
     </div>
   );

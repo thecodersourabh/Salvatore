@@ -20,6 +20,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { WebSocketProvider } from "./context/WebSocketContext";
 
 
 // Utils and Config
@@ -221,26 +222,28 @@ function MyApp() {
         
         <AuthProvider>
           <NotificationProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <LanguageProvider>
-                  <Auth0CallbackHandler />
+            <WebSocketProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <LanguageProvider>
+                    <Auth0CallbackHandler />
                 
-                <div className="flex flex-col h-full">
-                  <Navigation />
-                  {/* Global Address Bar for mobile apps */}
-                  { Capacitor.isNativePlatform() && <AddressBar /> }
-                  <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
-                    <AppRoutes />
-                  </main>
-                  
-                  {/* Floating components */}
-                  <Cart />
-                  <ChatBot />
-                </div>
-              </LanguageProvider>
-            </WishlistProvider>
-          </CartProvider>
+                  <div className="flex flex-col h-full">
+                    <Navigation />
+                    {/* Global Address Bar for mobile apps */}
+                    { Capacitor.isNativePlatform() && <AddressBar /> }
+                    <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+                      <AppRoutes />
+                    </main>
+                    
+                    {/* Floating components */}
+                    <Cart />
+                    <ChatBot />
+                  </div>
+                </LanguageProvider>
+              </WishlistProvider>
+            </CartProvider>
+            </WebSocketProvider>
           </NotificationProvider>
         </AuthProvider>
       </div>

@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Send, MoreVertical, Users, Edit2 } from 'lucide-react';
+import { X, Send, MoreVertical, Users, Edit2, Wifi, WifiOff } from 'lucide-react';
 import { TeamMembersModal } from './TeamMembersModal';
 import { teamService } from '../services/teamService';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocketContext } from '../context/WebSocketContext';
 
 interface ConversationDetailModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface ConversationDetailModalProps {
   onSendMessage: (e?: React.FormEvent) => void;
   loadingMessages: boolean;
   onRenameTeam?: (teamId: string, newName: string) => void;
+  onNewWebSocketMessage?: (message: { id?: string; senderId?: string; content: string; createdAt?: string }) => void;
 }
 
 export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = ({
@@ -40,8 +42,10 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   onSendMessage,
   loadingMessages,
   onRenameTeam,
+  onNewWebSocketMessage,
 }) => {
   const { user } = useAuth();
+  const { isConnected } = useWebSocketContext();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const [showTeamMembers, setShowTeamMembers] = useState(false);
@@ -56,6 +60,43 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
+
+  // Listen for WebSocket messages
+  useEffect(() => {
+    if (!isOpen || !conversation || !onNewWebSocketMessage) return;
+
+    const handleNewMessages = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const incomingMessage = customEvent.detail;
+
+      // Check if message is for this conversation
+      const isForThisConversation = 
+        // Direct message to this conversation's recipient
+        (incomingMessage.recipientId === conversation.recipientId) ||
+        // Team message for this conversation's team
+        (conversation.isTeam && incomingMessage.teamId === conversation.teamId) ||
+        // Message from this conversation's recipient
+        (incomingMessage.senderId === conversation.recipientId);
+
+      if (isForThisConversation) {
+        // Format the message to match the expected structure
+        const formattedMessage = {
+          id: incomingMessage.id,
+          senderId: incomingMessage.senderId,
+          content: incomingMessage.content,
+          createdAt: incomingMessage.timestamp,
+        };
+        
+        onNewWebSocketMessage(formattedMessage);
+      }
+    };
+
+    window.addEventListener('new-messages', handleNewMessages);
+    
+    return () => {
+      window.removeEventListener('new-messages', handleNewMessages);
+    };
+  }, [isOpen, conversation, onNewWebSocketMessage]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -155,9 +196,23 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
               )}
             </div>
             {renderAvatar(conversation.title || conversation.recipientId)}
-            <div>
-              <div className="font-semibold text-sm">{conversation.title || conversation.recipientId}</div>
-              <div className="text-xs text-gray-500">Active now</div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">{conversation.title || conversation.recipientId}</span>
+                {/* WebSocket Connection Status */}
+                {isConnected ? (
+                  <span title="Connected">
+                    <Wifi className="h-3.5 w-3.5 text-green-500" />
+                  </span>
+                ) : (
+                  <span title="Disconnected">
+                    <WifiOff className="h-3.5 w-3.5 text-red-500" />
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">
+                {isConnected ? 'Active now' : 'Offline'}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -1,5 +1,10 @@
 import { ApiError, ApiErrorHandler, ErrorType } from './apiErrorHandler';
 import { cacheService } from './cacheService';
+import { 
+  refreshTokenSilently, 
+  getStoredToken, 
+  ensureValidToken 
+} from '../utils/tokenHelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -55,7 +60,7 @@ const buildUrl = (endpoint: string, params?: Record<string, any>): string => {
   return url;
 };
 
-const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promise<T> => {
+const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetryAfterRefresh = false): Promise<T> => {
   try {
     if (!navigator.onLine) {
       throw new ApiError(
@@ -85,9 +90,12 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
     }
 
     // Get token from localStorage (Auth0 default)
-  let token = (init as any).idToken || localStorage.getItem('auth_id_token') || localStorage.getItem('id_token');
-    // If you use a different key, update above accordingly
+    let token = getStoredToken((init as any).idToken);
 
+    // Check if token is expired and refresh if needed (only if not already retrying)
+    if (token && !isRetryAfterRefresh) {
+      token = await ensureValidToken(token);
+    }
 
     // Always use a plain object for headers
     let headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -128,6 +136,25 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
         // If successful, parse and return
         if (response.ok) {
           return await handleResponse<T>(response);
+        }
+
+        // Handle 401 Unauthorized - Token expired (fallback safety net)
+        if (response.status === 401 && !isRetryAfterRefresh) {
+          console.log('🔐 Received 401 - Token expired unexpectedly, attempting silent refresh...');
+          
+          const newToken = await refreshTokenSilently();
+          
+          if (newToken) {
+            // Retry the request with the new token
+            console.log('🔄 Retrying request with refreshed token...');
+            return makeRequest<T>(endpoint, {
+              ...options,
+              idToken: newToken
+            } as ApiOptions, true);
+          } else {
+            // Token refresh failed, proceed with error handling
+            console.warn('⚠️ Token refresh failed, redirecting to login may be required');
+          }
         }
 
         // For server errors, optionally retry

@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { getLogoutUri } from '../utils/getRedirectUri';
 import { UserService } from '../services';
 import { User } from '../types/user';
+import { setTokenRefreshCallback, storeToken, clearToken } from '../utils/tokenHelper';
 
 export interface UserContext {
   email: string;
@@ -60,23 +61,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Store token in localStorage for consistent access across services
           if (token) {
-            localStorage.setItem('id_token', token);
-            localStorage.setItem('auth_id_token', token); // For api.ts compatibility
+            storeToken(token);
           }
         } catch (error) {
           console.error('Error fetching ID token:', error);
           setIdToken(null);
-          localStorage.removeItem('id_token');
-          localStorage.removeItem('auth_id_token');
+          clearToken();
         }
       } else {
         setIdToken(null);
-        localStorage.removeItem('id_token');
-        localStorage.removeItem('auth_id_token');
+        clearToken();
       }
     };
     fetchToken();
   }, [isAuthenticated, getIdTokenClaims]);
+
+  // Set up token refresh callback for API service
+  useEffect(() => {
+    if (getIdTokenClaims) {
+      const refreshCallback = async (): Promise<string | null> => {
+        try {
+          console.log('🔄 AuthContext: Refreshing token via getIdTokenClaims...');
+          const claims = await getIdTokenClaims();
+          const newToken = claims?.__raw || null;
+          
+          if (newToken) {
+            setIdToken(newToken);
+            storeToken(newToken);
+            console.log('✅ AuthContext: Token refreshed successfully');
+          }
+          
+          return newToken;
+        } catch (error) {
+          console.error('❌ AuthContext: Token refresh failed:', error);
+          return null;
+        }
+      };
+      
+      setTokenRefreshCallback(refreshCallback);
+    }
+  }, [getIdTokenClaims]);
 
   // Listen for auth state refresh events from deep link handler
   useEffect(() => {

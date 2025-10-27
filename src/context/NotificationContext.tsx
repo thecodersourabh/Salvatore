@@ -8,8 +8,15 @@ function createNotificationFromPayload(payload: NotificationPayload & { actionId
     const titleLower = (typeof payload.title === 'string' ? payload.title : '').toLowerCase();
     const bodyLower = (typeof payload.body === 'string' ? payload.body : '').toLowerCase();
 
-    // 1) If payload.data.type explicitly mentions order
+    // 1) Check payload.data.type first for explicit type
     const dataType = (payload.data?.type || '').toString().toLowerCase();
+    
+    // Check for message types (direct_message, team_message, or just message)
+    if (dataType.includes('message') || dataType === 'message' || dataType === 'group_message') {
+      return 'message';
+    }
+    
+    // Check for order types
     if (dataType && dataType.includes('order')) return 'order';
 
     // 2) If payload.data contains order identifiers
@@ -17,13 +24,20 @@ function createNotificationFromPayload(payload: NotificationPayload & { actionId
       return 'order';
     }
 
-    // 3) Inspect title/body for order-related keywords
+    // 3) If payload.data contains message identifiers
+    if (payload.data && (payload.data.messageId || payload.data.senderId || payload.data.senderName)) {
+      return 'message';
+    }
+
+    // 4) Inspect title/body for order-related keywords
     const orderIndicators = ['order', 'order received', 'new order', 'order #', 'order:'];
     if (orderIndicators.some(k => titleLower.includes(k) || bodyLower.includes(k))) return 'order';
 
-    if (titleLower.includes('message') || bodyLower.includes('message')) return 'message';
+    // 5) Check for other specific types
     if (titleLower.includes('payment') || bodyLower.includes('payment')) return 'payment';
     if (titleLower.includes('review') || bodyLower.includes('review')) return 'review';
+    
+    // 6) Default to system only if none of the above match
     return 'system';
   };
 
@@ -35,6 +49,7 @@ function createNotificationFromPayload(payload: NotificationPayload & { actionId
       if (dataType.includes('order_received') || titleLower.includes('order received') || bodyLower.includes('order received') || titleLower.includes('new order') || bodyLower.includes('new order')) return 'high';
       return 'medium';
     }
+    if (type === 'message') return 'medium';
     return 'low';
   };
 

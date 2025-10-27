@@ -121,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Store Auth0 to API user ID mapping
           if (fetchedUser?.id) {
             localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
+            localStorage.setItem(`x-user-id`, fetchedUser.id);
             localStorage.setItem(`user_name`, fetchedUser.userName);
           }
         } else {

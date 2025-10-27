@@ -185,9 +185,16 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
             <div className="text-sm text-gray-500 text-center">Loading messages...</div>
           ) : (
             messages.map((m, i) => {
+              // Get current user's ID from localStorage
+              const currentUserId = localStorage.getItem('x-user-id');
+              
               // Check if message is from the current user or from AI/assistant
               const isAIMessage = m.senderId === 'ai' || m.senderId === 'assistant';
-              const isMe = !isAIMessage && (m.senderId?.startsWith('google-oauth2|') || m.senderId === 'me');
+              const isMe = !isAIMessage && (
+                m.senderId === currentUserId || 
+                m.senderId === 'me' || 
+                m.senderId?.startsWith('google-oauth2|')
+              );
               return (
                 <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] md:max-w-[70%] p-3 rounded-2xl ${

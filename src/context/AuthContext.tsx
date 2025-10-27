@@ -7,6 +7,7 @@ import { User } from '../types/user';
 export interface UserContext {
   email: string;
   sub?: string;
+  userId?: string;
   name?: string;
   userName?: string;
   sector?: string;
@@ -123,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
             localStorage.setItem(`x-user-id`, fetchedUser.id);
             localStorage.setItem(`user_name`, fetchedUser.userName);
+            (window as any).__USER_ID__ = fetchedUser.id;
           }
         } else {
           // Fetch existing user data from API
@@ -133,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
             localStorage.setItem(`x-user-id`, fetchedUser.id);
             localStorage.setItem(`user_name`, fetchedUser.userName);
+            (window as any).__USER_ID__ = fetchedUser.id;
           }
         }
         
@@ -156,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const userContextValue: UserContext | null = isAuthenticated && user ? {
     email: user.email as string,
     sub: user.sub,
+    userId: apiUser?.id,
     name: apiUser?.name || user.name,
     userName: apiUser?.userName,
     sector: apiUser?.sector,

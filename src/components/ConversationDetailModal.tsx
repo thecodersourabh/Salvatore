@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { X, Send, MoreVertical, Users, Edit2 } from 'lucide-react';
 import { TeamMembersModal } from './TeamMembersModal';
 import { teamService } from '../services/teamService';
+import { useAuth } from '../context/AuthContext';
 
 interface ConversationDetailModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   loadingMessages,
   onRenameTeam,
 }) => {
+  const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const [showTeamMembers, setShowTeamMembers] = useState(false);
@@ -185,8 +187,8 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
             <div className="text-sm text-gray-500 text-center">Loading messages...</div>
           ) : (
             messages.map((m, i) => {
-              // Get current user's ID from localStorage
-              const currentUserId = localStorage.getItem('x-user-id');
+              // Get current user's ID from localStorage with fallback to user context
+              const currentUserId = localStorage.getItem('x-user-id') || user?.userId;
               
               // Check if message is from the current user or from AI/assistant
               const isAIMessage = m.senderId === 'ai' || m.senderId === 'assistant';

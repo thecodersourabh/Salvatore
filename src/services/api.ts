@@ -3,6 +3,11 @@ import { cacheService } from './cacheService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Helper to get current user ID with fallback
+const getUserId = (): string => {
+  return localStorage.getItem('x-user-id') || (window as any).__USER_ID__ ;
+};
+
 export interface ApiOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, any>;
   body?: any;
@@ -104,8 +109,8 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}): Promi
     // Add x-request-id for request tracking and logs
     headers['x-request-id'] = crypto.randomUUID();
 
-    // Add x-user-id if available from localStorage
-    const userId = localStorage.getItem('x-user-id') || '';
+    // Add x-user-id if available from localStorage or global context
+    const userId = getUserId();
     if (userId) {
       headers['x-user-id'] = userId;
     }

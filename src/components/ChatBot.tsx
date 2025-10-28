@@ -6,7 +6,6 @@ import { teamService } from '../services/teamService';
 import { NewMessageModal } from './NewMessageModal';
 import { ConversationDetailModal } from './ConversationDetailModal';
 import { User } from '../types/user';
-import { UserService } from '../services/userService';
 import { App } from '@capacitor/app';
 
 type ConversationItem = {
@@ -65,12 +64,26 @@ export const ChatBot: React.FC = () => {
       incomingMessages.forEach((message: any) => {
         // Update messages if this conversation is currently open
         if (selectedConv) {
-          const isForThisConversation = 
-            // Direct message to this conversation's recipient
-            (message.recipientId === selectedConv.recipientId && !isTeamMessage) ||
-            // Team message for this conversation's team
-            (message.teamId === selectedConv.teamId && isTeamMessage) ||
-            (message.teamId === selectedConv.recipientId && isTeamMessage);
+          let isForThisConversation = false;
+          
+          if (isTeamMessage) {
+            // Team message: check if it's for the current team
+            isForThisConversation = 
+              message.teamId === selectedConv.teamId || 
+              message.teamId === selectedConv.recipientId;
+          } else {
+            // Direct message: check if it's between me and the selected user
+            const currentUserId = (window as any).__USER_ID__;
+            const messageFrom = message.senderId;
+            const messageTo = message.recipientId;
+            
+            // Message is for this conversation if:
+            // 1. I sent it to the selected user, OR
+            // 2. The selected user sent it to me
+            isForThisConversation = 
+              (messageFrom === currentUserId && messageTo === selectedConv.recipientId) ||
+              (messageFrom === selectedConv.recipientId && messageTo === currentUserId);
+          }
 
           if (isForThisConversation) {
             const newMsg: ChatMessage = {
@@ -84,48 +97,72 @@ export const ChatBot: React.FC = () => {
         }
 
         // Update conversation list with latest message
-        setConversations(prev => {
+        (async () => {
           const recipientId = isTeamMessage 
             ? message.teamId 
             : (message.senderId !== (window as any).__USER_ID__ ? message.senderId : message.recipientId);
 
-          const existing = prev.find(c => 
-            c.recipientId === recipientId || 
-            c.teamId === recipientId
-          );
-
-          if (existing) {
-            // Update existing conversation
-            return prev.map(c => 
-              (c.recipientId === recipientId || c.teamId === recipientId)
-                ? { 
-                    ...c, 
-                    lastMessage: message.content, 
-                    timestamp: message.timestamp || new Date().toISOString(),
-                    unread: (c.unread || 0) + 1 
-                  }
-                : c
-            ).sort((a, b) => {
-              if (!a.timestamp) return 1;
-              if (!b.timestamp) return -1;
-              return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-            });
+          // Determine display name based on message type
+          let displayName: string;
+          
+          if (isTeamMessage) {
+            // For team messages, use the team name (not sender/recipient names)
+            displayName = message.teamName || recipientId;
           } else {
-            // Add new conversation
-            const newConv: ConversationItem = {
-              id: recipientId,
-              recipientId: recipientId,
-              teamId: isTeamMessage ? message.teamId : undefined,
-              title: message.senderName || recipientId,
-              lastMessage: message.content,
-              unread: 1,
-              timestamp: message.timestamp || new Date().toISOString(),
-              isAI: false,
-              isTeam: isTeamMessage,
-            };
-            return [newConv, ...prev];
+            // For direct messages, show the other person's name
+            displayName = message.senderId !== (window as any).__USER_ID__ 
+              ? (message.senderName || recipientId)  // Message from others: show sender's name
+              : (message.recipientName || recipientId);  // Message from me: show recipient's name
           }
-        });
+
+          setConversations(prev => {
+            const existing = prev.find(c => 
+              c.recipientId === recipientId || 
+              c.teamId === recipientId
+            );
+
+            if (existing) {
+              // Update existing conversation using name from backend
+              return prev.map(c => 
+                (c.recipientId === recipientId || c.teamId === recipientId)
+                  ? { 
+                      ...c,
+                      // Use backend-provided name or keep existing title
+                      title: displayName || c.title,
+                      lastMessage: message.content, 
+                      timestamp: message.timestamp || new Date().toISOString(),
+                      unread: (c.unread || 0) + 1 
+                    }
+                  : c
+              ).sort((a, b) => {
+                if (!a.timestamp) return 1;
+                if (!b.timestamp) return -1;
+                return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+              });
+            } else {
+              // Add new conversation with backend-provided name
+              const newConv: ConversationItem = {
+                id: recipientId,
+                recipientId: recipientId,
+                teamId: isTeamMessage ? message.teamId : undefined,
+                title: displayName,
+                lastMessage: message.content,
+                unread: 1,
+                timestamp: message.timestamp || new Date().toISOString(),
+                isAI: false,
+                isTeam: isTeamMessage,
+              };
+              
+              // Add new conversation and sort by timestamp
+              const newList = [newConv, ...prev];
+              return newList.sort((a, b) => {
+                if (!a.timestamp) return 1;
+                if (!b.timestamp) return -1;
+                return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+              });
+            }
+          });
+        })();
       });
     };
 
@@ -157,31 +194,32 @@ export const ChatBot: React.FC = () => {
           const data = chatResult.value?.conversations || chatResult.value;
           
           if (Array.isArray(data)) {
-            // Fetch user details for all unique recipient IDs
-            const recipientIds = [...new Set(data.map((c: any) => c.recipientId || c.with || c.userId || c.participantId || c.id))];
-            const userDetailsMap = new Map<string, User>();
-            
-            // Fetch user details in parallel
-            await Promise.allSettled(
-              recipientIds.map(async (recipientId: string) => {
-                try {
-                  const user = await UserService.getUser(recipientId);
-                  if (user) {
-                    userDetailsMap.set(recipientId, user);
-                  }
-                } catch (error) {
-                  console.error(`Failed to fetch user details for ${recipientId}:`, error);
-                }
-              })
-            );
-            
             data.forEach((c: any) => {
+              // Skip team conversations - they'll be processed separately from teams API
+              if (c.isTeam || c.teamId) {
+                return;
+              }
+              
               const recipientId = c.recipientId || c.with || c.userId || c.participantId || c.id;
               const timestamp = c.timestamp || c.updatedAt;
               
-              // Get user details from the map
-              const userDetails = userDetailsMap.get(recipientId);
-              const displayName = userDetails?.displayName || userDetails?.name || c.recipientName;
+              // Backend returns both senderName and recipientName
+              // Display the name of the OTHER person in the conversation (not me)
+              let displayName: string;
+              
+              // If we have both names, determine which one to show based on senderId
+              if (c.senderName && c.recipientName) {
+                if (c.senderId && c.senderId === (window as any).__USER_ID__) {
+                  // I'm the sender, so show the recipient's name
+                  displayName = c.recipientName;
+                } else {
+                  // Someone else is the sender (or senderId not available), show sender's name
+                  displayName = c.senderName;
+                }
+              } else {
+                // Fallback: use whichever name is available
+                displayName = c.recipientName || c.senderName;
+              }
               
               // If we already have this recipient, keep the most recent one
               const existing = conversationMap.get(recipientId);
@@ -189,7 +227,7 @@ export const ChatBot: React.FC = () => {
                 conversationMap.set(recipientId, {
                   id: c.id || c.conversationId || `${recipientId}`,
                   recipientId,
-                  title: displayName || recipientId,
+                  title: displayName,
                   lastMessage: c.lastMessage?.content || c.lastMessage || c.preview || undefined,
                   unread: c.unreadCount || c.unread || 0,
                   timestamp: timestamp || undefined,
@@ -233,8 +271,8 @@ export const ChatBot: React.FC = () => {
           if (Array.isArray(teams)) {
             teams.forEach((team: any) => {
               const teamId = team.teamId || team.id;
-              // Use current timestamp to ensure teams appear in focused tab
-              const timestamp = new Date().toISOString();
+              // Use actual timestamp from team data (lastMessageTimestamp, updatedAt, or createdAt)
+              const timestamp = team.lastMessageTimestamp || team.updatedAt || team.timestamp || team.createdAt;
               
               conversationMap.set(`team_${teamId}`, {
                 id: teamId,
@@ -243,7 +281,7 @@ export const ChatBot: React.FC = () => {
                 title: team.name || 'Team Chat',
                 lastMessage: team.lastMessage || undefined,
                 unread: team.unreadCount || 0,
-                timestamp: timestamp,
+                timestamp: timestamp || undefined,
                 isAI: false,
                 isTeam: true,
                 participantIds: team.members?.map((m: any) => m.userId) || [],
@@ -281,60 +319,10 @@ export const ChatBot: React.FC = () => {
       }
     };
     load();
+    
     return () => {
       mounted = false;
     };
-  }, [isChatOpen]);
-
-  // Reload conversations when app resumes on mobile (to catch missed messages)
-  useEffect(() => {
-    const handleAppStateChange = async (state: { isActive: boolean }) => {
-      if (state.isActive && isChatOpen) {
-        // Reload conversations when app comes to foreground
-        try {
-          const [chatResult, aiResult, teamsResult] = await Promise.allSettled([
-            chatService.getConversations(),
-            aiService.getConversations(),
-            teamService.getTeams()
-          ]);
-
-          const conversationMap = new Map<string, ConversationItem>();
-
-          // Process conversations (simplified version)
-          if (chatResult.status === 'fulfilled') {
-            const data = chatResult.value?.conversations || chatResult.value;
-            if (Array.isArray(data)) {
-              data.forEach((c: any) => {
-                const recipientId = c.recipientId || c.with || c.userId || c.id;
-                conversationMap.set(recipientId, {
-                  id: recipientId,
-                  recipientId: recipientId,
-                  title: c.recipientName || c.name || recipientId,
-                  lastMessage: c.lastMessage || c.content,
-                  unread: c.unread || c.unreadCount || 0,
-                  timestamp: c.timestamp || c.updatedAt,
-                  isAI: false,
-                });
-              });
-            }
-          }
-
-          setConversations(Array.from(conversationMap.values()));
-        } catch (error) {
-          console.error('Failed to reload conversations on app resume:', error);
-        }
-      }
-    };
-
-    // Listen for app state changes on mobile
-    try {
-      const listener = App.addListener('appStateChange', handleAppStateChange);
-      return () => {
-        listener.then(l => l.remove());
-      };
-    } catch (error) {
-      // Not on mobile, ignore
-    }
   }, [isChatOpen]);
 
   // Handle hardware back button on mobile
@@ -369,11 +357,11 @@ export const ChatBot: React.FC = () => {
       }
     };
 
-    setupBackButtonHandler();
+    void setupBackButtonHandler();
 
     return () => {
       if (backButtonListener) {
-        backButtonListener.then((listener: any) => listener?.remove());
+        backButtonListener.remove();
       }
     };
   }, [isChatOpen, conversationDetailModalOpen, newMessageModalOpen]);
@@ -528,8 +516,15 @@ export const ChatBot: React.FC = () => {
         
         setMessages(msgs);
       } else {
-        // Send direct message
-        await chatService.sendDirectMessage({ recipientId: selectedConv.recipientId, content });
+        // Send direct message with recipient name from conversation title
+        // Backend now provides proper names, so we can use the title directly
+        const recipientName = selectedConv.title || selectedConv.recipientId;
+        
+        await chatService.sendDirectMessage({ 
+          recipientId: selectedConv.recipientId, 
+          recipientName: recipientName,
+          content 
+        });
         // Refresh conversation messages
         const result: any = await chatService.getConversation(selectedConv.recipientId, 100);
         const data = result?.data || result?.messages || result;
@@ -569,10 +564,10 @@ export const ChatBot: React.FC = () => {
     }
   };
 
-  const openConversation = async (conv: ConversationItem) => {
+  const openConversation = (conv: ConversationItem) => {
     setSelectedConv(conv);
     setConversationDetailModalOpen(true);
-    setViewMode('conversation'); // Switch to conversation view on mobile
+    setViewMode('conversation');
   };
 
   const closeConversation = () => {
@@ -693,6 +688,84 @@ export const ChatBot: React.FC = () => {
     }
   };
 
+  // Handler for clearing chat messages
+  const handleClearChat = async (conversationId: string) => {
+    try {
+      const conv = conversations.find(c => 
+        c.recipientId === conversationId || 
+        c.teamId === conversationId || 
+        c.id === conversationId
+      );
+      
+      if (!conv) return;
+
+      if (conv.isTeam) {
+        // Clear team messages
+        await teamService.clearTeamMessages(conversationId);
+      } else {
+        // Clear direct messages
+        await chatService.clearConversation(conversationId);
+      }
+
+      // Clear messages in UI
+      if (selectedConv && (
+        selectedConv.recipientId === conversationId || 
+        selectedConv.teamId === conversationId ||
+        selectedConv.id === conversationId
+      )) {
+        setMessages([]);
+      }
+
+      // Update conversation in list to show no messages
+      setConversations(prev => prev.map(c => 
+        (c.recipientId === conversationId || c.teamId === conversationId || c.id === conversationId)
+          ? { ...c, lastMessage: undefined }
+          : c
+      ));
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+    }
+  };
+
+  // Handler for exiting/deleting conversation
+  const handleExitChat = async (conversationId: string) => {
+    try {
+      const conv = conversations.find(c => 
+        c.recipientId === conversationId || 
+        c.teamId === conversationId || 
+        c.id === conversationId
+      );
+      
+      if (!conv) return;
+
+      if (conv.isTeam) {
+        // Leave team
+        await teamService.leaveTeam(conversationId);
+      } else {
+        // Delete direct conversation
+        await chatService.deleteConversation(conversationId);
+      }
+
+      // Remove conversation from list
+      setConversations(prev => prev.filter(c => 
+        c.recipientId !== conversationId && 
+        c.teamId !== conversationId &&
+        c.id !== conversationId
+      ));
+
+      // Close conversation if it's currently open
+      if (selectedConv && (
+        selectedConv.recipientId === conversationId || 
+        selectedConv.teamId === conversationId ||
+        selectedConv.id === conversationId
+      )) {
+        closeConversation();
+      }
+    } catch (error) {
+      console.error('Failed to exit/delete chat:', error);
+    }
+  };
+
   const renderAvatar = (title?: string) => (
     <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-100">
       {title ? title.trim().charAt(0).toUpperCase() : 'U'}
@@ -722,7 +795,9 @@ export const ChatBot: React.FC = () => {
     <div className="fixed bottom-6 right-6 max-sm:bottom-4 max-sm:right-4 z-50">
       {!isChatOpen ? (
         <button
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => {
+            setIsChatOpen(true);
+          }}
           className="bg-rose-600 text-white p-4 max-sm:p-3 rounded-full shadow-lg hover:bg-rose-700 transition"
           aria-label="Open chat"
         >
@@ -860,6 +935,8 @@ export const ChatBot: React.FC = () => {
         loadingMessages={loadingMessages}
         onRenameTeam={handleRenameTeam}
         onNewWebSocketMessage={handleNewWebSocketMessage}
+        onClearChat={handleClearChat}
+        onExitChat={handleExitChat}
       />
     </div>
   );

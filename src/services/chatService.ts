@@ -4,6 +4,7 @@ const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_URL;
 
 export interface DirectMessagePayload {
   recipientId: string;
+  recipientName?: string;
   content: string;
   type?: string;
 }
@@ -48,6 +49,34 @@ export class ChatService {
       return result;
     } catch (error) {
       console.error('ChatService.getConversations failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear all messages in a conversation (delete message history)
+   */
+  static async clearConversation(recipientId: string) {
+    try {
+      const endpoint = `${CHAT_API_BASE.replace(/\/$/, '')}/conversations/${recipientId}/clear`;
+      const result = await api.delete<any>(endpoint);
+      return result;
+    } catch (error) {
+      console.error('ChatService.clearConversation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an entire conversation (removes conversation and all messages)
+   */
+  static async deleteConversation(recipientId: string) {
+    try {
+      const endpoint = `${CHAT_API_BASE.replace(/\/$/, '')}/conversations/${recipientId}`;
+      const result = await api.delete<any>(endpoint);
+      return result;
+    } catch (error) {
+      console.error('ChatService.deleteConversation failed:', error);
       throw error;
     }
   }

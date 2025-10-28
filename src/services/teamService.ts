@@ -206,6 +206,45 @@ export class TeamService {
       throw error;
     }
   }
+
+  /**
+   * Clear all messages in a team chat (delete message history)
+   */
+  static async clearTeamMessages(teamId: string): Promise<void> {
+    try {
+      const endpoint = `${CHAT_API_BASE.replace(/\/$/, '')}/teams/${teamId}/messages`;
+      await api.delete<any>(endpoint);
+    } catch (error) {
+      console.error('TeamService.clearTeamMessages failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Leave a team (removes current user from team and deletes their message history)
+   */
+  static async leaveTeam(teamId: string): Promise<void> {
+    try {
+      const endpoint = `${CHAT_API_BASE.replace(/\/$/, '')}/teams/${teamId}/leave`;
+      await api.post<any>(endpoint, {});
+    } catch (error) {
+      console.error('TeamService.leaveTeam failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a team completely (admin only - removes team for all members)
+   */
+  static async deleteTeam(teamId: string): Promise<void> {
+    try {
+      const endpoint = `${CHAT_API_BASE.replace(/\/$/, '')}/teams/${teamId}`;
+      await api.delete<any>(endpoint);
+    } catch (error) {
+      console.error('TeamService.deleteTeam failed:', error);
+      throw error;
+    }
+  }
 }
 
 export const teamService = TeamService;

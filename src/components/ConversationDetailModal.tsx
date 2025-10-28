@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Send, MoreVertical, Users, Edit2, Wifi, WifiOff } from 'lucide-react';
+import { X, Send, MoreVertical, Users, Edit2, Wifi, WifiOff, Trash2, LogOut } from 'lucide-react';
 import { TeamMembersModal } from './TeamMembersModal';
 import { teamService } from '../services/teamService';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +29,8 @@ interface ConversationDetailModalProps {
   loadingMessages: boolean;
   onRenameTeam?: (teamId: string, newName: string) => void;
   onNewWebSocketMessage?: (message: { id?: string; senderId?: string; content: string; createdAt?: string }) => void;
+  onClearChat?: (conversationId: string) => void;
+  onExitChat?: (conversationId: string) => void;
 }
 
 export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = ({
@@ -43,6 +45,8 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   loadingMessages,
   onRenameTeam,
   onNewWebSocketMessage,
+  onClearChat,
+  onExitChat,
 }) => {
   const { user } = useAuth();
   const { isConnected } = useWebSocketContext();
@@ -51,6 +55,8 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   const [showTeamMembers, setShowTeamMembers] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showClearChatModal, setShowClearChatModal] = useState(false);
+  const [showExitChatModal, setShowExitChatModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [renamingTeam, setRenamingTeam] = useState(false);
 
@@ -128,10 +134,32 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
       setNewTeamName('');
     } catch (error) {
       console.error('Failed to rename team:', error);
-      alert('Failed to rename team. Please try again.');
     } finally {
       setRenamingTeam(false);
     }
+  };
+
+  const handleClearChat = () => {
+    if (!conversation) return;
+    
+    if (onClearChat) {
+      onClearChat(conversation.isTeam ? (conversation.teamId || conversation.id) : conversation.recipientId);
+    }
+    
+    setShowClearChatModal(false);
+    setShowMoreMenu(false);
+  };
+
+  const handleExitChat = () => {
+    if (!conversation) return;
+    
+    if (onExitChat) {
+      onExitChat(conversation.isTeam ? (conversation.teamId || conversation.id) : conversation.recipientId);
+    }
+    
+    setShowExitChatModal(false);
+    setShowMoreMenu(false);
+    onClose();
   };
 
   const renderAvatar = (title?: string) => (
@@ -185,13 +213,37 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
                           setShowTeamMembers(true);
                           setShowMoreMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 rounded-b-lg"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 border-b dark:border-gray-600"
                       >
                         <Users className="h-4 w-4" />
                         Manage Members
                       </button>
                     </>
                   )}
+                  
+                  {/* Clear Chat option */}
+                  <button
+                    onClick={() => {
+                      setShowClearChatModal(true);
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear Chat
+                  </button>
+                  
+                  {/* Exit/Delete option */}
+                  <button
+                    onClick={() => {
+                      setShowExitChatModal(true);
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 rounded-b-lg"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {conversation.isTeam ? 'Exit Group' : 'Delete Chat'}
+                  </button>
                 </div>
               )}
             </div>
@@ -341,6 +393,76 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {renamingTeam ? 'Renaming...' : 'Rename'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Clear Chat Confirmation Modal */}
+        {showClearChatModal && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setShowClearChatModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-2 p-6 max-sm:p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Clear Chat History?
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                This will delete all messages in this conversation. This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowClearChatModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearChat}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Clear Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Exit Chat/Group Confirmation Modal */}
+        {showExitChatModal && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setShowExitChatModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-sm:mx-2 p-6 max-sm:p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {conversation.isTeam ? 'Exit Group?' : 'Delete Conversation?'}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                {conversation.isTeam 
+                  ? 'You will be removed from this group and all chat history will be deleted. You can be added back by other members.'
+                  : 'This will delete the entire conversation and all messages. This action cannot be undone.'}
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowExitChatModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleExitChat}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  {conversation.isTeam ? 'Exit Group' : 'Delete Chat'}
                 </button>
               </div>
             </div>

@@ -337,6 +337,47 @@ export const ChatBot: React.FC = () => {
     }
   }, [isChatOpen]);
 
+  // Handle hardware back button on mobile
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      try {
+        backButtonListener = await App.addListener('backButton', () => {
+          // Priority 1: Close ConversationDetailModal if open
+          if (conversationDetailModalOpen) {
+            closeConversation();
+            return;
+          }
+
+          // Priority 2: Close NewMessageModal if open
+          if (newMessageModalOpen) {
+            setNewMessageModalOpen(false);
+            return;
+          }
+
+          // Priority 3: Close ChatBot if open
+          if (isChatOpen) {
+            setIsChatOpen(false);
+            return;
+          }
+
+          // If nothing is open, let the system handle the back button (exit app)
+        });
+      } catch (error) {
+        // Not on mobile platform, ignore
+      }
+    };
+
+    setupBackButtonHandler();
+
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.then((listener: any) => listener?.remove());
+      }
+    };
+  }, [isChatOpen, conversationDetailModalOpen, newMessageModalOpen]);
+
   // Load messages when a conversation is selected
   useEffect(() => {
     if (!selectedConv) return;

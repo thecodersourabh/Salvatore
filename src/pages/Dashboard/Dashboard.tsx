@@ -61,7 +61,7 @@ const iconMap: Record<ServiceSector, any> = {
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { getCurrentSectors, translateSector } = useSectorTranslation();
-  const { user } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null };
+  const { user, idToken } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null; idToken: string | null };
   const { language } = useLanguage();
   const { formatCurrency, currency } = useCurrency();
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -153,7 +153,7 @@ export const Dashboard = () => {
   // Fetch provider order stats (status wise) for dashboard metrics
   useEffect(() => {
     const loadOrderStats = async () => {
-      if (!user) {
+      if (!user || !idToken) {
         setStatsLoading(false);
         return;
       }
@@ -216,7 +216,7 @@ export const Dashboard = () => {
     };
 
     loadOrderStats();
-  }, [user]);
+  }, [user, idToken]);
 
   const toggleServiceStatus = (serviceId: number): void => {
     setServices(prev => 

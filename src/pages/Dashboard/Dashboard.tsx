@@ -2,10 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Zap,
-  Scissors,
-  Wrench,
-  Building2,
   TrendingUp,
   DollarSign,
   Calendar,
@@ -15,7 +11,8 @@ import {
 import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
 import StatSkeleton from '../../components/ui/StatSkeleton';
 import { ErrorType } from "../../services/apiErrorHandler";
-import { ServiceCard } from "../../components/ServiceCard";
+import { ProductCard } from "../../components/ProductCard";
+import { ProductDetailModal } from "../../components/ProductDetailModal";
 import { UserService } from "../../services";
 import { orderService } from "../../services/orderService";
 import { OrderStats } from "../../types/order";
@@ -24,39 +21,11 @@ import {useLanguage } from '../../context/LanguageContext';
 import { ServiceSector, User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
 import { useCurrency } from '../../context/CurrencyContext';
+import { ProductService, ProductResponse } from "../../services/productService";
 
-interface ServiceItem {
-  id: number;
-  title: string;
-  description: string;
-  icon: any;
-  category: string;
-  rating: number;
-  totalJobs: number;
-  isActive: boolean;
-  services: Array<{
-    name: string;
-    description: string;
-  }>;
-  skills?: string[];
-}
+// ServiceItem interface removed - now using products directly
 
-const iconMap: Record<ServiceSector, any> = {
-  Technology: Building2,
-  electrician: Zap,
-  plumber: Wrench,
-  carpenter: Building2,
-  mechanic: Wrench,
-  tailor: Scissors,
-  beautician: Scissors,
-  cleaner: Building2,
-  painter: Building2,
-  gardener: Building2,
-  tutor: Building2,
-  chef: Building2,
-  agency: Building2,
-  other: Building2
-};
+// Icon map removed - not needed for product display
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -64,7 +33,7 @@ export const Dashboard = () => {
   const { user, idToken } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null; idToken: string | null };
   const { language } = useLanguage();
   const { formatCurrency, currency } = useCurrency();
-  const [services, setServices] = useState<ServiceItem[]>([]);
+  // Removed services state - now showing products directly
   const [loading, setLoading] = useState(true);
   const [showProfileAlert, setShowProfileAlert] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
@@ -72,6 +41,10 @@ export const Dashboard = () => {
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [activeOrdersCount, setActiveOrdersCount] = useState<number | null>(null);
+  const [userProducts, setUserProducts] = useState<ProductResponse[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<ProductResponse | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -117,22 +90,12 @@ export const Dashboard = () => {
           const translatedSector = translateSector(userSector);
           const sectorData = sectorServices[translatedSector as ServiceSector];
           if (sectorData) {
-            const serviceCards = sectorData.services.map((service, index) => {
-              return {
-                id: index + 1,
-                title: service.name,
-                description: service.description,
-                icon: iconMap[userSector] || Building2,
-                category: userSector,
-                rating: profile.stats?.rating ?? 4.5,
-                totalJobs: profile.stats?.completedJobs ?? 10,
-                isActive: true,
-                services: [service],
-                skills: service.skills || []
-              };
-            });
-            
-            setServices(serviceCards);
+            // Store profile data for later use when products are loaded
+            localStorage.setItem('dashboardProfile', JSON.stringify({
+              profile,
+              userSector,
+              sectorData
+            }));
           }
         }
         setNetworkError(null);
@@ -149,6 +112,64 @@ export const Dashboard = () => {
 
     fetchUserProfile();
   }, [user]);
+
+  // Fetch user products
+  useEffect(() => {
+    const loadUserProducts = async () => {
+      if (!user?.email && !(user as any)?.sub) {
+        setProductsLoading(false);
+        return;
+      }
+
+      try {
+        // Use proper user ID mapping pattern (same as used in other services)
+        let userId: string | null = null;
+        
+        if ((user as any)?.sub) {
+          // First try to get mapped internal user ID from localStorage
+          userId = localStorage.getItem(`auth0_${(user as any).sub}`) || null;
+        }
+        
+        // Fallback to x-user-id or window context
+        if (!userId) {
+          userId = localStorage.getItem('x-user-id') || (window as any).__USER_ID__ || null;
+        }
+        
+        // Final fallback to email or sub
+        if (!userId) {
+          userId = user?.email || (user as any)?.sub || null;
+        }
+        
+        console.log('Fetching products for userId:', userId, 'user sub:', (user as any)?.sub);
+        
+        if (userId) {
+          const products = await ProductService.getUserProducts(userId);
+          console.log('Fetched products:', products?.length || 0, 'products for user:', userId);
+          setUserProducts(products || []);
+        } else {
+          console.warn('No valid userId found for product lookup');
+          setUserProducts([]);
+        }
+        setNetworkError(null);
+      } catch (error) {
+        console.error('Error loading user products:', error);
+        setUserProducts([]);
+        // Don't set network error for products since it's not critical
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadUserProducts();
+  }, [user]);
+
+  // Log products when loaded
+  useEffect(() => {
+    if (!productsLoading) {
+      const safeCount = Array.isArray(userProducts) ? userProducts.length : 0;
+      console.log('User products loaded:', safeCount, 'userProducts type:', typeof userProducts);
+    }
+  }, [userProducts, productsLoading]);
 
   // Fetch provider order stats (status wise) for dashboard metrics
   useEffect(() => {
@@ -218,30 +239,24 @@ export const Dashboard = () => {
     loadOrderStats();
   }, [user, idToken]);
 
-  const toggleServiceStatus = (serviceId: number): void => {
-    setServices(prev => 
-      prev.map(service => 
-        service.id === serviceId 
-          ? { ...service, isActive: !service.isActive }
-          : service
-      )
-    );
-  };
+  // Removed toggleServiceStatus - not needed for product display
 
-  const activeServices = services.filter(service => service.isActive);
-  const totalEarnings = activeServices.reduce(
-    (sum, service) => sum + (service.totalJobs * 45),
+  // Calculate stats based on products instead of services
+  const safeUserProducts = Array.isArray(userProducts) ? userProducts : [];
+  const activeProducts = safeUserProducts.filter(product => product?.isActive !== false);
+  const totalEarnings = activeProducts.reduce(
+    (sum, product) => sum + (product?.price || 0),
     0
   );
 
   // Count completed jobs: prefer backend-provided stats when available
   const totalCompletedJobs = orderStats && typeof orderStats.completedOrders === 'number'
     ? orderStats.completedOrders
-    : activeServices.reduce((sum, s) => sum + (s.totalJobs || 0), 0);
+    : 0;
 
   // Use orderStats when available for dashboard metrics (values used directly in JSX)
   const hasNumericStats = !!orderStats && typeof orderStats.totalRevenue === 'number' && typeof orderStats.pendingOrders === 'number' && typeof orderStats.inProgressOrders === 'number';
-  const safeActiveOrders = hasNumericStats ? (orderStats!.pendingOrders + orderStats!.inProgressOrders) : activeServices.length;
+  const safeActiveOrders = hasNumericStats ? (orderStats!.pendingOrders + orderStats!.inProgressOrders) : safeUserProducts.length;
   const safeRevenueNumber = hasNumericStats ? orderStats!.totalRevenue : totalEarnings || 0;
 
   if (loading) {
@@ -345,52 +360,101 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Services Management Section */}
+      {/* Products Management Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              Your Services
+              Your Service Products
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Manage your service offerings across different sectors
+              Manage your service offerings and track their performance
             </p>
           </div>
-          <button className="flex items-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors">
+          <button 
+            onClick={() => navigate('/add-product')}
+            className="flex items-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors"
+          >
             <Plus className="h-4 w-4" />
-            <span>Add Service</span>
+            <span>Add Product</span>
           </button>
         </div>
 
-        {services.length === 0 ? (
+        {loading || productsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="animate-pulse">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : safeUserProducts.length === 0 ? (
           <div className="max-w-xl mx-auto">
             <div className="card p-6 text-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No services yet</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">You haven't added any services. Create a listing to start receiving bookings.</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No products yet</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">You haven't added any service products. Create your first listing to start receiving bookings.</p>
               <div className="flex items-center justify-center gap-3">
                 <button onClick={() => navigate('/profile/edit')} className="button-primary px-4 py-2">Complete Profile</button>
-                <button onClick={() => navigate('/services/new')} className="button-secondary px-4 py-2">Add Service</button>
+                <button onClick={() => navigate('/add-product')} className="button-secondary px-4 py-2">Add Service</button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                <ServiceCard
-                  key={service.id}
-                  title={service.title}
-                  description={service.description}
-                  icon={service.icon}
-                  category={service.category}
-                  rating={service.rating}
-                  totalJobs={service.totalJobs}
-                  isActive={service.isActive}
-                  onToggle={() => toggleServiceStatus(service.id)}
-                  services={service.services}
-                  skills={service.skills}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {safeUserProducts.map((product) => (
+              <ProductCard
+                key={product.productId || product.id}
+                product={product}
+                onEdit={(product) => navigate(`/add-product?edit=${product.productId || product.id}`)}
+                onDelete={async (productId) => {
+                  try {
+                    await ProductService.deleteProduct(productId);
+                    setUserProducts(prev => Array.isArray(prev) ? prev.filter(p => (p?.productId || p?.id) !== productId) : []);
+                    // Show success message
+                    console.log('Product deleted successfully');
+                  } catch (error) {
+                    console.error('Error deleting product:', error);
+                    console.log('Failed to delete product. Please try again.');
+                  }
+                }}
+                onToggleActive={async (productId) => {
+                  try {
+                    const product = safeUserProducts.find(p => (p?.productId || p?.id) === productId);
+                    if (product) {
+                      // Update the product status
+                      const updatedData = { isActive: !product.isActive };
+                      await ProductService.updateProduct(productId, updatedData);
+                      
+                      // Update local state
+                      setUserProducts(prev => Array.isArray(prev) ? prev.map(p => 
+                        (p?.productId || p?.id) === productId ? { ...p, isActive: !p.isActive } : p
+                      ) : []);
+                      
+                      console.log(`Product ${product.isActive ? 'deactivated' : 'activated'} successfully`);
+                    }
+                  } catch (error) {
+                    console.error('Error toggling product status:', error);
+                    console.log('Failed to update product status. Please try again.');
+                  }
+                }}
+                onView={(product) => {
+                  setSelectedProduct(product as ProductResponse);
+                  setIsDetailModalOpen(true);
+                }}
+                showActions={true}
+              />
             ))}
           </div>
         )}
@@ -436,6 +500,31 @@ export const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          onEdit={(product) => {
+            navigate(`/add-product?edit=${product.productId || product.id}`);
+          }}
+          onDelete={async (productId) => {
+            try {
+              await ProductService.deleteProduct(productId);
+              setUserProducts(prev => Array.isArray(prev) ? prev.filter(p => (p?.productId || p?.id) !== productId) : []);
+              console.log('Product deleted successfully');
+            } catch (error) {
+              console.error('Error deleting product:', error);
+              console.log('Failed to delete product. Please try again.');
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

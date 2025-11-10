@@ -5,6 +5,20 @@ interface ServiceItem {
   description: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  category: string;
+  images?: Array<{
+    url: string;
+    isPrimary: boolean;
+  }>;
+  tags?: string[];
+}
+
 interface ServiceCardProps {
   title: string;
   description: string;
@@ -16,6 +30,7 @@ interface ServiceCardProps {
   onToggle: () => void;
   services: ServiceItem[];
   skills?: string[];
+  products?: Product[];
 }
 
 export function ServiceCard({ 
@@ -28,8 +43,11 @@ export function ServiceCard({
   isActive,
   onToggle,
   services,
-  skills = []
+  skills = [],
+  products = []
 }: ServiceCardProps) {
+  // Use services to prevent unused variable warning
+  const serviceCount = services?.length || 0;
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
@@ -39,7 +57,9 @@ export function ServiceCard({
           </div>
           <div>
             <h3 className="font-medium text-gray-900 dark:text-white">{title}</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{category}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {category} {serviceCount > 0 && `• ${serviceCount} service${serviceCount !== 1 ? 's' : ''}`}
+            </p>
           </div>
         </div>
         <div className="flex items-center">
@@ -92,6 +112,56 @@ export function ServiceCard({
           </div>
         </div>
       )}
+
+      {/* Products List */}
+      <div className="mb-4">
+        <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+          <span>Your Products</span>
+          <span className="text-rose-600 font-medium">{Array.isArray(products) ? products.length : 0}</span>
+        </h4>
+        
+        {Array.isArray(products) && products.length > 0 ? (
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {products.slice(0, 3).map((product, index) => (
+              <div key={product.id || index} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                {product.images?.[0] && (
+                  <img 
+                    src={product.images[0].url} 
+                    alt={product.name}
+                    className="w-8 h-8 rounded object-cover flex-shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                    {product.name}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                      {product.currency === 'USD' ? '$' : '₹'}{product.price}
+                    </p>
+                    {product.tags && product.tags.length > 0 && (
+                      <span className="text-xs text-gray-400 truncate ml-2">
+                        {product.tags[0]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {products.length > 3 && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-gray-700 rounded-md">
+                +{products.length - 3} more products
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              No products yet. Create your first service product!
+            </p>
+          </div>
+        )}
+      </div>
       
       <div className="flex items-center justify-between text-xs border-t pt-3">
         <div className="flex items-center space-x-3">

@@ -1,0 +1,529 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-31",
+  
+  "commonQuestions": {
+    "service_title": {
+      "id": "service_title",
+      "label": "Package Name/Title",
+      "type": "text",
+      "required": true,
+      "variants": {
+        "Basic": {
+          "placeholder": "e.g., Basic {serviceName} Package",
+          "helperText": "Give your basic package a clear, descriptive name"
+        },
+        "Standard": {
+          "placeholder": "e.g., Standard {serviceName} Package",
+          "helperText": "Give your standard package a clear, descriptive name"
+        },
+        "Premium": {
+          "placeholder": "e.g., Premium {serviceName} Package",
+          "helperText": "Give your premium package a clear, descriptive name"
+        }
+      }
+    },
+    
+    "package_description": {
+      "id": "package_description",
+      "label": "Package Description",
+      "type": "textarea",
+      "required": true,
+      "variants": {
+        "Basic": {
+          "placeholder": "Describe what's included in this basic package",
+          "helperText": "Be specific about what the customer will receive"
+        },
+        "Standard": {
+          "placeholder": "Describe what's included in this standard package",
+          "helperText": "Explain how this differs from the basic package"
+        },
+        "Premium": {
+          "placeholder": "Describe what's included in this premium package",
+          "helperText": "Explain how this differs from the standard package"
+        }
+      }
+    },
+    
+    "price": {
+      "id": "price",
+      "label": "Price (₹)",
+      "type": "number",
+      "required": true,
+      "validation": {
+        "min": 0,
+        "max": 10000000
+      },
+      "variants": {
+        "Basic": {
+          "placeholder": "Enter your price",
+          "helperText": "Set your base price for this package"
+        },
+        "Standard": {
+          "placeholder": "Enter your price",
+          "helperText": "Set your standard price (typically higher than Basic)"
+        },
+        "Premium": {
+          "placeholder": "Enter your price",
+          "helperText": "Set your premium price (typically higher than Standard)"
+        }
+      }
+    },
+    
+    "delivery_time": {
+      "id": "delivery_time",
+      "label": "Delivery/Completion Time ({timeUnit})",
+      "type": "number",
+      "required": true,
+      "validation": {
+        "min": 1,
+        "max": 365
+      },
+      "placeholder": "e.g., 3 {timeUnit}",
+      "helperText": "How long will this take to complete?"
+    },
+    
+    "travel_coverage": {
+      "id": "travel_coverage",
+      "label": "Travel/Coverage Area",
+      "type": "text",
+      "placeholder": "e.g., Within 10km, City-wide, State-wide",
+      "required": false,
+      "helperText": "What's your service coverage area?",
+      "tiers": ["Standard", "Premium"]
+    },
+    
+    "consultation_included": {
+      "id": "consultation_included",
+      "label": "Consultation/Planning Included?",
+      "type": "select",
+      "options": [
+        "No consultation",
+        "Basic phone consultation",
+        "In-person consultation",
+        "Virtual video consultation",
+        "Both in-person and virtual"
+      ],
+      "required": true,
+      "helperText": "Do you offer pre-service consultation?",
+      "tiers": ["Premium"]
+    },
+    
+    "rush_service_available": {
+      "id": "rush_service_available",
+      "label": "Rush/Express Service Available?",
+      "type": "select",
+      "options": [
+        "No",
+        "Yes, with additional charges",
+        "Yes, included in package"
+      ],
+      "required": false,
+      "helperText": "Can you provide expedited service?",
+      "tiers": ["Standard", "Premium"]
+    }
+  },
+  
+  "categoryQuestions": {
+    "PHYSICAL_ONSITE": {
+      "service_location": {
+        "id": "service_location",
+        "label": "Service Location",
+        "type": "multiselect",
+        "options": [
+          "At customer's location (home/office)",
+          "At my workshop/studio/clinic",
+          "Both locations available",
+          "Online/Remote service"
+        ],
+        "required": true,
+        "helperText": "Where will you provide this service?"
+      },
+      
+      "materials_included": {
+        "id": "materials_included",
+        "label": "Are Materials/Parts Included?",
+        "type": "select",
+        "options": [
+          "Yes, all materials included in price",
+          "Basic materials included, premium charged separately",
+          "No, customer provides materials",
+          "Materials charged separately"
+        ],
+        "required": true,
+        "helperText": "How do you handle materials and parts?"
+      },
+      
+      "warranty_offered": {
+        "id": "warranty_offered",
+        "label": "Warranty/Guarantee Offered",
+        "type": "select",
+        "options": [
+          "No warranty",
+          "7 days",
+          "15 days",
+          "30 days",
+          "60 days",
+          "90 days",
+          "6 months",
+          "1 year"
+        ],
+        "required": true,
+        "helperText": "Do you offer any warranty on your work?",
+        "tiers": ["Standard", "Premium"]
+      }
+    },
+    
+    "DIGITAL_REMOTE": {
+      "number_of_revisions": {
+        "id": "number_of_revisions",
+        "label": "Number of Revisions/Adjustments",
+        "type": "select",
+        "options": ["1", "2", "3", "5", "Unlimited"],
+        "required": true,
+        "helperText": "How many free revisions/adjustments will you offer?"
+      },
+      
+      "deliverables": {
+        "id": "deliverables",
+        "label": "What Will Be Delivered?",
+        "type": "multiselect",
+        "options": [
+          "Final product/service",
+          "Documentation",
+          "Training/tutorial",
+          "Source files",
+          "Post-delivery support"
+        ],
+        "required": true,
+        "helperText": "What will the customer receive?"
+      },
+      
+      "source_files_included": {
+        "id": "source_files_included",
+        "label": "Source Files Included?",
+        "type": "select",
+        "options": [
+          "Yes, all source files included",
+          "Partial source files",
+          "No source files"
+        ],
+        "required": true,
+        "helperText": "Will you provide source/editable files?",
+        "tiers": ["Premium"]
+      }
+    },
+    
+    "HEALTHCARE": {
+      "qualifications": {
+        "id": "qualifications",
+        "label": "Qualifications/Certifications",
+        "type": "textarea",
+        "placeholder": "List your medical qualifications and certifications",
+        "required": true,
+        "helperText": "Provide details of your professional credentials",
+        "tiers": ["Premium"]
+      },
+      
+      "follow_up_included": {
+        "id": "follow_up_included",
+        "label": "Follow-up Sessions/Consultations",
+        "type": "select",
+        "options": [
+          "No follow-up",
+          "1 follow-up included",
+          "2 follow-ups included",
+          "3 follow-ups included",
+          "5 follow-ups included",
+          "Unlimited follow-ups"
+        ],
+        "required": true,
+        "helperText": "Are follow-up consultations included?",
+        "tiers": ["Standard", "Premium"]
+      },
+      
+      "emergency_availability": {
+        "id": "emergency_availability",
+        "label": "Emergency Availability",
+        "type": "select",
+        "options": [
+          "Business hours only",
+          "Extended hours",
+          "24/7 availability"
+        ],
+        "required": true,
+        "helperText": "What are your emergency consultation hours?",
+        "tiers": ["Premium"]
+      }
+    },
+    
+    "EDUCATION": {
+      "session_duration": {
+        "id": "session_duration",
+        "label": "Session Duration (minutes)",
+        "type": "number",
+        "placeholder": "e.g., 60",
+        "required": true,
+        "helperText": "How long is each session?"
+      },
+      
+      "number_of_sessions": {
+        "id": "number_of_sessions",
+        "label": "Number of Sessions",
+        "type": "select",
+        "options": ["1", "5", "10", "20", "30", "Ongoing"],
+        "required": true,
+        "helperText": "How many sessions are included?"
+      },
+      
+      "study_materials_included": {
+        "id": "study_materials_included",
+        "label": "Study Materials Included?",
+        "type": "select",
+        "options": [
+          "No materials",
+          "Basic notes/worksheets",
+          "Comprehensive study materials",
+          "Premium books/resources"
+        ],
+        "required": true,
+        "helperText": "What study materials do you provide?"
+      }
+    },
+    
+    "CULINARY": {
+      "serving_size": {
+        "id": "serving_size",
+        "label": "Serving Size/Number of People",
+        "type": "text",
+        "placeholder": "e.g., 10-15 people, 50 portions",
+        "required": true,
+        "helperText": "How many people can you serve?"
+      },
+      
+      "dietary_options": {
+        "id": "dietary_options",
+        "label": "Dietary Options Available",
+        "type": "multiselect",
+        "options": [
+          "Vegetarian",
+          "Vegan",
+          "Gluten-free",
+          "Keto",
+          "Low-carb",
+          "Diabetic-friendly",
+          "Jain",
+          "Halal",
+          "Custom"
+        ],
+        "required": true,
+        "helperText": "What dietary preferences can you accommodate?"
+      },
+      
+      "ingredients_sourcing": {
+        "id": "ingredients_sourcing",
+        "label": "Ingredients Quality",
+        "type": "select",
+        "options": [
+          "Standard quality",
+          "Premium ingredients",
+          "Organic only",
+          "Customer provides ingredients"
+        ],
+        "required": true,
+        "helperText": "What quality of ingredients do you use?"
+      }
+    },
+    
+    "CREATIVE": {
+      "number_of_concepts": {
+        "id": "number_of_concepts",
+        "label": "Number of Initial Concepts",
+        "type": "select",
+        "options": ["1", "2", "3", "5", "Unlimited"],
+        "required": true,
+        "helperText": "How many initial design concepts will you provide?"
+      },
+      
+      "revisions_included": {
+        "id": "revisions_included",
+        "label": "Revisions Included",
+        "type": "select",
+        "options": ["1", "2", "3", "5", "Unlimited"],
+        "required": true,
+        "helperText": "How many rounds of revisions are included?"
+      },
+      
+      "final_file_formats": {
+        "id": "final_file_formats",
+        "label": "Final File Formats Delivered",
+        "type": "multiselect",
+        "options": [
+          "JPEG/PNG",
+          "PDF",
+          "AI/PSD (Source files)",
+          "SVG",
+          "Video (MP4)",
+          "RAW files"
+        ],
+        "required": true,
+        "helperText": "What file formats will you deliver?"
+      }
+    },
+    
+    "CONSULTATION": {
+      "consultation_duration": {
+        "id": "consultation_duration",
+        "label": "Consultation Duration (minutes)",
+        "type": "number",
+        "placeholder": "e.g., 30, 60",
+        "required": true,
+        "helperText": "How long is each consultation session?"
+      },
+      
+      "report_delivery": {
+        "id": "report_delivery",
+        "label": "Written Report/Documentation",
+        "type": "select",
+        "options": [
+          "No report",
+          "Basic summary",
+          "Detailed report",
+          "Comprehensive report with action plan"
+        ],
+        "required": true,
+        "helperText": "Will you provide a written report?"
+      },
+      
+      "follow_up_support": {
+        "id": "follow_up_support",
+        "label": "Follow-up Support",
+        "type": "select",
+        "options": [
+          "No follow-up",
+          "Email support (7 days)",
+          "Email support (30 days)",
+          "One follow-up session",
+          "Unlimited email support"
+        ],
+        "required": true,
+        "helperText": "What follow-up support do you offer?",
+        "tiers": ["Standard", "Premium"]
+      }
+    },
+    
+    "LOGISTICS": {
+      "vehicle_type": {
+        "id": "vehicle_type",
+        "label": "Vehicle Type",
+        "type": "multiselect",
+        "options": [
+          "Two-wheeler",
+          "Sedan/Hatchback",
+          "SUV/Van",
+          "Pickup truck",
+          "Large truck"
+        ],
+        "required": true,
+        "helperText": "What type of vehicle will you use?"
+      },
+      
+      "loading_unloading_included": {
+        "id": "loading_unloading_included",
+        "label": "Loading/Unloading Service",
+        "type": "select",
+        "options": [
+          "Customer handles loading/unloading",
+          "Basic loading/unloading included",
+          "Full service with helpers",
+          "Professional packing + loading/unloading"
+        ],
+        "required": true,
+        "helperText": "What loading/unloading services are included?"
+      },
+      
+      "insurance_coverage": {
+        "id": "insurance_coverage",
+        "label": "Insurance Coverage",
+        "type": "select",
+        "options": [
+          "No insurance",
+          "Basic coverage (up to ₹10,000)",
+          "Standard coverage (up to ₹50,000)",
+          "Premium coverage (up to ₹2,00,000)",
+          "Full value insurance"
+        ],
+        "required": true,
+        "helperText": "What insurance coverage do you provide?",
+        "tiers": ["Standard", "Premium"]
+      }
+    }
+  },
+  
+  "featurePlaceholders": {
+    "PHYSICAL_ONSITE": [
+      "Complete diagnostics included",
+      "Quality parts/materials used",
+      "Professional tools and equipment",
+      "Clean-up after service",
+      "Warranty on work performed",
+      "Follow-up support included"
+    ],
+    "DIGITAL_REMOTE": [
+      "Responsive design included",
+      "SEO optimization",
+      "Source files provided",
+      "Post-launch support (30 days)",
+      "Unlimited revisions",
+      "Fast delivery"
+    ],
+    "HEALTHCARE": [
+      "Licensed professional",
+      "Emergency consultation available",
+      "Follow-up included",
+      "Medical report provided",
+      "Prescription if needed",
+      "24/7 availability"
+    ],
+    "EDUCATION": [
+      "Personalized learning plan",
+      "Progress tracking included",
+      "Study materials provided",
+      "Flexible scheduling",
+      "Doubt clearing sessions",
+      "Test preparation support"
+    ],
+    "CULINARY": [
+      "Fresh ingredients guaranteed",
+      "Custom menu planning",
+      "Professional presentation",
+      "Dietary preferences accommodated",
+      "Setup and cleanup included",
+      "Tasting session available"
+    ],
+    "CREATIVE": [
+      "Multiple design concepts",
+      "Unlimited revisions",
+      "High-resolution files",
+      "Commercial usage rights",
+      "Fast turnaround",
+      "Professional consultation"
+    ],
+    "CONSULTATION": [
+      "One-on-one session",
+      "Detailed analysis report",
+      "Action plan included",
+      "Follow-up support",
+      "Confidential consultation",
+      "Expert recommendations"
+    ],
+    "LOGISTICS": [
+      "Door-to-door service",
+      "Real-time tracking",
+      "Professional handling",
+      "Insurance coverage",
+      "Flexible scheduling",
+      "Helper assistance included"
+    ]
+  }
+}

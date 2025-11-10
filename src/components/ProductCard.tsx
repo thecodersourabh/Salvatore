@@ -1,0 +1,279 @@
+import React from 'react';
+import { Star, Eye, Edit, Trash2, Share2 } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
+
+interface ProductImage {
+  url: string;
+  isPrimary: boolean;
+}
+
+interface Product {
+  id?: string;
+  productId?: string;  // API returns productId instead of id
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  currency: string;
+  category: string;
+  images?: ProductImage[];
+  tags?: string[];
+  skills?: string[];
+  specifications?: any;  // API specifications can vary in structure
+  rating?: number;
+  reviewCount?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ProductCardProps {
+  product: Product;
+  onEdit?: (product: Product) => void;
+  onDelete?: (productId: string) => void;
+  onToggleActive?: (productId: string) => void;
+  onView?: (product: Product) => void;
+  showActions?: boolean;
+}
+
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onEdit,
+  onDelete,
+  onToggleActive,
+  onView,
+  showActions = true
+}) => {
+  const { formatCurrency } = useCurrency();
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(product);
+  };
+
+  // Get the product ID from either id or productId field
+  const productId = product.id || product.productId || '';
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      onDelete?.(productId);
+    }
+  };
+
+  const handleToggleActive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleActive?.(productId);
+  };
+
+  const handleView = () => {
+    onView?.(product);
+  };
+
+  const primaryImage = product.images?.find(img => img.isPrimary)?.url || 
+                      product.images?.[0]?.url || 
+                      'https://via.placeholder.com/300x200?text=No+Image';
+
+  const discountPercentage = product.originalPrice && product.price < product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer"
+         onClick={handleView}>
+      
+      {/* Product Image */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-700">
+        <img
+          src={primaryImage}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        
+        {/* Status Badge */}
+        {product.isActive !== undefined && (
+          <div className="absolute top-2 left-2">
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+              product.isActive 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+            }`}>
+              {product.isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        )}
+
+        {/* Discount Badge */}
+        {discountPercentage && (
+          <div className="absolute top-2 right-2">
+            <span className="bg-rose-500 text-white px-2 py-1 text-xs font-bold rounded">
+              -{discountPercentage}%
+            </span>
+          </div>
+        )}
+
+        {/* Quick Actions Overlay */}
+        {showActions && (
+          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="flex space-x-2">
+              <button
+                onClick={handleView}
+                className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
+                title="View Details"
+              >
+                <Eye className="h-4 w-4 text-gray-700" />
+              </button>
+              {onEdit && (
+                <button
+                  onClick={handleEdit}
+                  className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
+                  title="Edit Product"
+                >
+                  <Edit className="h-4 w-4 text-blue-600" />
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.share?.({ 
+                    title: product.name, 
+                    text: product.description,
+                    url: window.location.href 
+                  });
+                }}
+                className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
+                title="Share"
+              >
+                <Share2 className="h-4 w-4 text-gray-700" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Product Info */}
+      <div className="p-4">
+        {/* Category */}
+        {product.category && (
+          <div className="mb-2">
+            <span className="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded">
+              {product.category}
+            </span>
+          </div>
+        )}
+
+        {/* Product Name */}
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 text-sm leading-tight">
+          {product.name}
+        </h3>
+
+        {/* Description */}
+        <p className="text-gray-600 dark:text-gray-400 text-xs mb-3 line-clamp-2">
+          {product.description}
+        </p>
+
+        {/* Rating & Reviews */}
+        {product.rating && (
+          <div className="flex items-center mb-3">
+            <div className="flex items-center bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+              <span>{product.rating.toFixed(1)}</span>
+              <Star className="h-3 w-3 ml-1 fill-current" />
+            </div>
+            {product.reviewCount && (
+              <span className="text-gray-500 text-xs ml-2">
+                ({product.reviewCount.toLocaleString()})
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Tags/Skills */}
+        {(() => {
+          // Get skills from product.skills or specifications.skills
+          const skills = product.skills || 
+                        (product.specifications as any)?.skills || 
+                        product.tags || 
+                        [];
+          
+          if (Array.isArray(skills) && skills.length > 0) {
+            return (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-1">
+                  {skills.slice(0, 3).map((skill: string, index: number) => (
+                    <span
+                      key={index}
+                      className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                  {skills.length > 3 && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      +{skills.length - 3}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
+        {/* Price Section */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatCurrency(product.price)}
+            </span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                {formatCurrency(product.originalPrice)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        {showActions && (
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              {onToggleActive && (
+                <button
+                  onClick={handleToggleActive}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    product.isActive
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      : 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40'
+                  }`}
+                >
+                  {product.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-1">
+              {onEdit && (
+                <button
+                  onClick={handleEdit}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  title="Edit"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={handleDelete}
+                  className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

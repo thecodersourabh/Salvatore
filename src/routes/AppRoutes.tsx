@@ -14,6 +14,7 @@ import { Wishlist } from "../pages/Profile/Wishlist/Wishlist";
 import { Settings } from "../pages/Settings/Settings";
 import PaymentPage from "../pages/Payments/PaymentPage";
 import NotificationTestPage from "../pages/NotificationTestPage";
+import AddProductPage from "../pages/Services/AddProduct";
 
 export const AppRoutes = () => {
   return (
@@ -68,6 +69,11 @@ export const AppRoutes = () => {
       <Route path="/notification-test" element={
         <ProtectedRoute>
           <NotificationTestPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/add-product" element={
+        <ProtectedRoute>
+          <AddProductPage />
         </ProtectedRoute>
       } />
     </Routes>

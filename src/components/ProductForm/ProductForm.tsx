@@ -6,6 +6,7 @@ import packageTierTemplates from "../../config/packageTierTemplates.json";
 import { Edit2, Check, X as XIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ProductService } from "../../services/productService";
+import { ImageService } from "../../services/imageService";
 
 type ServiceDef = any;
 
@@ -33,6 +34,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   // media uploads
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{url: string, isPrimary: boolean, order: number}>>([]);
   const [video, setVideo] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -132,7 +134,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     if (!files) return;
     const maxImages = 6;
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const incoming = Array.from(files).slice(0, maxImages - images.length);
+    
+    // Calculate current total images (existing + new)
+    const currentTotalImages = existingImages.length + images.length;
+    const availableSlots = maxImages - currentTotalImages;
+    
+    const incoming = Array.from(files).slice(0, availableSlots);
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     
     const validFiles = incoming.filter(f => {
@@ -151,16 +158,32 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       const newPreviews = validFiles.map(f => URL.createObjectURL(f));
       setImages(prev => [...prev, ...validFiles]);
       setImagePreviews(prev => [...prev, ...newPreviews]);
+      console.log(`Added ${validFiles.length} new images. Total: ${currentTotalImages + validFiles.length}/${maxImages}`);
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => {
-      const removed = prev[index];
-      if (removed) URL.revokeObjectURL(removed);
-      return prev.filter((_, i) => i !== index);
-    });
+    const existingImagesCount = existingImages.length;
+    
+    if (index < existingImagesCount) {
+      // Removing an existing image
+      console.log('Removing existing image at index:', index);
+      setExistingImages(prev => prev.filter((_, i) => i !== index));
+      setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Removing a new image (File object)
+      const newImageIndex = index - existingImagesCount;
+      console.log('Removing new image at index:', newImageIndex);
+      
+      setImages(prev => prev.filter((_, i) => i !== newImageIndex));
+      setImagePreviews(prev => {
+        const removed = prev[index];
+        if (removed && removed.startsWith('blob:')) {
+          URL.revokeObjectURL(removed);
+        }
+        return prev.filter((_, i) => i !== index);
+      });
+    }
   };
 
   // Drag and drop handlers for images
@@ -298,19 +321,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         if (product.images && product.images.length > 0) {
           console.log('Loading existing product images:', product.images.length);
           
-          // Create preview URLs from existing images
+          // Store existing images separately 
+          setExistingImages(product.images);
+          
+          // Create preview URLs from existing images for display
           const existingPreviews = product.images.map(img => img.url);
           setImagePreviews(existingPreviews);
           
-          // Note: We don't set the File objects since these are existing URLs
-          // When updating, we'll handle this differently in handleSubmit
+          // Clear any new images since we're loading existing ones
+          setImages([]);
         }
         
         console.log('Form fields populated successfully');
       } catch (error) {
         console.error('Failed to load product for editing:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to load product data';
-        alert(`Failed to load product: ${errorMessage}`);
+        console.log(`Failed to load product: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
@@ -375,26 +401,62 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         // Update existing product
         console.log('Updating existing product:', editProductId);
         
-        // Handle image updates if new images were added
-        if (images.length > 0) {
-          console.log('Updating product with new images');
-          result = await ProductService.createProduct({
-            productData,
-            images,
-            video,
-          });
-          
-          // Then update the product record
-          const apiProductData = ProductService.transformFormDataToApiFormat(productData, []);
-          await ProductService.updateProduct(editProductId, apiProductData);
-        } else {
-          // Just update the product data without new images
-          const apiProductData = ProductService.transformFormDataToApiFormat(productData, []);
-          result = await ProductService.updateProduct(editProductId, apiProductData);
+        // Combine existing images with new images for the update
+        let allImages: Array<{url: string, isPrimary: boolean, order: number}> = [];
+        
+        // Add existing images first
+        if (existingImages.length > 0) {
+          allImages = existingImages.map((img, index) => ({
+            url: img.url,
+            isPrimary: img.isPrimary || index === 0,
+            order: index + 1
+          }));
+          console.log('Including existing images:', allImages.length);
         }
         
+        // If user added new images, upload them and add to the array
+        if (images.length > 0) {
+          console.log('Uploading new images:', images.length);
+          
+          try {
+            const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
+            
+            // Upload new images
+            const newImageKeys: string[] = [];
+            for (let i = 0; i < images.length; i++) {
+              const imageKey = await ImageService.uploadImage({
+                username,
+                file: images[i],
+                folder: 'products'
+              });
+              newImageKeys.push(imageKey);
+            }
+            
+            // Add new images to the array
+            const newImageObjects = newImageKeys.map((key, index) => ({
+              url: ImageService.getImageUrl(key),
+              isPrimary: allImages.length === 0 && index === 0, // Only primary if no existing images
+              order: allImages.length + index + 1
+            }));
+            
+            allImages = [...allImages, ...newImageObjects];
+            console.log('Total images after adding new ones:', allImages.length);
+            
+          } catch (imageError) {
+            console.error('Failed to upload new images:', imageError);
+            throw new Error('Failed to upload new images');
+          }
+        }
+        
+        // Update product with all images (existing + new)
+        const apiProductData = ProductService.transformFormDataToApiFormat(productData, allImages.map(img => img.url));
+        // Manually add the images array since transformFormDataToApiFormat might not handle this correctly
+        (apiProductData as any).images = allImages;
+        
+        result = await ProductService.updateProduct(editProductId, apiProductData);
+        
         console.log('Product updated successfully:', result);
-        alert('Product updated successfully!');
+        console.log('Product updated successfully!');
       } else {
         // Create new product
         console.log('Creating new product');
@@ -405,7 +467,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         });
         
         console.log('Product created successfully:', result);
-        alert('Product created successfully!');
+        console.log('Product created successfully!');
       }
       
       // After successful operation, redirect to dashboard
@@ -416,7 +478,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       console.error('Product operation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       const operation = editProductId ? 'update' : 'create';
-      alert(`Failed to ${operation} product: ${errorMessage}`);
+      console.log(`Failed to ${operation} product: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }

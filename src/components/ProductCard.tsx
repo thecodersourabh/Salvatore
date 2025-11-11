@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, Eye, Edit, Trash2, Share2 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import { ConfirmationModal } from './ui/ConfirmationModal';
 
 interface ProductImage {
   url: string;
@@ -45,6 +46,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showActions = true
 }) => {
   const { formatCurrency } = useCurrency();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,9 +58,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      onDelete?.(productId);
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete?.(productId);
   };
 
   const handleToggleActive = (e: React.MouseEvent) => {
@@ -112,43 +116,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {/* Quick Actions Overlay */}
-        {showActions && (
-          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-            <div className="flex space-x-2">
-              <button
-                onClick={handleView}
-                className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
-                title="View Details"
-              >
-                <Eye className="h-4 w-4 text-gray-700" />
-              </button>
-              {onEdit && (
-                <button
-                  onClick={handleEdit}
-                  className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
-                  title="Edit Product"
-                >
-                  <Edit className="h-4 w-4 text-blue-600" />
-                </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.share?.({ 
-                    title: product.name, 
-                    text: product.description,
-                    url: window.location.href 
-                  });
-                }}
-                className="bg-white bg-opacity-90 hover:bg-opacity-100 p-2 rounded-full transition-all duration-200 hover:scale-110"
-                title="Share"
-              >
-                <Share2 className="h-4 w-4 text-gray-700" />
-              </button>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* Product Info */}
@@ -252,6 +220,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
 
             <div className="flex items-center space-x-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleView();
+                }}
+                className="p-1.5 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                title="View Details"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
               {onEdit && (
                 <button
                   onClick={handleEdit}
@@ -261,6 +239,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   <Edit className="h-4 w-4" />
                 </button>
               )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.share?.({ 
+                    title: product.name, 
+                    text: product.description,
+                    url: window.location.href 
+                  });
+                }}
+                className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                title="Share"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
               {onDelete && (
                 <button
                   onClick={handleDelete}
@@ -274,6 +266,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${product.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonColor="red"
+        icon="delete"
+        requireTextConfirmation={true}
+        confirmationText={product.name}
+        confirmationPlaceholder="Type product name to confirm"
+      />
     </div>
   );
 };

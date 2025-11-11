@@ -159,7 +159,7 @@ export class ProductService {
       }
 
       // Transform form data to API format
-      const apiProductData = this.transformFormDataToApiFormat(request.productData, cdnImageUrls);
+      const apiProductData = ProductService.transformFormDataToApiFormat(request.productData, cdnImageUrls);
 
       // Create product via API with JSON data (no FormData needed)
       console.log('Creating product record in API...');
@@ -177,7 +177,7 @@ export class ProductService {
   /**
    * Transform form data to the API format expected by the backend
    */
-  private static transformFormDataToApiFormat(
+  static transformFormDataToApiFormat(
     formData: LegacyFormData, 
     cdnImageUrls: string[]
   ): CreateProductRequest {
@@ -267,12 +267,27 @@ export class ProductService {
 
   /**
    * Get products for a specific user/provider
+   * Uses the new endpoint pattern: /users/{userId}/products
    */
   static async getUserProducts(userId?: string): Promise<ProductResponse[]> {
-    const baseUrl = this.getApiUrl();
-    const url = userId ? `${baseUrl}?userId=${userId}` : baseUrl;
+    // Get user ID from parameter, localStorage, or context
+    const targetUserId = userId || 
+      localStorage.getItem('x-user-id') || 
+      (window as any).__USER_ID__ || 
+      localStorage.getItem('username');
+    
+    if (!targetUserId) {
+      console.warn('No user ID available for fetching products');
+      return [];
+    }
+
+    // Use the new endpoint pattern: /users/{userId}/products
+    const apiUrl = this.getApiUrl();
+    const url = `${apiUrl.replace(/\/products$/, '')}/users/${targetUserId}/products`;
     
     try {
+      console.log('Fetching products for user:', targetUserId, 'from URL:', url);
+      
       const response = await api.get<{
         success: boolean;
         data: ProductResponse[];
@@ -300,6 +315,92 @@ export class ProductService {
       return [];
     } catch (error) {
       console.error('Get user products error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all products (for marketplace/public view) 
+   * This method can be used when you need to show all products regardless of user
+   */
+  static async getAllProducts(): Promise<ProductResponse[]> {
+    const apiUrl = this.getApiUrl();
+    
+    try {
+      const response = await api.get<{
+        success: boolean;
+        data: ProductResponse[];
+        pagination?: any;
+        filters?: any;
+        timestamp?: string;
+        requestId?: string;
+      }>(apiUrl);
+      
+      console.log('Raw API response for all products:', response);
+      
+      // Extract the data array from the API response
+      if (response && typeof response === 'object' && 'data' in response) {
+        console.log('Extracting all products from response:', response.data?.length || 0, 'products');
+        return Array.isArray(response.data) ? response.data : [];
+      }
+      
+      // Fallback: if response is already an array (for backward compatibility)
+      if (Array.isArray(response)) {
+        console.log('All products response is already an array:', (response as ProductResponse[]).length, 'products');
+        return response as ProductResponse[];
+      }
+      
+      console.warn('Unexpected API response format for all products:', typeof response);
+      return [];
+    } catch (error) {
+      console.error('Get all products error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get products by a specific user ID (for viewing another user's products)
+   */
+  static async getProductsByUserId(userId: string): Promise<ProductResponse[]> {
+    if (!userId) {
+      console.warn('No user ID provided for fetching products');
+      return [];
+    }
+
+    // Use the new endpoint pattern: /users/{userId}/products
+    const apiUrl = this.getApiUrl();
+    const url = `${apiUrl.replace(/\/products$/, '')}/users/${userId}/products`;
+    
+    try {
+      console.log('Fetching products for specific user:', userId, 'from URL:', url);
+      
+      const response = await api.get<{
+        success: boolean;
+        data: ProductResponse[];
+        pagination?: any;
+        filters?: any;
+        timestamp?: string;
+        requestId?: string;
+      }>(url);
+      
+      console.log('Raw API response for user products:', response);
+      
+      // Extract the data array from the API response
+      if (response && typeof response === 'object' && 'data' in response) {
+        console.log('Extracting data from response:', response.data?.length || 0, 'products for user:', userId);
+        return Array.isArray(response.data) ? response.data : [];
+      }
+      
+      // Fallback: if response is already an array (for backward compatibility)
+      if (Array.isArray(response)) {
+        console.log('Response is already an array:', (response as ProductResponse[]).length, 'products');
+        return response as ProductResponse[];
+      }
+      
+      console.warn('Unexpected API response format:', typeof response);
+      return [];
+    } catch (error) {
+      console.error('Get products by user ID error:', error);
       throw error;
     }
   }
@@ -419,6 +520,65 @@ export class ProductService {
    */
   static getProductVideoUrl(videoKey: string): string {
     return ImageService.getImageUrl(videoKey);
+  }
+
+  /**
+   * Transform ProductResponse back to LegacyFormData format for form editing
+   */
+  static transformProductResponseToFormData(product: ProductResponse): LegacyFormData {
+    // Extract tier information from specifications
+    const tiers = ['Basic', 'Standard', 'Premium'] as const;
+    const prices: Record<string, number | ""> = { Basic: "", Standard: "", Premium: "" };
+    const deliveryTimes: Record<string, number | ""> = { Basic: "", Standard: "", Premium: "" };
+    const fullFormAnswersPerTier: Record<string, Record<string, string>> = { Basic: {}, Standard: {}, Premium: {} };
+
+    // Find the primary tier (the one with the product's price)
+    let primaryTier = 'Basic';
+    tiers.forEach(tier => {
+      const tierSpec = product.specifications[tier];
+      if (tierSpec) {
+        if (tierSpec.price === product.price) {
+          primaryTier = tier;
+        }
+        prices[tier] = tierSpec.price || "";
+        
+        // Parse delivery time to extract numeric value
+        const deliveryTimeStr = tierSpec.deliveryTime || '3-5 days';
+        const timeMatch = deliveryTimeStr.match(/(\d+)(-\d+)?/);
+        deliveryTimes[tier] = timeMatch ? parseInt(timeMatch[1]) : "";
+        
+        // Populate tier answers
+        fullFormAnswersPerTier[tier] = {
+          description: product.description || '',
+          brand: product.brand || '',
+          revisions: tierSpec.revisions || '3 included',
+          support: tierSpec.support || '',
+          ...(tierSpec.features ? tierSpec.features.reduce((acc, feature) => {
+            const [key, value] = feature.split(': ');
+            if (key && value) acc[key] = value;
+            return acc;
+          }, {} as Record<string, string>) : {})
+        };
+      }
+    });
+
+    // Extract category from product category or derive from tags
+    const category = product.category ? 
+      product.category.charAt(0).toUpperCase() + product.category.slice(1) : 
+      'Technology';
+
+    return {
+      sku: product.id || product.productId || '',
+      title: product.name,
+      category: category,
+      name: product.name,
+      serviceNames: [product.name],
+      tier: primaryTier,
+      prices,
+      deliveryTimes,
+      fullFormAnswersPerTier,
+      tags: product.skills || product.tags || []
+    };
   }
 
   /**

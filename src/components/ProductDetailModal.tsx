@@ -1,6 +1,8 @@
-import React from 'react';
-import { X, Star, Tag, Calendar, Package, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, DollarSign } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import { ConfirmationModal } from './ui/ConfirmationModal';
+import { useImageGallery } from '../hooks/useImageGallery';
 
 interface ProductImage {
   url: string;
@@ -44,6 +46,121 @@ interface ProductDetailModalProps {
   onDelete?: (productId: string) => void;
 }
 
+// Helper component to render tier specifications
+const TierSpecificationCard: React.FC<{
+  tierName: string;
+  tierData: any;
+  formatCurrency: (amount: number) => string;
+}> = ({ tierName, tierData, formatCurrency }) => {
+  if (!tierData || typeof tierData !== 'object') return null;
+
+  const {
+    price,
+    deliveryTime,
+    revisions,
+    support,
+    features = []
+  } = tierData;
+
+  // Parse features array to extract key-value pairs
+  const parsedFeatures = features.map((feature: string) => {
+    const colonIndex = feature.indexOf(': ');
+    if (colonIndex > -1) {
+      return {
+        key: feature.substring(0, colonIndex).replace(/_/g, ' '),
+        value: feature.substring(colonIndex + 2)
+      };
+    }
+    return { key: feature, value: '' };
+  });
+
+  const getTierColor = (tier: string) => {
+    switch (tier.toLowerCase()) {
+      case 'basic': return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+      case 'standard': return 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800';
+      case 'premium': return 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800';
+      default: return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+    }
+  };
+
+  const getTierBadgeColor = (tier: string) => {
+    switch (tier.toLowerCase()) {
+      case 'basic': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'standard': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'premium': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  return (
+    <div className={`border rounded-lg p-4 ${getTierColor(tierName)}`}>
+      {/* Tier Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getTierBadgeColor(tierName)}`}>
+          {tierName}
+        </span>
+        {price && (
+          <div className="flex items-center">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatCurrency(price)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Tier Details */}
+      <div className="space-y-2">
+        {deliveryTime && (
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Delivery:</span> {deliveryTime}
+            </span>
+          </div>
+        )}
+        
+        {revisions && (
+          <div className="flex items-center">
+            <CheckCircle className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Revisions:</span> {revisions}
+            </span>
+          </div>
+        )}
+        
+        {support && (
+          <div className="flex items-center">
+            <Package className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Support:</span> {support}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Features */}
+      {parsedFeatures.length > 0 && (
+        <div className="mt-4">
+          <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Features:</h5>
+          <div className="space-y-1">
+            {parsedFeatures.map((feature: { key: string; value: string }, index: number) => (
+              <div key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                {feature.value ? (
+                  <span>
+                    <span className="font-medium capitalize">{feature.key}:</span> {feature.value}
+                  </span>
+                ) : (
+                  <span className="capitalize">{feature.key}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   product,
   isOpen,
@@ -52,13 +169,33 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onDelete
 }) => {
   const { formatCurrency } = useCurrency();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!isOpen) return null;
 
   const productId = product.id || product.productId || '';
-  const primaryImage = product.images?.find(img => img.isPrimary)?.url || 
-                      product.images?.[0]?.url || 
-                      'https://via.placeholder.com/600x400?text=No+Image';
+  
+  // Transform product images for the gallery hook
+  const galleryImages = (product.images || []).map((img, index) => ({
+    key: `image_${index}`,
+    url: img.url,
+    isPrimary: img.isPrimary
+  }));
+
+  // Use the image gallery hook
+  const { 
+    currentImage, 
+    currentIndex,
+    selectImage, 
+    isTransitioning,
+    hasMultipleImages
+  } = useImageGallery({ 
+    images: galleryImages,
+    autoSwitchInterval: 0, // Disable auto-switching for modal
+    initialImage: galleryImages.find(img => img.isPrimary)?.key || galleryImages[0]?.key
+  });
+
+  const primaryImage = currentImage?.url || 'https://via.placeholder.com/600x400?text=No+Image';
 
   const rating = product.averageRating || product.rating || 0;
   const reviewCount = product.totalReviews || product.reviewCount || 0;
@@ -75,10 +212,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      onDelete?.(productId);
-      onClose();
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete?.(productId);
+    onClose();
   };
 
   return (
@@ -104,22 +243,35 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <img
                   src={primaryImage}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover transition-opacity duration-200 ${
+                    isTransitioning ? 'opacity-70' : 'opacity-100'
+                  }`}
                 />
               </div>
               
-              {/* Additional Images */}
-              {product.images && product.images.length > 1 && (
+              {/* Additional Images - Now Clickable */}
+              {hasMultipleImages && (
                 <div className="grid grid-cols-4 max-sm:grid-cols-3 gap-2">
-                  {product.images.slice(0, 4).map((image, index) => (
-                    <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                      <img
-                        src={image.url}
-                        alt={`${product.name} view ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
+                  {galleryImages.slice(0, 8).map((image, index) => {
+                    const isSelected = currentIndex === index;
+                    return (
+                      <button
+                        key={image.key}
+                        onClick={() => selectImage(image.key)}
+                        className={`aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                          isSelected 
+                            ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' 
+                            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`${product.name} view ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -226,25 +378,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                 )}
 
-                {/* Specifications */}
-                {product.specifications && typeof product.specifications === 'object' && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Specifications</h3>
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      {Object.entries(product.specifications).map(([key, value]) => (
-                        <div key={key} className="flex justify-between py-2 border-b border-gray-200 dark:border-gray-600 last:border-b-0">
-                          <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}:
-                          </span>
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Metadata */}
                 <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                   {product.createdAt && (
@@ -263,16 +396,46 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Full Width Service Packages Section */}
+          {product.specifications && typeof product.specifications === 'object' && (
+            <div className="mt-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Service Packages</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {Object.entries(product.specifications)
+                  .filter(([_, value]) => value && typeof value === 'object')
+                  .map(([tierName, tierData]) => (
+                    <TierSpecificationCard
+                      key={tierName}
+                      tierName={tierName}
+                      tierData={tierData}
+                      formatCurrency={formatCurrency}
+                    />
+                  ))}
+              </div>
+              
+              {/* Fallback for non-tier specifications */}
+              {Object.entries(product.specifications).some(([_, value]) => value && typeof value !== 'object') && (
+                <div className="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Additional Details:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {Object.entries(product.specifications)
+                      .filter(([_, value]) => typeof value !== 'object')
+                      .map(([key, value]) => (
+                        <div key={key} className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span> {String(value)}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end space-x-4 max-sm:flex-col max-sm:space-x-0 max-sm:space-y-3 p-6 max-sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 sticky bottom-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 max-sm:w-full text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors max-sm:order-3"
-          >
-            Close
-          </button>
+          
           {onEdit && (
             <button
               onClick={handleEdit}
@@ -291,6 +454,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${product.name}"? This action cannot be undone.`}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+        confirmButtonColor="red"
+        icon="delete"
+        requireTextConfirmation={true}
+        confirmationText={product.name}
+        confirmationPlaceholder="Type product name to confirm"
+      />
     </div>
   );
 };

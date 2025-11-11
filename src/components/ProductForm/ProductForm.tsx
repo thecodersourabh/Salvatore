@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import sectorServices from "../../config/sectorServices.json";
 import packageTierTemplates from "../../config/packageTierTemplates.json";
 import { Edit2, Check, X as XIcon } from "lucide-react";
@@ -12,9 +13,10 @@ type ServiceDef = any;
 
 interface ProductFormProps {
   ownerId?: string | null; // if editing an existing product, pass ownerId to control edit permissions
+  editProductId?: string | null; // product ID to edit, if in edit mode
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
+export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editProductId = null }) => {
   const sectors = useMemo(() => Object.keys(sectorServices), []);
 
   const [category, setCategory] = useState<string | null>(null); // renamed from sector
@@ -33,6 +35,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [video, setVideo] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isVideoDragging, setIsVideoDragging] = useState(false);
 
   const { user: authUser } = useAuth();
   const currentUserId = authUser?.userId || null;
@@ -66,13 +70,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
     Astrologer: 'CONSULTATION',
     Other: 'PHYSICAL_ONSITE'
   };
-
-  useEffect(() => {
-    if (!category) return setServiceList([]);
-    const list = (sectorServices as any)[category]?.services || [];
-    setServiceList(list);
-    setSelectedService(null);
-  }, [category]);
 
   useEffect(() => {
     if (!selectedService) return;
@@ -112,14 +109,49 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
     };
   }, [imagePreviews, videoPreview]);
 
+  // Prevent default drag behavior on the document
+  useEffect(() => {
+    const handleDocumentDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    
+    const handleDocumentDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('dragover', handleDocumentDragOver);
+    document.addEventListener('drop', handleDocumentDrop);
+
+    return () => {
+      document.removeEventListener('dragover', handleDocumentDragOver);
+      document.removeEventListener('drop', handleDocumentDrop);
+    };
+  }, []);
+
   const handleImageAdd = (files: FileList | null) => {
     if (!files) return;
     const maxImages = 6;
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
     const incoming = Array.from(files).slice(0, maxImages - images.length);
-    const allowed = incoming.filter(f => f.type.startsWith('image/'));
-    const newPreviews = allowed.map(f => URL.createObjectURL(f));
-    setImages(prev => [...prev, ...allowed]);
-    setImagePreviews(prev => [...prev, ...newPreviews]);
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    
+    const validFiles = incoming.filter(f => {
+      if (!allowedTypes.includes(f.type.toLowerCase())) {
+        console.log(`File ${f.name} is not a valid image format`);
+        return false;
+      }
+      if (f.size > maxFileSize) {
+        console.log(`File ${f.name} is too large (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      const newPreviews = validFiles.map(f => URL.createObjectURL(f));
+      setImages(prev => [...prev, ...validFiles]);
+      setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -129,6 +161,76 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
       if (removed) URL.revokeObjectURL(removed);
       return prev.filter((_, i) => i !== index);
     });
+  };
+
+  // Drag and drop handlers for images
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragging to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageAdd(files);
+    }
+  };
+
+  // Drag and drop handlers for video
+  const handleVideoDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsVideoDragging(true);
+  };
+
+  const handleVideoDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsVideoDragging(false);
+    }
+  };
+
+  const handleVideoDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleVideoDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsVideoDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0]; // Only take the first file for video
+      const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/quicktime', 'video/x-msvideo'];
+      
+      if (allowedVideoTypes.includes(file.type.toLowerCase()) || file.type.startsWith('video/')) {
+        handleVideoAdd(file);
+      } else {
+        console.log('Please drop a valid video file (MP4, MOV, AVI)');
+      }
+    }
   };
 
   const handleVideoAdd = (file: File | null) => {
@@ -154,7 +256,97 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Update service list when category changes
+  useEffect(() => {
+    if (!category) return setServiceList([]);
+    const list = (sectorServices as any)[category]?.services || [];
+    setServiceList(list);
+    // Only clear selectedService if we're not in edit mode or if we're not loading
+    if (!editProductId && !loading) {
+      setSelectedService(null);
+    }
+  }, [category, editProductId, loading]);
+
+  // Load existing product data if in edit mode
+  useEffect(() => {
+    const loadProductForEditing = async () => {
+      if (!editProductId) return;
+      
+      setLoading(true);
+      try {
+        console.log('Loading product for editing:', editProductId);
+        const product = await ProductService.getProductById(editProductId);
+        console.log('Loaded product:', product);
+        
+        // Transform product data to form format
+        const formData = ProductService.transformProductResponseToFormData(product);
+        console.log('Transformed form data:', formData);
+        
+        // Populate form fields
+        setCategory(formData.category);
+        setSelectedServiceNames(formData.serviceNames);
+        setTags(formData.tags);
+        setTier(formData.tier);
+        setPrices(formData.prices);
+        setDeliveryTimes(formData.deliveryTimes);
+        setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
+        
+        // Load existing images from product
+        if (product.images && product.images.length > 0) {
+          console.log('Loading existing product images:', product.images.length);
+          
+          // Create preview URLs from existing images
+          const existingPreviews = product.images.map(img => img.url);
+          setImagePreviews(existingPreviews);
+          
+          // Note: We don't set the File objects since these are existing URLs
+          // When updating, we'll handle this differently in handleSubmit
+        }
+        
+        console.log('Form fields populated successfully');
+      } catch (error) {
+        console.error('Failed to load product for editing:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load product data';
+        alert(`Failed to load product: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProductForEditing();
+  }, [editProductId]);
+
+  // Separate effect to handle service selection after category is set
+  useEffect(() => {
+    const loadServiceFromCategory = async () => {
+      if (!editProductId || !category) return;
+      
+      try {
+        const product = await ProductService.getProductById(editProductId);
+        const formData = ProductService.transformProductResponseToFormData(product);
+        
+        // Find and set the selected service based on the loaded data
+        if (category && formData.name) {
+          const categoryServices = (sectorServices as any)[category]?.services || [];
+          const matchingService = categoryServices.find((service: any) => service.name === formData.name);
+          if (matchingService) {
+            setSelectedService(matchingService);
+            console.log('Selected service set:', matchingService);
+          } else {
+            console.warn('No matching service found for:', formData.name, 'in category:', category);
+            console.log('Available services:', categoryServices.map((s: any) => s.name));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to set selected service:', error);
+      }
+    };
+
+    loadServiceFromCategory();
+  }, [editProductId, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,30 +369,55 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
 
     setSubmitting(true);
     try {
-      const result = await ProductService.createProduct({
-        productData,
-        images,
-        video,
-      });
-
-      console.log('Product created successfully:', result);
-      console.log('Product created successfully');
+      let result;
       
-      // Optional: reset form (keep some fields)
-      setImages([]);
-      setImagePreviews([]);
-      handleRemoveVideo();
+      if (editProductId) {
+        // Update existing product
+        console.log('Updating existing product:', editProductId);
+        
+        // Handle image updates if new images were added
+        if (images.length > 0) {
+          console.log('Updating product with new images');
+          result = await ProductService.createProduct({
+            productData,
+            images,
+            video,
+          });
+          
+          // Then update the product record
+          const apiProductData = ProductService.transformFormDataToApiFormat(productData, []);
+          await ProductService.updateProduct(editProductId, apiProductData);
+        } else {
+          // Just update the product data without new images
+          const apiProductData = ProductService.transformFormDataToApiFormat(productData, []);
+          result = await ProductService.updateProduct(editProductId, apiProductData);
+        }
+        
+        console.log('Product updated successfully:', result);
+        alert('Product updated successfully!');
+      } else {
+        // Create new product
+        console.log('Creating new product');
+        result = await ProductService.createProduct({
+          productData,
+          images,
+          video,
+        });
+        
+        console.log('Product created successfully:', result);
+        alert('Product created successfully!');
+      }
       
-      // After successful creation, redirect to dashboard
+      // After successful operation, redirect to dashboard
       console.log('Attempting to navigate to dashboard...');
       navigate('/', { replace: true });
       
     } catch (error) {
-      console.error('Product creation error:', error);
+      console.error('Product operation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.log(`Failed to create product: ${errorMessage}`);
+      const operation = editProductId ? 'update' : 'create';
+      alert(`Failed to ${operation} product: ${errorMessage}`);
     } finally {
-      // If navigation didn't happen (e.g., SPA router prevented), ensure we stop submitting
       setSubmitting(false);
     }
   };
@@ -212,6 +429,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
+          {/* Back Button */}
+          <div className="mb-4">
+            <button
+              onClick={() => navigate('/', { replace: true })}
+              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Back to Dashboard</span>
+            </button>
+          </div>
+
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,13 +447,31 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Service</h1>
-              <p className="text-gray-600 dark:text-gray-400">Set up your service offerings with detailed packages and pricing</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {editProductId ? 'Edit Service' : 'Create New Service'}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {editProductId 
+                  ? 'Update your service offerings with new details and pricing'
+                  : 'Set up your service offerings with detailed packages and pricing'
+                }
+              </p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Loading State */}
+        {loading && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600"></div>
+              <span className="text-gray-600 dark:text-gray-400">Loading product data...</span>
+            </div>
+          </div>
+        )}
+
+        {!loading && (
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">{/* Submit button */}
           <div className="p-6 sm:p-8 space-y-8">
         {/* Sector & Service selectors */}
         <div className="space-y-6">
@@ -360,20 +606,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
                   className="hidden"
                   id="image-upload"
                 />
-                <label
-                  htmlFor="image-upload"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                <div
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
+                    isDragging 
+                      ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20 scale-105' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
                 >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg className="w-8 h-8 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
-                  </div>
-                </label>
+                  <label
+                    htmlFor="image-upload"
+                    className="flex flex-col items-center justify-center w-full h-full cursor-pointer"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className={`w-8 h-8 mb-2 transition-colors ${isDragging ? 'text-rose-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <p className={`text-sm transition-colors ${isDragging ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {isDragging ? (
+                          <span className="font-semibold">Drop images here</span>
+                        ) : (
+                          <>
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </>
+                        )}
+                      </p>
+                      <p className={`text-xs transition-colors ${isDragging ? 'text-rose-500 dark:text-rose-400' : 'text-gray-400'}`}>
+                        PNG, JPG, GIF up to 10MB
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {imagePreviews.length > 0 && (
@@ -414,20 +680,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
                     className="hidden"
                     id="video-upload"
                   />
-                  <label
-                    htmlFor="video-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  <div
+                    onDragEnter={handleVideoDragEnter}
+                    onDragLeave={handleVideoDragLeave}
+                    onDragOver={handleVideoDragOver}
+                    onDrop={handleVideoDrop}
+                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
+                      isVideoDragging 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-105' 
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    }`}
                   >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-8 h-8 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        <span className="font-semibold">Upload video</span>
-                      </p>
-                      <p className="text-xs text-gray-400">MP4, MOV, AVI up to 200MB</p>
-                    </div>
-                  </label>
+                    <label
+                      htmlFor="video-upload"
+                      className="flex flex-col items-center justify-center w-full h-full cursor-pointer"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg className={`w-8 h-8 mb-2 transition-colors ${isVideoDragging ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <p className={`text-sm transition-colors ${isVideoDragging ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                          {isVideoDragging ? (
+                            <span className="font-semibold">Drop video here</span>
+                          ) : (
+                            <>
+                              <span className="font-semibold">Click to upload</span> or drag and drop video
+                            </>
+                          )}
+                        </p>
+                        <p className={`text-xs transition-colors ${isVideoDragging ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400'}`}>
+                          MP4, MOV, AVI up to 200MB
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -729,41 +1015,53 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null }) => {
             {submitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>Creating Service...</span>
+                <span>Processing...</span>
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Create Service</span>
+                <span>{editProductId ? 'Update Service' : 'Create Service'}</span>
               </>
             )}
           </button>
           
-          <button 
-            type="button"
-            onClick={() => {
-              // Reset form logic could go here
-              setCategory(null);
-              setSelectedService(null);
-              setTags([]);
-              setPrices({ Basic: "", Standard: "", Premium: "" });
-              setDeliveryTimes({ Basic: "", Standard: "", Premium: "" });
-              setImages([]);
-              setImagePreviews([]);
-              handleRemoveVideo();
-            }}
-            className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>Reset Form</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/', { replace: true })}
+              className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Cancel & Return</span>
+            </button>
+            
+            <button 
+              type="button"
+              onClick={() => {
+                // Reset form logic could go here
+                setCategory(null);
+                setSelectedService(null);
+                setTags([]);
+                setPrices({ Basic: "", Standard: "", Premium: "" });
+                setDeliveryTimes({ Basic: "", Standard: "", Premium: "" });
+                setImages([]);
+                setImagePreviews([]);
+                handleRemoveVideo();
+              }}
+              className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Reset Form</span>
+            </button>
+          </div>
           </div>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

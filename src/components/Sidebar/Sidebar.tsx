@@ -13,8 +13,6 @@ import {
   X,
   ShoppingCart,
   Bell
-  ,
-  PlusCircle
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -57,11 +55,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       icon: Package,
       label: "My Orders",
       link: "/orders"
-    },
-    {
-      icon: PlusCircle,
-      label: "Add Product",
-      link: "/add-product"
     },
     {
       icon: Heart,

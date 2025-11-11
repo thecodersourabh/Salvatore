@@ -27,6 +27,8 @@ import {
 } from "ionicons/icons";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { QRCodeSVG } from "qrcode.react";
 import { cameraOutline } from "ionicons/icons";
 import type { Profile } from "../../types/profile";
@@ -67,6 +69,34 @@ export const ProfileView = () => {
   const [descriptionChanged, setDescriptionChanged] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Handle Android back button
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        // Listen for the hardware back button
+        backButtonListener = await CapacitorApp.addListener('backButton', () => {
+          // Navigate back to dashboard
+          navigate('/', { replace: true });
+        });
+      } catch (error) {
+        console.error('Failed to setup back button handler:', error);
+      }
+    };
+
+    setupBackButtonHandler();
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [navigate]);
 
   // Enhanced auto-resize textarea function
   const handleTextareaResize = (textarea: HTMLTextAreaElement) => {

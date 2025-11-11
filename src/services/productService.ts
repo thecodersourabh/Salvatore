@@ -124,6 +124,7 @@ export class ProductService {
         
         for (let i = 0; i < request.images.length; i++) {
           const image = request.images[i];
+          console.log(`Processing image ${i + 1}:`, image.name, image.size, image.type);
           try {
             const imageKey = await ImageService.uploadImage({
               username,
@@ -133,12 +134,16 @@ export class ProductService {
             imageKeys.push(imageKey);
             const cdnUrl = ImageService.getImageUrl(imageKey);
             cdnImageUrls.push(cdnUrl);
-            console.log(`Image ${i + 1} uploaded successfully:`, imageKey);
+            console.log(`Image ${i + 1} uploaded successfully:`, imageKey, '-> URL:', cdnUrl);
           } catch (uploadError) {
             console.error(`Failed to upload image ${i + 1}:`, uploadError);
             throw new Error(`Failed to upload image ${i + 1}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
           }
         }
+        
+        console.log('All images uploaded successfully. CDN URLs:', cdnImageUrls);
+      } else {
+        console.log('No images provided to upload');
       }
 
       // Upload video to CDN if provided
@@ -160,6 +165,13 @@ export class ProductService {
 
       // Transform form data to API format
       const apiProductData = ProductService.transformFormDataToApiFormat(request.productData, cdnImageUrls);
+      
+      // Add debugging to see what's being sent to API
+      console.log('API Product Data being sent:', {
+        ...apiProductData,
+        images: apiProductData.images?.length || 0,
+        imagesDetail: apiProductData.images
+      });
 
       // Create product via API with JSON data (no FormData needed)
       console.log('Creating product record in API...');

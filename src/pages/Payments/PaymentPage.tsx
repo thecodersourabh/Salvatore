@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { IonSegment, IonSegmentButton, IonLabel } from '@ionic/react';
@@ -10,9 +13,38 @@ import { apiService } from '../../services/ApiService';
 
 const PaymentPage = () => {
   const { userContext: user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('billing-payment');
+
+  // Handle Android back button
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        // Listen for the hardware back button
+        backButtonListener = await CapacitorApp.addListener('backButton', () => {
+          // Navigate back to dashboard
+          navigate('/', { replace: true });
+        });
+      } catch (error) {
+        console.error('Failed to setup back button handler:', error);
+      }
+    };
+
+    setupBackButtonHandler();
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const initializeUserContext = async () => {

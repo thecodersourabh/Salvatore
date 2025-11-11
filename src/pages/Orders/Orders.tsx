@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Package, Search, Filter, ChevronRight, RefreshCw, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { Order, OrderStatus, OrderListParams, OrderListResponse } from '../../types/order';
@@ -16,6 +19,7 @@ interface OrdersState {
 
 export const Orders = () => {
   const { userContext, idToken, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   const [state, setState] = useState<OrdersState>({
     orders: [],
@@ -32,6 +36,34 @@ export const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const limit = 10;
+
+  // Handle Android back button
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        // Listen for the hardware back button
+        backButtonListener = await CapacitorApp.addListener('backButton', () => {
+          // Navigate back to dashboard
+          navigate('/', { replace: true });
+        });
+      } catch (error) {
+        console.error('Failed to setup back button handler:', error);
+      }
+    };
+
+    setupBackButtonHandler();
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [navigate]);
 
   // Debounced search function
   const debouncedSearchCallback = useCallback((query: string) => {

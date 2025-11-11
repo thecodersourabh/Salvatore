@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { translations } from '../../utils/translations';
@@ -10,6 +13,35 @@ export const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const t = translations[language];
   const { currency, setCurrency } = useCurrency();
+  const navigate = useNavigate();
+
+  // Handle Android back button
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        // Listen for the hardware back button
+        backButtonListener = await CapacitorApp.addListener('backButton', () => {
+          // Navigate back to dashboard
+          navigate('/', { replace: true });
+        });
+      } catch (error) {
+        console.error('Failed to setup back button handler:', error);
+      }
+    };
+
+    setupBackButtonHandler();
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [navigate]);
  
   return (
     <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useCart } from '../../../context/CartContext';
@@ -9,6 +11,35 @@ export const Wishlist = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
+  
+  // Handle Android back button
+  useEffect(() => {
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        // Listen for the hardware back button
+        backButtonListener = await CapacitorApp.addListener('backButton', () => {
+          // Navigate back to dashboard
+          navigate('/', { replace: true });
+        });
+      } catch (error) {
+        console.error('Failed to setup back button handler:', error);
+      }
+    };
+
+    setupBackButtonHandler();
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [navigate]);
+
   const handleAddToCart = (item: typeof wishlistItems[0]) => {
     addItem({
       id: item.id,

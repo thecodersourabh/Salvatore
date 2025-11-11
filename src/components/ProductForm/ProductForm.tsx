@@ -39,6 +39,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isVideoDragging, setIsVideoDragging] = useState(false);
+  
+  // Toast state for validation feedback
+  const [validationError, setValidationError] = useState('');
+  const [validationField, setValidationField] = useState('');
 
   const { user: authUser } = useAuth();
   const currentUserId = authUser?.userId || null;
@@ -130,6 +134,37 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     };
   }, []);
 
+  // Validation helper function
+  const showValidationError = (message: string, field: string = '') => {
+    console.log('🚨 Validation error:', message, 'Field:', field, 'EditMode:', editProductId ? 'UPDATE' : 'CREATE');
+    setValidationError(message);
+    setValidationField(field);
+    
+    // Clear validation error after 5 seconds
+    setTimeout(() => {
+      setValidationError('');
+      setValidationField('');
+    }, 5000);
+  };
+
+  const showSuccessMessage = (message: string) => {
+    console.log('Success:', message);
+    setValidationError(message); // Use the message for display
+    setValidationField('success');
+    setTimeout(() => {
+      setValidationError('');
+      setValidationField('');
+    }, 3000);
+  };
+
+  // Helper function to get field styling based on validation state
+  const getFieldClassName = (fieldName: string, baseClassName: string) => {
+    const hasError = validationField === fieldName && validationError && validationField !== 'success';
+    return hasError 
+      ? `${baseClassName} border-red-500 dark:border-red-400 ring-2 ring-red-200 dark:ring-red-800 focus:ring-red-500 focus:border-red-500`
+      : baseClassName;
+  };
+
   const handleImageAdd = (files: FileList | null) => {
     if (!files) return;
     const maxImages = 6;
@@ -144,11 +179,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     
     const validFiles = incoming.filter(f => {
       if (!allowedTypes.includes(f.type.toLowerCase())) {
-        console.log(`File ${f.name} is not a valid image format`);
+        showValidationError(`File ${f.name} is not a valid image format. Please use JPEG, PNG, GIF, or WebP.`, 'images');
         return false;
       }
       if (f.size > maxFileSize) {
-        console.log(`File ${f.name} is too large (max 10MB)`);
+        showValidationError(`File ${f.name} is too large. Maximum size is 10MB.`, 'images');
         return false;
       }
       return true;
@@ -251,7 +286,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       if (allowedVideoTypes.includes(file.type.toLowerCase()) || file.type.startsWith('video/')) {
         handleVideoAdd(file);
       } else {
-        console.log('Please drop a valid video file (MP4, MOV, AVI)');
+        showValidationError('Please drop a valid video file (MP4, MOV, AVI)', 'video');
       }
     }
   };
@@ -259,12 +294,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   const handleVideoAdd = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('video/')) {
-      console.log('Only video files are allowed');
+      showValidationError('Only video files are allowed', 'video');
       return;
     }
     const maxSizeMB = 200; // 200 MB
     if (file.size > maxSizeMB * 1024 * 1024) {
-      console.log(`Video too large. Max ${maxSizeMB} MB`);
+      showValidationError(`Video too large. Maximum size is ${maxSizeMB} MB`, 'video');
       return;
     }
     if (videoPreview) URL.revokeObjectURL(videoPreview);
@@ -376,8 +411,52 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (submitting) {
+      console.log('Already submitting, ignoring submission');
+      return;
+    }
+    
+    console.log('🚀 Starting form validation...', editProductId ? 'UPDATE mode' : 'CREATE mode');
+    
     if (!selectedService?.name) {
-      console.log("Please select a service");
+      const action = editProductId ? 'update' : 'create';
+      showValidationError(`Please select a service before ${action === 'update' ? 'updating' : 'creating'} the product`, 'service');
+      return;
+    }
+
+    // Image validation - different rules for create vs update
+    if (!editProductId) {
+      // For new products, must have at least one image
+      if (!images || images.length === 0) {
+        console.log('Create validation failed - no images provided');
+        showValidationError('Please add at least one image to create a product', 'images');
+        return;
+      }
+    } else {
+      // For updates, must have at least one image total (existing + new)
+      const totalImages = (existingImages?.length || 0) + (images?.length || 0);
+      if (totalImages === 0) {
+        console.log('Update validation failed - no images total. Existing:', existingImages?.length, 'New:', images?.length);
+        showValidationError('Product must have at least one image', 'images');
+        return;
+      }
+    }
+
+    // Validate pricing for at least the basic tier
+    const basicPrice = prices.Basic;
+    if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) {
+      const action = editProductId ? 'update' : 'create';
+      showValidationError(`Please set a valid price for at least the Basic tier to ${action} the product`, 'price');
+      return;
+    }
+
+    // Validate delivery times for basic tier
+    const basicDeliveryTime = deliveryTimes.Basic;
+    if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) {
+      const action = editProductId ? 'update' : 'create';
+      showValidationError(`Please set a valid delivery time for at least the Basic tier to ${action} the product`, 'delivery');
       return;
     }
 
@@ -456,10 +535,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         result = await ProductService.updateProduct(editProductId, apiProductData);
         
         console.log('Product updated successfully:', result);
-        console.log('Product updated successfully!');
+        showSuccessMessage('Product updated successfully!');
       } else {
         // Create new product
         console.log('Creating new product');
+        console.log('Images to upload:', images.length);
+        console.log('Video to upload:', video ? 'Yes' : 'No');
+        
         result = await ProductService.createProduct({
           productData,
           images,
@@ -467,7 +549,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         });
         
         console.log('Product created successfully:', result);
-        console.log('Product created successfully!');
+        showSuccessMessage('Product created successfully!');
       }
       
       // After successful operation, redirect to dashboard
@@ -478,7 +560,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       console.error('Product operation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       const operation = editProductId ? 'update' : 'create';
-      console.log(`Failed to ${operation} product: ${errorMessage}`);
+      showValidationError(`Failed to ${operation} product: ${errorMessage}`, 'general');
     } finally {
       setSubmitting(false);
     }
@@ -1125,6 +1207,63 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         </form>
         )}
       </div>
+      
+      {/* Validation Error Display */}
+      {validationError && validationField !== 'success' && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Validation Error
+                </h3>
+                <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                  {validationError}
+                </p>
+              </div>
+              <div className="ml-auto pl-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValidationError('');
+                    setValidationField('');
+                  }}
+                  className="inline-flex rounded-md text-red-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-red-900"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message Display */}
+      {validationField === 'success' && validationError && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-lg shadow-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  {validationError}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

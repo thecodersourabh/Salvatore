@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, DollarSign } from 'lucide-react';
+import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { useImageGallery } from '../hooks/useImageGallery';

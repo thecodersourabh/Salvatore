@@ -622,7 +622,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         )}
 
         {!loading && (
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">{/* Submit button */}
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden relative">{/* Submit button */}
+          {/* Loading Overlay */}
+          {submitting && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {editProductId ? 'Updating Service...' : 'Creating Service...'}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="p-6 sm:p-8 space-y-8">
         {/* Sector & Service selectors */}
         <div className="space-y-6">
@@ -634,8 +645,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               <select 
                 value={category || ""} 
                 onChange={(e) => setCategory(e.target.value || null)} 
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
+                disabled={submitting}
               >
                 <option value="">Choose a sector</option>
                 {sectors.map((s) => (
@@ -657,9 +669,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                   setSelectedService(svc);
                   setTags([]);
                 }} 
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
-                disabled={!category}
+                disabled={!category || submitting}
               >
                 <option value="">
                   {!category ? "Select a sector first" : "Choose a service template"}
@@ -766,6 +778,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                   onChange={(e) => handleImageAdd(e.target.files)}
                   className="hidden"
                   id="image-upload"
+                  disabled={submitting}
                 />
                 <div
                   onDragEnter={handleDragEnter}
@@ -780,7 +793,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                 >
                   <label
                     htmlFor="image-upload"
-                    className="flex flex-col items-center justify-center w-full h-full cursor-pointer"
+                    className={`flex flex-col items-center justify-center w-full h-full ${submitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <svg className={`w-8 h-8 mb-2 transition-colors ${isDragging ? 'text-rose-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -813,7 +826,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(i)}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700"
+                        disabled={submitting}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         ×
                       </button>
@@ -840,6 +854,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                     onChange={(e) => handleVideoAdd(e.target.files?.[0] || null)}
                     className="hidden"
                     id="video-upload"
+                    disabled={submitting}
                   />
                   <div
                     onDragEnter={handleVideoDragEnter}
@@ -854,7 +869,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                   >
                     <label
                       htmlFor="video-upload"
-                      className="flex flex-col items-center justify-center w-full h-full cursor-pointer"
+                      className={`flex flex-col items-center justify-center w-full h-full ${submitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <svg className={`w-8 h-8 mb-2 transition-colors ${isVideoDragging ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -884,7 +899,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                   <button
                     type="button"
                     onClick={handleRemoveVideo}
-                    className="w-full px-4 py-2 text-sm text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors"
+                    disabled={submitting}
+                    className="w-full px-4 py-2 text-sm text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Remove Video
                   </button>
@@ -919,15 +935,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                     <div className="flex justify-end mb-2 space-x-1">
                       {editingTier === t ? (
                         <>
-                          <button type="button" onClick={() => setEditingTier(null)} title="Cancel" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                          <button type="button" onClick={() => setEditingTier(null)} title="Cancel" disabled={submitting} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <XIcon size={16} className="text-gray-500" />
                           </button>
-                          <button type="button" onClick={() => setEditingTier(null)} title="Save" className="p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors">
+                          <button type="button" onClick={() => setEditingTier(null)} title="Save" disabled={submitting} className="p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <Check size={16} />
                           </button>
                         </>
                       ) : (
-                        <button type="button" onClick={() => setEditingTier(t)} title="Edit tier" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <button type="button" onClick={() => setEditingTier(t)} title="Edit tier" disabled={submitting} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           <Edit2 size={16} className="text-gray-500" />
                         </button>
                       )}
@@ -1099,13 +1115,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                                           value={prices[t] !== "" ? String(prices[t]) : ''}
                                           min={commonDef?.validation?.min || 0}
                                           max={commonDef?.validation?.max}
+                                          disabled={submitting}
                                           onChange={(e) => {
                                             const v = e.target.value;
                                             const num = v === '' ? '' : Number(v);
                                             setPrices(prev => ({ ...prev, [t]: num }));
                                             setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: v } }));
                                           }}
-                                          className="w-full pl-8 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                                          className="w-full pl-8 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                       </div>
                                     ) : qKey === 'delivery_time' ? (
@@ -1118,13 +1135,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                                           value={deliveryTimes[t] !== "" ? String(deliveryTimes[t]) : ''}
                                           min={commonDef?.validation?.min || 1}
                                           max={commonDef?.validation?.max}
+                                          disabled={submitting}
                                           onChange={(e) => {
                                             const v = e.target.value;
                                             const num = v === '' ? '' : Number(v);
                                             setDeliveryTimes(prev => ({ ...prev, [t]: num }));
                                             setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: v } }));
                                           }}
-                                          className="flex-1 px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                                          className="flex-1 px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                         <span className="flex items-center px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300">
                                           {selectedService?.timeUnit || 'days'}
@@ -1137,8 +1155,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                                         type={fieldType === 'number' ? 'number' : 'text'}
                                         placeholder={placeholder || (svcPerTierDefault ? `e.g. ${svcPerTierDefault}` : (isReq ? `Enter ${label.toLowerCase()}` : `Enter ${label.toLowerCase()} (optional)`))}
                                         value={fullFormAnswersPerTier[t]?.[qKey] || svcPerTierDefault || ''}
+                                        disabled={submitting}
                                         onChange={(e) => setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: e.target.value } }))}
-                                        className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                                        className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                       />
                                     )
                                   )}
@@ -1192,7 +1211,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
             <button
               type="button"
               onClick={() => navigate('/', { replace: true })}
-              className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+              disabled={submitting}
+              className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Cancel & Return</span>

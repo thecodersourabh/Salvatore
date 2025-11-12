@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock } from 'lucide-react';
+import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { useImageGallery } from '../hooks/useImageGallery';
@@ -226,12 +226,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 max-sm:p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-2xl max-sm:text-xl font-bold text-gray-900 dark:text-white">Product Details</h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center space-x-2">
+            {onEdit && (
+              <button
+                onClick={handleEdit}
+                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                title="Edit Product"
+              >
+                <Edit className="h-5 w-5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={handleDelete}
+                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                title="Delete Product"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -430,27 +450,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end space-x-4 max-sm:flex-col max-sm:space-x-0 max-sm:space-y-3 p-6 max-sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 sticky bottom-0">
-          
-          {onEdit && (
-            <button
-              onClick={handleEdit}
-              className="px-4 py-2 max-sm:w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors max-sm:order-1"
-            >
-              Edit Product
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 max-sm:w-full bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors max-sm:order-2"
-            >
-              Delete Product
-            </button>
           )}
         </div>
       </div>

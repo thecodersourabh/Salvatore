@@ -12,11 +12,11 @@ import {
   Shield,
   Clock
 } from "lucide-react";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../context/AuthContext";
 import bannerImage from "../assets/banner.png";
 
 export const Home = () => {
-  const { loginWithRedirect } = useAuth0();
+  const { loginWithRedirect } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -77,7 +77,7 @@ export const Home = () => {
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
               <button
-                onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' }})}
+                onClick={() => loginWithRedirect('seller')}
                 className="group bg-gradient-to-r from-rose-600 to-rose-700 text-white px-8 py-4 rounded-xl hover:from-rose-700 hover:to-rose-800 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
@@ -299,7 +299,7 @@ export const Home = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
             <button
-              onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' }})}
+              onClick={() => loginWithRedirect('seller')}
               className="bg-gradient-to-r from-rose-600 to-rose-700 text-white px-8 py-4 rounded-xl hover:from-rose-700 hover:to-rose-800 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               <User className="h-5 w-5" />

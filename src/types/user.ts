@@ -42,6 +42,7 @@ export interface User {
   userName: string;
   avatar?: string;
   email?: string;
+  role?: string;
   displayName?: string;
   description?: string;
   sector?: ServiceSector;

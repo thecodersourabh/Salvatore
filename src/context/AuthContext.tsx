@@ -16,13 +16,14 @@ export interface UserContext {
   email_verified?: boolean;
   isVerified?: boolean;
   avatar?: string;
+  role?: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   logout: () => void;
-  loginWithRedirect: () => void;
+  loginWithRedirect: (role?: 'seller' | 'customer') => void;
   userCreated: boolean;
   creatingUser: boolean;
   user: UserContext | null;
@@ -131,19 +132,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         let fetchedUser: User | null = null;
         
+        // Get role from signup flow or default to customer
+        const signupRole = localStorage.getItem('signup_role') || 'customer';
+        
         if (!userExists) {
-          // Create new user with Auth0 data
+          // Create new user
           const userData = {
             email: user.email,
             name: user.name || '',
             phone: user.phone_number || '000-000-0000',
             auth0Id: user.sub,
-            version: 1
+            version: 1,
+            role: signupRole
           };
           
           fetchedUser = await UserService.createUser(userData);
           
-          // Store Auth0 to API user ID mapping
+          // Store user mapping
           if (fetchedUser?.id) {
             localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
             localStorage.setItem(`x-user-id`, fetchedUser.id);
@@ -151,10 +156,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             (window as any).__USER_ID__ = fetchedUser.id;
           }
         } else {
-          // Fetch existing user data from API
+          // Get existing user
           fetchedUser = await UserService.getUserByEmail(user.email);
           
-          // Store mapping for existing user
+          // Update role if needed (only for seller signups)
+          if (signupRole === 'seller' && fetchedUser && fetchedUser.role !== 'seller') {
+            fetchedUser = await UserService.updateUser(user.email, { role: 'seller' });
+          }
+          
+          // Store user mapping
           if (fetchedUser?.id) {
             localStorage.setItem(`auth0_${user.sub}`, fetchedUser.id);
             localStorage.setItem(`x-user-id`, fetchedUser.id);
@@ -163,7 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         
-        // Update API user state
+        // Clean up
+        localStorage.removeItem('signup_role');
+        
+        // Update state
         if (fetchedUser) {
           setApiUser(fetchedUser);
         }
@@ -190,7 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     phoneNumber: apiUser?.phone || user.phone_number,
     email_verified: user.email_verified,
     isVerified: user.email_verified,
-    avatar: apiUser?.avatar || user.picture
+    avatar: apiUser?.avatar || user.picture,
+    role: apiUser?.role || 'customer'
   } : null;
 
   // Auth context value object
@@ -198,9 +212,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated,
     loading: isLoading || creatingUser,
     logout: () => logout({ logoutParams: { returnTo: getLogoutUri() } }),
-    loginWithRedirect: () => {
+    loginWithRedirect: (role?: 'seller' | 'customer') => {
+      // Store role for processing after login
+      if (role && role === 'seller') {
+        localStorage.setItem('signup_role', 'seller');
+      }
+      
       loginWithRedirect({
-        appState: { returnTo: window.location.pathname }
+        appState: { 
+          returnTo: window.location.pathname
+        },
+        authorizationParams: role === 'seller' ? { screen_hint: 'signup' } : undefined
       });
     },
     userCreated,

@@ -59,7 +59,7 @@ export const ProfileLayout = () => {
   }, [auth.userContext]);
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-20 md:pb-0">
       <StepProvider>
         {/* Show ProfileCompletion if profile is incomplete */}
         {profileCompletion < 100 && (

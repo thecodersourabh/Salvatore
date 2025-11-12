@@ -159,7 +159,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           </nav>
 
           {/* Logout Button */}
-          <div className={`border-t p-4 sm:p-6 ${isNative ? 'sidebar-safe-bottom' : ''}`}>
+          <div className={`border-t p-4 sm:p-6 pb-20 sm:pb-6 ${isNative ? 'sidebar-safe-bottom' : ''}`}>
             <button
               onClick={handleLogout}
               className="sidebar-button flex items-center justify-center space-x-2 w-full px-4 py-3 sm:py-2 text-white bg-rose-600 hover:bg-rose-700 rounded-lg sm:rounded-md transition-colors font-medium text-base sm:text-sm sidebar-focusable"

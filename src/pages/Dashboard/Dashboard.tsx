@@ -268,7 +268,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <div className="bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
       {/* Network Error Message */}
       {networkError && (
         <div className="max-w-7xl mx-auto px-4 mt-4">

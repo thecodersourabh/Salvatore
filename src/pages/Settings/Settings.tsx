@@ -44,7 +44,7 @@ export const Settings: React.FC = () => {
   }, [navigate]);
  
   return (
-    <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8 bg-white dark:bg-gray-900 min-h-screen">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">{t.settings.title}</h1>
       <IonAccordionGroup expand="inset" multiple={true} value={["general", "notifications", "realtime"]}>
           {/* General Panel */}

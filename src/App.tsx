@@ -11,6 +11,7 @@ import { Navigation } from "./components/Navigation";
 import { ChatBot } from "./components/ChatBot";
 import { Cart } from "./components/Cart";
 import { MobileSplashScreen } from "./components/MobileSplashScreen";
+import { MobileNavBar } from "./components/MobileNavBar";
 import { AppRoutes } from "./routes/AppRoutes";
 
 // Context
@@ -235,6 +236,9 @@ function MyApp() {
                     <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
                       <AppRoutes />
                     </main>
+                    
+                    {/* Mobile App Download Footer */}
+                    <MobileNavBar />
                     
                     {/* Floating components */}
                     <Cart />

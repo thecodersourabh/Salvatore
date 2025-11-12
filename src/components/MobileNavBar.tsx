@@ -21,6 +21,11 @@ export function MobileNavBar({
     return null;
   }
 
+  // Don't show footer if user is not logged in
+  if (!isAuthenticated) {
+    return null;
+  }
+
   const handleNavigation = (path: string) => {
     // Close ChatBot if it's open when navigating to other sections
     const closeChatEvent = new CustomEvent('closeChatBot');

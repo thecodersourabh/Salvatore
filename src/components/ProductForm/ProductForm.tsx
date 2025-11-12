@@ -157,14 +157,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     }, 3000);
   };
 
-  // Helper function to get field styling based on validation state
-  const getFieldClassName = (fieldName: string, baseClassName: string) => {
-    const hasError = validationField === fieldName && validationError && validationField !== 'success';
-    return hasError 
-      ? `${baseClassName} border-red-500 dark:border-red-400 ring-2 ring-red-200 dark:ring-red-800 focus:ring-red-500 focus:border-red-500`
-      : baseClassName;
-  };
-
+  
   const handleImageAdd = (files: FileList | null) => {
     if (!files) return;
     const maxImages = 6;
@@ -408,6 +401,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
     loadServiceFromCategory();
   }, [editProductId, category]);
+
+  // Debug effect for tags and service state
+  useEffect(() => {
+    if (editProductId) {
+      console.log('Debug - Edit mode state:', {
+        editProductId,
+        category,
+        selectedService: selectedService?.name,
+        selectedServiceNames,
+        tags,
+        loading
+      });
+    }
+  }, [editProductId, category, selectedService, selectedServiceNames, tags, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -667,14 +674,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           {/* Skills/Tags selector with modern checkbox style */}
           {selectedService && (() => {
             const allSkills = new Set<string>();
+            
+            // Add skills from selected service names
             selectedServiceNames.forEach((name) => {
               const svc = serviceList.find((s: any) => s.name === name);
               (svc?.skills || []).forEach((sk: string) => allSkills.add(sk));
             });
+            
+            // Add skills from the currently selected service as fallback
             if (allSkills.size === 0 && selectedService?.skills) {
               (selectedService.skills || []).forEach((sk: string) => allSkills.add(sk));
             }
-            const skillsArray = Array.from(allSkills);
+            
+            // In edit mode, also include any previously saved tags that might not be in the service definitions
+            if (editProductId && tags.length > 0) {
+              tags.forEach((tag: string) => allSkills.add(tag));
+            }
+            
+            const skillsArray = Array.from(allSkills).filter(Boolean); // Remove any empty strings
             
             return skillsArray.length > 0 ? (
               <div className="space-y-3">

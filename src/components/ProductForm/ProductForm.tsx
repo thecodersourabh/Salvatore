@@ -9,7 +9,6 @@ import { ProductService } from "../../services/cachedServices";
 import { ProductService as BaseProductService } from "../../services/productService";
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
-import { Navigation } from "../Navigation";
 
 type ServiceDef = any;
 
@@ -56,7 +55,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   if (authUser && !hasPermission) {
     return (
       <>
-        <Navigation />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0 pt-16 md:pt-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
@@ -685,12 +683,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
   return (
     <>
-      {/* Main Navigation */}
-      <Navigation />
-      
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0 pt-16 md:pt-16">
-        {/* Fixed header (acts like view details modal header) */}
-        <div className="fixed top-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
+        {/* Fixed sub-header positioned below main navigation */}
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 w-full shadow-md sticky top-0 z-10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between">
               {/* Left side - Title only */}
@@ -746,7 +741,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 

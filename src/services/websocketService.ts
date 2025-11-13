@@ -55,6 +55,7 @@ export class WebSocketService {
   private listeners: Map<string, Set<WebSocketEventCallback>> = new Map();
   private isIntentionallyClosed = false;
   private connectionPromise: Promise<void> | null = null;
+  private supportsStatus = false; // Track if server supports status messages
 
   private constructor() {}
 
@@ -92,10 +93,13 @@ export class WebSocketService {
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          console.log('✅ WebSocket connected');
           this.reconnectAttempts = 0;
           this.reconnectDelay = 3000;
           this.startPingInterval();
+          
+          // Test if server supports status messages by sending a simple ping first
+          this.send({ type: 'ping' });
+          
           this.emit('connected', { userId });
           this.connectionPromise = null;
           resolve();
@@ -111,12 +115,10 @@ export class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
-          console.error('❌ WebSocket error:', error);
           this.emit('error', error);
         };
 
         this.ws.onclose = (event) => {
-          console.log('🔌 WebSocket closed:', event.code, event.reason);
           this.stopPingInterval();
           this.emit('disconnected', { code: event.code, reason: event.reason });
           this.connectionPromise = null;
@@ -136,7 +138,7 @@ export class WebSocketService {
         }, 10000); // 10 second timeout
 
       } catch (error) {
-        console.error('❌ Failed to create WebSocket:', error);
+        console.error('Failed to create WebSocket:', error);
         this.connectionPromise = null;
         reject(error);
       }
@@ -148,8 +150,33 @@ export class WebSocketService {
   /**
    * Disconnect from WebSocket server
    */
-  disconnect(): void {
+  disconnect(userId?: string): void {
     this.isIntentionallyClosed = true;
+    
+    // Send offline status before disconnecting (only if supported)
+    if (userId && this.ws && this.ws.readyState === WebSocket.OPEN && this.supportsStatus) {
+      this.send({
+        type: 'status',
+        data: {
+          userId: userId,
+          status: 'offline'
+        }
+      });
+      
+      // Wait a moment for the message to be sent
+      setTimeout(() => {
+        if (this.ws) {
+          this.ws.close(1000, 'Client disconnecting');
+          this.ws = null;
+        }
+      }, 100);
+    } else {
+      if (this.ws) {
+        this.ws.close(1000, 'Client disconnecting');
+        this.ws = null;
+      }
+    }
+    
     this.stopPingInterval();
     
     if (this.reconnectTimer) {
@@ -157,12 +184,7 @@ export class WebSocketService {
       this.reconnectTimer = null;
     }
 
-    if (this.ws) {
-      this.ws.close(1000, 'Client disconnecting');
-      this.ws = null;
-    }
-
-    console.log('🔌 WebSocket disconnected intentionally');
+    console.log('WebSocket disconnected intentionally');
   }
 
   /**
@@ -171,9 +193,24 @@ export class WebSocketService {
   send(message: WebSocketMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-    } else {
-      console.warn('⚠️ WebSocket not connected, cannot send message');
     }
+  }
+
+  /**
+   * Update user status
+   */
+  updateStatus(userId: string, status: 'online' | 'offline' | 'away'): void {
+    if (!this.supportsStatus) {
+      return;
+    }
+    
+    this.send({
+      type: 'status',
+      data: {
+        userId: userId,
+        status: status
+      }
+    });
   }
 
   /**
@@ -221,20 +258,50 @@ export class WebSocketService {
         break;
       
       case 'status':
+        this.supportsStatus = true;
         this.emit('status', message.data);
         break;
       
       case 'pong':
-        // Pong received, connection is alive
+        // If this is our first pong and we haven't tried status yet, try it now
+        if (!this.supportsStatus) {
+          const userId = (window as any).__USER_ID__ || 'unknown';
+          
+          // Try sending a status message
+          setTimeout(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+              this.send({
+                type: 'status',
+                data: {
+                  userId: userId,
+                  status: 'online'
+                }
+              });
+            }
+          }, 500);
+        }
         break;
       
       case 'error':
-        console.error('Server error:', message.data);
+        // If we get an error right after sending status, assume status is not supported
+        if (message.data && typeof message.data === 'object') {
+          const errorCode = message.data.code?.toLowerCase() || '';
+          const errorMessage = message.data.message?.toLowerCase() || '';
+          
+          if (errorCode === 'unknown_message_type' && errorMessage.includes('status')) {
+            this.supportsStatus = false;
+            // Don't emit this as a user-facing error since it's expected
+            return;
+          } else if (errorMessage.includes('status') || errorMessage.includes('unknown') || errorMessage.includes('unsupported')) {
+            this.supportsStatus = false;
+          }
+        }
+        
         this.emit('error', message.data);
         break;
       
       default:
-        console.warn('Unknown message type:', message.type);
+        break;
     }
   }
 
@@ -262,19 +329,16 @@ export class WebSocketService {
    */
   private attemptReconnect(userId: string, token: string): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('❌ Max reconnection attempts reached');
       this.emit('reconnect-failed', { attempts: this.reconnectAttempts });
       return;
     }
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
-    console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
-      this.connect(userId, token).catch(error => {
-        console.error('❌ Reconnection failed:', error);
+      this.connect(userId, token).catch(() => {
+        // Silent retry
       });
     }, delay);
   }
@@ -289,7 +353,7 @@ export class WebSocketService {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.send({ type: 'ping' });
       }
-    }, 30000); // Ping every 30 seconds
+    }, 60000); // Ping every 60 seconds (reduced from 30)
   }
 
   /**

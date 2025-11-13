@@ -133,6 +133,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   // Handle status changes
   const handleStatusChange = useCallback((status: any) => {
+    console.log('📡 WebSocket status change received:', status);
+    
     // Dispatch user status event for presence/typing indicators
     window.dispatchEvent(new CustomEvent('user-status-change', {
       detail: {

@@ -16,6 +16,7 @@ interface UseWebSocketReturn {
   send: (message: WebSocketMessage) => void;
   disconnect: () => void;
   reconnect: () => void;
+  updateStatus: (status: 'online' | 'offline' | 'away') => void;
 }
 
 /**
@@ -75,9 +76,9 @@ export function useWebSocket({
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {
-    websocketService.disconnect();
+    websocketService.disconnect(userId || undefined);
     setIsConnected(false);
-  }, []);
+  }, [userId]);
 
   // Reconnect to WebSocket
   const reconnect = useCallback(() => {
@@ -89,6 +90,13 @@ export function useWebSocket({
   const send = useCallback((message: WebSocketMessage) => {
     websocketService.send(message);
   }, []);
+
+  // Update user status
+  const updateStatus = useCallback((status: 'online' | 'offline' | 'away') => {
+    if (userId) {
+      websocketService.updateStatus(userId, status);
+    }
+  }, [userId]);
 
   // Setup event listeners
   useEffect(() => {
@@ -165,5 +173,6 @@ export function useWebSocket({
     send,
     disconnect,
     reconnect,
+    updateStatus,
   };
 }

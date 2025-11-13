@@ -7,6 +7,9 @@ import { NewMessageModal } from './NewMessageModal';
 import { ConversationDetailModal } from './ConversationDetailModal';
 import { User } from '../types/user';
 import { App } from '@capacitor/app';
+import { useWebSocketContext } from '../context/WebSocketContext';
+import { userActivityService, UserActivity } from '../services/userActivityService';
+import { useAuth } from '../context/AuthContext';
 
 type ConversationItem = {
   id: string;
@@ -45,7 +48,17 @@ export const ChatBot: React.FC = () => {
   const [authError, setAuthError] = useState(false);
   const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
   const [conversationDetailModalOpen, setConversationDetailModalOpen] = useState(false);
+  const [userActivities, setUserActivities] = useState<Map<string, UserActivity>>(new Map());
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const { isConnected } = useWebSocketContext();
+  const { apiUser } = useAuth();
+
+  // Mark current user as active when they interact
+  const markCurrentUserActive = () => {
+    if (apiUser?.id) {
+      userActivityService.markUserActive(apiUser.id);
+    }
+  };
 
   // Helper to scroll to bottom when messages change
   useEffect(() => {
@@ -53,6 +66,32 @@ export const ChatBot: React.FC = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isChatOpen]);
+
+  // Initialize activity service when chat opens
+  useEffect(() => {
+    if (isChatOpen && apiUser?.id) {
+      // Start the activity service
+      userActivityService.start({
+        onlineThresholdMinutes: 5,      // Online if active in last 5 minutes
+        recentlyActiveThresholdMinutes: 15, // Recently active if active in last 15 minutes  
+        pollingIntervalMs: 30000,       // Poll every 30 seconds
+      });
+
+      // Mark current user as active
+      userActivityService.markUserActive(apiUser.id);
+
+      // Subscribe to activity updates
+      const unsubscribe = userActivityService.subscribe((activities) => {
+        setUserActivities(new Map(activities));
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+
+    return undefined;
+  }, [isChatOpen, apiUser?.id]);
 
   // Listen for new WebSocket messages
   useEffect(() => {
@@ -189,6 +228,19 @@ export const ChatBot: React.FC = () => {
     return () => {
       window.removeEventListener('openChatBot', handleOpenChatBot);
       window.removeEventListener('closeChatBot', handleCloseChatBot);
+    };
+  }, []);
+
+  // Listen for user status changes from WebSocket - now handled by activity service
+  useEffect(() => {
+    const handleStatusChange = () => {
+      // Activity service will handle this automatically through its own listener
+    };
+
+    window.addEventListener('user-status-change', handleStatusChange);
+    
+    return () => {
+      window.removeEventListener('user-status-change', handleStatusChange);
     };
   }, []);
 
@@ -453,13 +505,18 @@ export const ChatBot: React.FC = () => {
   }, [conversations, searchQuery]);
 
   // Separate conversations by focused/other
-  // Focused: teams OR unread > 0 OR recent activity (within last 24 hours)
+  // Focused: individual chats, teams, OR unread > 0 OR recent activity (within last 24 hours)
+  // Help & Support: only AI chats and support-related conversations
   const focusedConversations = useMemo(() => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return filteredConversations.filter(c => {
       // Always show teams in focused tab
       if (c.isTeam) return true;
+      // Show individual user chats (non-AI) in focused tab
+      if (!c.isAI) return true;
+      // Show conversations with unread messages
       if ((c.unread || 0) > 0) return true;
+      // Show recent conversations
       if (c.timestamp && new Date(c.timestamp).getTime() > oneDayAgo) return true;
       return false;
     });
@@ -468,9 +525,11 @@ export const ChatBot: React.FC = () => {
   const otherConversations = useMemo(() => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return filteredConversations.filter(c => {
-      // Don't show teams in other tab
-      if (c.isTeam) return false;
+      // Only show AI/support chats in other tab
+      if (!c.isAI) return false;
+      // Don't show if it has unread messages (should be in focused)
       if ((c.unread || 0) > 0) return false;
+      // Don't show if it's recent (should be in focused)
       if (c.timestamp && new Date(c.timestamp).getTime() > oneDayAgo) return false;
       return true;
     });
@@ -481,6 +540,9 @@ export const ChatBot: React.FC = () => {
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!newMessage.trim() || !selectedConv) return;
+
+    // Mark current user as active when sending messages
+    markCurrentUserActive();
 
     const content = newMessage.trim();
     // optimistic UI
@@ -584,6 +646,9 @@ export const ChatBot: React.FC = () => {
   };
 
   const openConversation = (conv: ConversationItem) => {
+    // Mark current user as active when opening conversations
+    markCurrentUserActive();
+    
     setSelectedConv(conv);
     setConversationDetailModalOpen(true);
     setViewMode('conversation');
@@ -785,11 +850,25 @@ export const ChatBot: React.FC = () => {
     }
   };
 
-  const renderAvatar = (title?: string) => (
-    <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-100">
-      {title ? title.trim().charAt(0).toUpperCase() : 'U'}
-    </div>
-  );
+  const renderAvatar = (title?: string, userId?: string) => {
+    const activity = userId ? userActivities.get(userId) : null;
+    
+    return (
+      <div className="relative">
+        <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-100">
+          {title ? title.trim().charAt(0).toUpperCase() : 'U'}
+        </div>
+        {/* Activity-based status indicator */}
+        {activity && (
+          <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 ${
+            activity.status === 'online' ? 'bg-green-500' :
+            activity.status === 'recently-active' ? 'bg-green-400' :
+            activity.status === 'away' ? 'bg-yellow-500' : 'bg-gray-400'
+          }`} title={`${activity.status} - last seen ${activity.lastSeen.toLocaleTimeString()}`}></div>
+        )}
+      </div>
+    );
+  };
 
   const formatTimestamp = (timestamp?: string) => {
     if (!timestamp) return '';
@@ -830,6 +909,8 @@ export const ChatBot: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <MessageCircle className="h-5 w-5 text-rose-600" />
                 <span className="font-semibold">Messaging</span>
+                {/* WebSocket Connection Status */}
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Connected' : 'Disconnected'}></div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -852,6 +933,7 @@ export const ChatBot: React.FC = () => {
                   Authentication expired. Please refresh the page to login again.
                 </div>
               )}
+              
               <div className="relative">
                 <input 
                   value={searchQuery} 
@@ -906,7 +988,7 @@ export const ChatBot: React.FC = () => {
                         selectedConv?.id === conv.id ? 'bg-gray-100 dark:bg-gray-700' : ''
                       }`}
                     >
-                      {renderAvatar(conv.title || conv.recipientId)}
+                      {renderAvatar(conv.title || conv.recipientId, conv.recipientId)}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <div className="font-medium text-sm truncate">{conv.title || conv.recipientId}</div>

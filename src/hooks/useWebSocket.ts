@@ -126,13 +126,11 @@ export function useWebSocket({
     // Connection state events
     const unsubConnected = websocketService.on('connected', () => {
       setIsConnected(true);
-      console.log('✅ WebSocket connected in hook');
     });
     unsubscribers.push(unsubConnected);
 
     const unsubDisconnected = websocketService.on('disconnected', () => {
       setIsConnected(false);
-      console.log('🔌 WebSocket disconnected in hook');
     });
     unsubscribers.push(unsubDisconnected);
 

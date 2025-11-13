@@ -120,7 +120,6 @@ export class ProductService {
       const cdnImageUrls: string[] = [];
       
       if (request.images && request.images.length > 0) {
-        console.log(`Uploading ${request.images.length} images to CDN...`);
         
         for (let i = 0; i < request.images.length; i++) {
           const image = request.images[i];
@@ -134,49 +133,37 @@ export class ProductService {
             imageKeys.push(imageKey);
             const cdnUrl = ImageService.getImageUrl(imageKey);
             cdnImageUrls.push(cdnUrl);
-            console.log(`Image ${i + 1} uploaded successfully:`, imageKey, '-> URL:', cdnUrl);
           } catch (uploadError) {
             console.error(`Failed to upload image ${i + 1}:`, uploadError);
             throw new Error(`Failed to upload image ${i + 1}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
           }
         }
         
-        console.log('All images uploaded successfully. CDN URLs:', cdnImageUrls);
       } else {
-        console.log('No images provided to upload');
       }
 
-      // Upload video to CDN if provided
+      // Upload video to CDN if provided (currently not connected to API)
+      /* 
       let videoKey: string | undefined;
       if (request.video) {
-        console.log('Uploading video to CDN...');
         try {
           videoKey = await ImageService.uploadImage({
             username,
             file: request.video,
             folder: 'products/videos'
           });
-          console.log('Video uploaded successfully:', videoKey);
         } catch (uploadError) {
           console.error('Failed to upload video:', uploadError);
           throw new Error(`Failed to upload video: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
         }
       }
+      */
 
       // Transform form data to API format
       const apiProductData = ProductService.transformFormDataToApiFormat(request.productData, cdnImageUrls);
-      
-      // Add debugging to see what's being sent to API
-      console.log('API Product Data being sent:', {
-        ...apiProductData,
-        images: apiProductData.images?.length || 0,
-        imagesDetail: apiProductData.images
-      });
 
       // Create product via API with JSON data (no FormData needed)
-      console.log('Creating product record in API...');
       const result = await this.createProductJson(apiProductData);
-      console.log('Product created successfully:', result);
       
       return result;
       
@@ -298,8 +285,6 @@ export class ProductService {
     const url = `${apiUrl.replace(/\/products$/, '')}/users/${targetUserId}/products`;
     
     try {
-      console.log('Fetching products for user:', targetUserId, 'from URL:', url);
-      
       const response = await api.get<{
         success: boolean;
         data: ProductResponse[];
@@ -309,17 +294,13 @@ export class ProductService {
         requestId?: string;
       }>(url);
       
-      console.log('Raw API response:', response);
-      
       // Extract the data array from the API response
       if (response && typeof response === 'object' && 'data' in response) {
-        console.log('Extracting data from response:', response.data?.length || 0, 'products');
         return Array.isArray(response.data) ? response.data : [];
       }
       
       // Fallback: if response is already an array (for backward compatibility)
       if (Array.isArray(response)) {
-        console.log('Response is already an array:', (response as ProductResponse[]).length, 'products');
         return response as ProductResponse[];
       }
       
@@ -348,17 +329,13 @@ export class ProductService {
         requestId?: string;
       }>(apiUrl);
       
-      console.log('Raw API response for all products:', response);
-      
       // Extract the data array from the API response
       if (response && typeof response === 'object' && 'data' in response) {
-        console.log('Extracting all products from response:', response.data?.length || 0, 'products');
         return Array.isArray(response.data) ? response.data : [];
       }
       
       // Fallback: if response is already an array (for backward compatibility)
       if (Array.isArray(response)) {
-        console.log('All products response is already an array:', (response as ProductResponse[]).length, 'products');
         return response as ProductResponse[];
       }
       
@@ -395,17 +372,13 @@ export class ProductService {
         requestId?: string;
       }>(url);
       
-      console.log('Raw API response for user products:', response);
-      
       // Extract the data array from the API response
       if (response && typeof response === 'object' && 'data' in response) {
-        console.log('Extracting data from response:', response.data?.length || 0, 'products for user:', userId);
         return Array.isArray(response.data) ? response.data : [];
       }
       
       // Fallback: if response is already an array (for backward compatibility)
       if (Array.isArray(response)) {
-        console.log('Response is already an array:', (response as ProductResponse[]).length, 'products');
         return response as ProductResponse[];
       }
       
@@ -619,7 +592,6 @@ export class ProductService {
       // Upload new images
       const newImageKeys: string[] = [];
       if (newImages.length > 0) {
-        console.log(`Uploading ${newImages.length} new images...`);
         for (let i = 0; i < newImages.length; i++) {
           const imageKey = await ImageService.uploadImage({
             username,

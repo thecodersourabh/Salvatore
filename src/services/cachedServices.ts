@@ -128,19 +128,16 @@ export class CachedProductService {
     // Try cache first
     const cached = getCachedData<ProductResponse>(CACHE_NAMESPACES.PRODUCT, productId);
     if (cached) {
-      console.log('Cached getProduct: Using cached product for:', productId);
       return cached;
     }
 
     // Fetch from API using base service
     try {
-      console.log('Cached getProduct: Fetching product from API for:', productId);
       const product = await BaseProductService.getProductById(productId);
       
       // Cache result
       if (product) {
         cacheData(CACHE_NAMESPACES.PRODUCT, productId, product, CACHE_TTL.MEDIUM);
-        console.log('Cached getProduct: Product cached for:', productId);
       }
       
       return product;
@@ -233,22 +230,11 @@ export class CachedOrderService {
 
     // Fetch from API
     try {
-      console.log('Fetching order stats for period:', period, 'user:', userContext.id);
-      
       const stats = await baseOrderService.getOrderStats(period);
       
       if (stats) {
-        console.log('Order stats received:', {
-          period,
-          totalOrders: stats.totalOrders,
-          completedOrders: stats.completedOrders,
-          pendingOrders: stats.pendingOrders,
-        });
-
         // Cache result with shorter TTL for real-time data
         cacheData(CACHE_NAMESPACES.STATS, cacheKey, stats, CACHE_TTL.SHORT);
-      } else {
-        console.log('No order stats received for period:', period);
       }
       
       return stats;

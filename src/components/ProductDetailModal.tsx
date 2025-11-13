@@ -226,7 +226,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-sm:p-0 bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:fixed max-sm:inset-x-0 max-sm:top-0 max-sm:bottom-16 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-0 max-sm:max-h-none">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:fixed max-sm:inset-0 max-sm:pt-[max(3rem,env(safe-area-inset-top))] max-sm:pb-20 max-sm:max-h-none">
         {/* Header */}
         <div className="flex items-center justify-between p-6 max-sm:p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-2xl max-sm:text-xl font-bold text-gray-900 dark:text-white">Product Details</h2>

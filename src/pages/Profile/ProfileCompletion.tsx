@@ -245,8 +245,6 @@ export const ProfileCompletion = () => {
         folder: 'profile'
       });
       
-      console.log('✅ Image uploaded successfully:', s3Key);
-      
       // Update form data with the S3 key - getCdnUrl will be used for display
       setFormData(prev => ({
         ...prev,

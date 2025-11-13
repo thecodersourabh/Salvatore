@@ -204,8 +204,6 @@ export const ProfileView = () => {
         folder: type === 'cover' ? 'covers' : 'profile'
       });
       
-      console.log('✅ Image uploaded successfully:', s3Key);
-      
       // Update user profile with new image
       await UserService.updateUser(currentUser.email, {
         [type === 'cover' ? 'coverImage' : 'avatar']: s3Key
@@ -270,7 +268,6 @@ export const ProfileView = () => {
       if (updatedData) {
         setUser(prev => prev ? { ...prev, description } : null);
         setDescriptionChanged(false);
-        console.log('✅ Description updated successfully');
       }
     } catch (err) {
       console.error('❌ Failed to update description:', err);
@@ -362,12 +359,6 @@ export const ProfileView = () => {
 
           // Initialize description state
           setDescription(userData.description || '');
-
-          console.log('Profile loaded successfully:', {
-            name: userData.name,
-            email: userData.email,
-            avatar: avatarUrl
-          });
 
         } else {
           console.log('No profile found for:', username || currentUser?.email);

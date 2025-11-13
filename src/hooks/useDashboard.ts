@@ -83,9 +83,6 @@ export const useDashboard = (user: any, idToken: string | null) => {
               email: user.email || mappedId, 
               name: user.name || user.email || ''
             });
-            console.log('Order service context set successfully for user:', mappedId);
-          } else {
-            console.warn('No valid mapped ID found for order service context');
           }
         } catch (contextError) {
           console.error('Failed to set order service context:', contextError);
@@ -138,13 +135,6 @@ export const useDashboard = (user: any, idToken: string | null) => {
         },
         loading: false,
         error: null,
-      });
-
-      console.log('Dashboard data loaded successfully:', {
-        profileLoaded: !!profile,
-        productsCount: products.length,
-        orderStatsLoaded: !!orderStats,
-        activeOrdersCount,
       });
 
     } catch (error) {

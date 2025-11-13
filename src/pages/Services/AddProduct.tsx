@@ -38,7 +38,7 @@ export const AddProductPage: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="p-4">
+    <div>
       <ProductForm editProductId={editProductId} />
     </div>
   );

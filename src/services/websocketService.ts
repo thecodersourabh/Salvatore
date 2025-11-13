@@ -89,8 +89,6 @@ export class WebSocketService {
         // Get WebSocket URL from environment or construct it
         const wsUrl = this.getWebSocketUrl(userId, token);
         
-        console.log('🔌 Connecting to WebSocket:', wsUrl.replace(token, '***'));
-        
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {

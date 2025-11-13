@@ -8,6 +8,8 @@ import { useAuth } from "../../context/AuthContext";
 import { ProductService } from "../../services/cachedServices";
 import { ProductService as BaseProductService } from "../../services/productService";
 import { ImageService } from "../../services/imageService";
+import { UserService } from "../../services/userService";
+import { Navigation } from "../Navigation";
 
 type ServiceDef = any;
 
@@ -48,6 +50,85 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   const { user: authUser } = useAuth();
   const currentUserId = authUser?.userId || null;
   const canEdit = !ownerId || ownerId === currentUserId;
+  const hasPermission = authUser?.role === 'seller' || authUser?.role === 'admin';
+
+  // Early permission check - show permission message if user doesn't have access
+  if (authUser && !hasPermission) {
+    return (
+      <>
+        <Navigation />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0 pt-16 md:pt-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  Seller Permissions Required
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md mx-auto">
+                  You need seller permissions to create and manage products. Currently, your account has <strong>{authUser.role || 'Customer'}</strong> access.
+                </p>
+                <div className="space-y-4">
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (!authUser?.email) return;
+                        
+                        // Try to update user role to seller
+                        const updatedUser = await UserService.updateUser(authUser.email, { 
+                          role: 'seller' 
+                        });
+                        
+                        if (updatedUser) {
+                          // Force auth context to refresh
+                          window.dispatchEvent(new CustomEvent('auth-state-refresh'));
+                          showSuccessMessage('Your account has been upgraded to seller! The page will refresh automatically.');
+                          
+                          // Redirect to refresh the page
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 2000);
+                        }
+                      } catch (error) {
+                        console.error('Role upgrade failed:', error);
+                        showValidationError('Failed to upgrade account. Please contact support.', 'error');
+                      }
+                    }}
+                    className="inline-flex items-center px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Upgrade to Seller Account
+                  </button>
+                  <br />
+                  <button
+                    onClick={() => navigate('/')}
+                    className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Dashboard
+                  </button>
+                </div>
+                <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Need Help?</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Contact our support team at <strong>support@salvatore.app</strong> to upgrade your account or if you believe this is an error.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // helper to replace template tokens in labels/placeholders using selectedService context
   const interp = (s?: string) => {
@@ -137,7 +218,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
   // Validation helper function
   const showValidationError = (message: string, field: string = '') => {
-    console.log('🚨 Validation error:', message, 'Field:', field, 'EditMode:', editProductId ? 'UPDATE' : 'CREATE');
     setValidationError(message);
     setValidationField(field);
     
@@ -149,7 +229,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   };
 
   const showSuccessMessage = (message: string) => {
-    console.log('Success:', message);
     setValidationError(message); // Use the message for display
     setValidationField('success');
     setTimeout(() => {
@@ -187,7 +266,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       const newPreviews = validFiles.map(f => URL.createObjectURL(f));
       setImages(prev => [...prev, ...validFiles]);
       setImagePreviews(prev => [...prev, ...newPreviews]);
-      console.log(`Added ${validFiles.length} new images. Total: ${currentTotalImages + validFiles.length}/${maxImages}`);
     }
   };
 
@@ -196,13 +274,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     
     if (index < existingImagesCount) {
       // Removing an existing image
-      console.log('Removing existing image at index:', index);
       setExistingImages(prev => prev.filter((_, i) => i !== index));
       setImagePreviews(prev => prev.filter((_, i) => i !== index));
     } else {
       // Removing a new image (File object)
       const newImageIndex = index - existingImagesCount;
-      console.log('Removing new image at index:', newImageIndex);
       
       setImages(prev => prev.filter((_, i) => i !== newImageIndex));
       setImagePreviews(prev => {
@@ -329,9 +405,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       
       setLoading(true);
       try {
-        console.log('Loading product for editing:', editProductId);
         const product = await ProductService.getProduct(editProductId);
-        console.log('Loaded product:', product);
         
         if (!product) {
           throw new Error('Product not found');
@@ -339,7 +413,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         
         // Transform product data to form format
         const formData = BaseProductService.transformProductResponseToFormData(product);
-        console.log('Transformed form data:', formData);
         
         // Populate form fields
         setCategory(formData.category);
@@ -352,8 +425,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         
         // Load existing images from product
         if (product.images && product.images.length > 0) {
-          console.log('Loading existing product images:', product.images.length);
-          
           // Store existing images separately 
           setExistingImages(product.images);
           
@@ -365,11 +436,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           setImages([]);
         }
         
-        console.log('Form fields populated successfully');
       } catch (error) {
         console.error('Failed to load product for editing:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load product data';
-        console.log(`Failed to load product: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
@@ -395,10 +463,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           const matchingService = categoryServices.find((service: any) => service.name === formData.name);
           if (matchingService) {
             setSelectedService(matchingService);
-            console.log('Selected service set:', matchingService);
           } else {
             console.warn('No matching service found for:', formData.name, 'in category:', category);
-            console.log('Available services:', categoryServices.map((s: any) => s.name));
           }
         }
       } catch (error) {
@@ -409,30 +475,28 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     loadServiceFromCategory();
   }, [editProductId, category]);
 
-  // Debug effect for tags and service state
-  useEffect(() => {
-    if (editProductId) {
-      console.log('Debug - Edit mode state:', {
-        editProductId,
-        category,
-        selectedService: selectedService?.name,
-        selectedServiceNames,
-        tags,
-        loading
-      });
-    }
-  }, [editProductId, category, selectedService, selectedServiceNames, tags, loading]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Prevent multiple submissions
     if (submitting) {
-      console.log('Already submitting, ignoring submission');
       return;
     }
     
-    console.log('🚀 Starting form validation...', editProductId ? 'UPDATE mode' : 'CREATE mode');
+    // Debug authentication status
+    console.log('Debug Auth Info:', {
+      isAuthenticated: authUser !== null,
+      userId: authUser?.userId,
+      userSub: authUser?.sub,
+      userRole: authUser?.role,
+      localStorageUserId: localStorage.getItem('x-user-id'),
+      localStorageToken: localStorage.getItem('idToken') ? 'Present' : 'Missing'
+    });
+    
+    if (!authUser?.userId) {
+      showValidationError('You must be logged in to create or update products. Please log in and try again.', 'auth');
+      return;
+    }
     
     if (!selectedService?.name) {
       const action = editProductId ? 'update' : 'create';
@@ -444,7 +508,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     if (!editProductId) {
       // For new products, must have at least one image
       if (!images || images.length === 0) {
-        console.log('Create validation failed - no images provided');
         showValidationError('Please add at least one image to create a product', 'images');
         return;
       }
@@ -452,7 +515,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       // For updates, must have at least one image total (existing + new)
       const totalImages = (existingImages?.length || 0) + (images?.length || 0);
       if (totalImages === 0) {
-        console.log('Update validation failed - no images total. Existing:', existingImages?.length, 'New:', images?.length);
         showValidationError('Product must have at least one image', 'images');
         return;
       }
@@ -488,11 +550,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
     setSubmitting(true);
     try {
-      let result;
       
       if (editProductId) {
         // Update existing product
-        console.log('Updating existing product:', editProductId);
         
         // Combine existing images with new images for the update
         let allImages: Array<{url: string, isPrimary: boolean, order: number}> = [];
@@ -504,12 +564,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
             isPrimary: img.isPrimary || index === 0,
             order: index + 1
           }));
-          console.log('Including existing images:', allImages.length);
         }
         
         // If user added new images, upload them and add to the array
         if (images.length > 0) {
-          console.log('Uploading new images:', images.length);
           
           try {
             const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
@@ -533,7 +591,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
             }));
             
             allImages = [...allImages, ...newImageObjects];
-            console.log('Total images after adding new ones:', allImages.length);
             
           } catch (imageError) {
             console.error('Failed to upload new images:', imageError);
@@ -546,28 +603,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         // Manually add the images array since transformFormDataToApiFormat might not handle this correctly
         (apiProductData as any).images = allImages;
         
-        result = await ProductService.updateProduct(editProductId, apiProductData);
+        await ProductService.updateProduct(editProductId, apiProductData);
         
-        console.log('Product updated successfully:', result);
         showSuccessMessage('Product updated successfully!');
       } else {
         // Create new product
-        console.log('Creating new product');
-        console.log('Images to upload:', images.length);
-        console.log('Video to upload:', video ? 'Yes' : 'No');
         
-        result = await ProductService.createProduct({
+        await ProductService.createProduct({
           productData,
           images,
           video,
         });
         
-        console.log('Product created successfully:', result);
         showSuccessMessage('Product created successfully!');
       }
       
       // After successful operation, redirect to dashboard
-      console.log('Attempting to navigate to dashboard...');
       navigate('/', { replace: true });
       
     } catch (error) {
@@ -580,43 +631,124 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     }
   };
 
+  // Comprehensive validation function to check if form is complete
+  const isFormValid = useMemo(() => {
+    // Check permissions first
+    if (!hasPermission) return false;
+    
+    // Basic required fields
+    if (!category || !selectedService) return false;
+    
+    // Image validation - different for create vs edit
+    if (!editProductId) {
+      // For new products, must have at least one image
+      if (!images || images.length === 0) return false;
+    } else {
+      // For updates, must have at least one image total (existing + new)
+      const totalImages = (existingImages?.length || 0) + (images?.length || 0);
+      if (totalImages === 0) return false;
+    }
+    
+    // Pricing validation - at least Basic tier must have valid price
+    const basicPrice = prices.Basic;
+    if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) return false;
+    
+    // Delivery time validation - at least Basic tier must have valid delivery time
+    const basicDeliveryTime = deliveryTimes.Basic;
+    if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) return false;
+    
+    // Check required form questions for the selected tier
+    if (selectedService) {
+      const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
+      const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
+      const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
+      const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
+      const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
+      
+      const keysFromServiceQuestions = Object.values(serviceQsPerTier || {}).reduce<string[]>((acc, obj) => acc.concat(Object.keys(obj || {})), []);
+      const allQs = Array.from(new Set([...commonQs, ...catQs, ...keysFromServiceQuestions, ...Object.keys(reqMap || {})]));
+      
+      // Check required questions for the selected tier
+      for (const qKey of allQs) {
+        const isRequired = !!(reqMap && reqMap[qKey]);
+        if (isRequired) {
+          const answer = fullFormAnswersPerTier[tier]?.[qKey];
+          if (!answer || answer.trim() === '') return false;
+        }
+      }
+    }
+    
+    return true;
+  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, sectorToCategoryMap]);
+
   // categoryForSelected removed (not needed when features are template-driven)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          {/* Back Button */}
-          <div className="mb-4">
-            <button
-              onClick={() => navigate('/', { replace: true })}
-              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="text-sm font-medium">Back to Dashboard</span>
-            </button>
-          </div>
+    <>
+      {/* Main Navigation */}
+      <Navigation />
+      
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0 pt-16 md:pt-16">
+        {/* Fixed header (acts like view details modal header) */}
+        <div className="fixed top-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              {/* Left side - Title only */}
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {editProductId ? 'Edit Service' : 'Create New Service'}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {editProductId 
+                      ? 'Update your service details and pricing'
+                      : 'Set up your service packages and pricing'
+                    }
+                  </p>
+                </div>
+              </div>
 
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {editProductId ? 'Edit Service' : 'Create New Service'}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {editProductId 
-                  ? 'Update your service offerings with new details and pricing'
-                  : 'Set up your service offerings with detailed packages and pricing'
-                }
-              </p>
+              {/* Right side - Submit button */}
+              <div>
+                {/* Submit button */}
+                <button 
+                  type="submit" 
+                  form="product-form"
+                  disabled={submitting || !isFormValid} 
+                  className={`relative px-6 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                    (submitting || !isFormValid) ? 'opacity-60 cursor-not-allowed hover:transform-none hover:shadow-lg' : ''
+                  }`}
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span className="text-sm font-medium">Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-semibold">{editProductId ? 'Update Service' : 'Create Service'}</span>
+                    </>
+                  )}
+                  
+                  {/* Subtle glow effect when enabled */}
+                  {!submitting && isFormValid && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-rose-600 to-rose-700 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
         {/* Loading State */}
         {loading && (
@@ -629,7 +761,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         )}
 
         {!loading && (
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden relative">{/* Submit button */}
+        <form id="product-form" onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden relative">{/* Submit button */}
           {/* Loading Overlay */}
           {submitting && (
             <div className="absolute inset-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -641,7 +773,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               </div>
             </div>
           )}
-          <div className="p-6 sm:p-8 space-y-8">
+          
+          {/* header is fixed; mobile button removed to avoid duplicates */}
+          
+          <div className="p-4 sm:p-6 space-y-8">
         {/* Sector & Service selectors */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -758,7 +893,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               </div>
             ) : null;
           })()}
-        </div>        {/* Media uploads: images + video */}
+        </div>        
+        {/* Media uploads: images + video */}
         <div className="space-y-6 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
             <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1190,31 +1326,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           </div>
         </div>
        
-        {/* Submit actions */}
+        {/* Bottom actions - Cancel and Reset only */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <button 
-            type="submit" 
-            disabled={submitting || !selectedService || !category} 
-            className={`flex-1 sm:flex-none sm:px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-              (submitting || !selectedService || !category) ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg transform hover:-translate-y-0.5'
-            }`}
-          >
-            {submitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{editProductId ? 'Update Service' : 'Create Service'}</span>
-              </>
-            )}
-          </button>
-          
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto">
             <button
               type="button"
               onClick={() => navigate('/', { replace: true })}
@@ -1309,6 +1423,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         </div>
       )}
     </div>
+    </>
   );
 };
 

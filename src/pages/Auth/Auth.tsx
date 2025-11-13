@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from '../../context/AuthContext';
 import { Capacitor } from '@capacitor/core';
@@ -8,6 +10,18 @@ export const Auth = () => {
   // Always call hooks at the top level
   const { userCreated, creatingUser } = useAuth();
   const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
+  const navigate = useNavigate();
+
+  // Auto-redirect to dashboard when user is authenticated and created
+  useEffect(() => {
+    if (isAuthenticated && userCreated && !creatingUser) {
+      const timer = setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 1500); // Small delay to show the welcome message
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, userCreated, creatingUser, navigate]);
 
   // Handle login with proper Capacitor integration
   const handleLogin = async () => {
@@ -85,7 +99,13 @@ export const Auth = () => {
             </h2>
             <p className="mt-2 text-sm text-gray-600">{user?.email}</p>
             {userCreated && (
-              <p className="mt-2 text-xs text-green-600"> Account synced with database</p>
+              <div className="mt-2">
+                <p className="text-xs text-green-600">✓ Account synced with database</p>
+                <p className="text-xs text-blue-600 mt-1">Redirecting to dashboard...</p>
+              </div>
+            )}
+            {creatingUser && (
+              <p className="mt-2 text-xs text-yellow-600">Setting up your account...</p>
             )}
           </div>
           <div className="mt-8">

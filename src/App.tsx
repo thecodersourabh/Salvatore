@@ -122,15 +122,15 @@ function isDuplicateCode(code: string | null): boolean {
 async function processAuthCallback(url: string, handleRedirectCallback: (url?: string) => Promise<any>) {
   try {
     await handleRedirectCallback(url);
-    redirectToProfile();
+    redirectToDashboard();
   } catch (error) {
     handleAuthError(error);
   }
 }
 
-function redirectToProfile() {
+function redirectToDashboard() {
   setTimeout(() => {
-    window.location.hash = '/profile';
+    window.location.hash = '/';
   }, REDIRECT_DELAYS.SUCCESS);
 }
 
@@ -145,7 +145,7 @@ function handleAuthError(error: any) {
     error.message.includes('Invalid authorization code');
 
   if (isNetworkError || isCodeError) {
-    redirectToProfile();
+    redirectToDashboard();
   } else {
     setTimeout(() => {
       window.location.hash = '/auth?error=callback_failed';

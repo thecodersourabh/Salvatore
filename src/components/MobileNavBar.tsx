@@ -1,6 +1,5 @@
 import { IonIcon } from '@ionic/react';
 import { homeOutline, personOutline, home, person, chatbubbleOutline, chatbubble } from 'ionicons/icons';
-import { Capacitor } from '@capacitor/core';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

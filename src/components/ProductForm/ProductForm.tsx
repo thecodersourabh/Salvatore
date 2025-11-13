@@ -5,7 +5,8 @@ import sectorServices from "../../config/sectorServices.json";
 import packageTierTemplates from "../../config/packageTierTemplates.json";
 import { Edit2, Check, X as XIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { ProductService } from "../../services/productService";
+import { ProductService } from "../../services/cachedServices";
+import { ProductService as BaseProductService } from "../../services/productService";
 import { ImageService } from "../../services/imageService";
 
 type ServiceDef = any;
@@ -329,11 +330,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       setLoading(true);
       try {
         console.log('Loading product for editing:', editProductId);
-        const product = await ProductService.getProductById(editProductId);
+        const product = await ProductService.getProduct(editProductId);
         console.log('Loaded product:', product);
         
+        if (!product) {
+          throw new Error('Product not found');
+        }
+        
         // Transform product data to form format
-        const formData = ProductService.transformProductResponseToFormData(product);
+        const formData = BaseProductService.transformProductResponseToFormData(product);
         console.log('Transformed form data:', formData);
         
         // Populate form fields
@@ -379,8 +384,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       if (!editProductId || !category) return;
       
       try {
-        const product = await ProductService.getProductById(editProductId);
-        const formData = ProductService.transformProductResponseToFormData(product);
+        const product = await ProductService.getProduct(editProductId);
+        if (!product) return;
+        
+        const formData = BaseProductService.transformProductResponseToFormData(product);
         
         // Find and set the selected service based on the loaded data
         if (category && formData.name) {
@@ -535,7 +542,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         }
         
         // Update product with all images (existing + new)
-        const apiProductData = ProductService.transformFormDataToApiFormat(productData, allImages.map(img => img.url));
+        const apiProductData = BaseProductService.transformFormDataToApiFormat(productData, allImages.map(img => img.url));
         // Manually add the images array since transformFormDataToApiFormat might not handle this correctly
         (apiProductData as any).images = allImages;
         

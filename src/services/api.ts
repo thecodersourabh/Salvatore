@@ -1,5 +1,9 @@
 import { ApiError, ApiErrorHandler, ErrorType } from './apiErrorHandler';
-import { cacheService } from './cacheService';
+import { 
+  cacheData, 
+  getCachedData, 
+  CACHE_NAMESPACES 
+} from '../utils/appCache';
 import { 
   refreshTokenSilently, 
   getStoredToken, 
@@ -79,8 +83,8 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
     // Try cache for GET requests (only when ttl provided)
     if (isGet && cacheOptions && !cacheOptions.force && cacheOptions.ttlMs) {
       try {
-        const cacheKey = `GET:${url}`;
-        const cached = cacheService.get<any>(cacheKey);
+        const cacheKey = `GET_${url.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const cached = getCachedData<any>(CACHE_NAMESPACES.API, cacheKey);
         if (cached !== null && cached !== undefined) {
           return cached as T;
         }
@@ -195,8 +199,9 @@ export const api: ApiInstance = {
     try {
       const cacheOpts = (opts as any).cacheOptions;
       if (cacheOpts && cacheOpts.ttlMs) {
-        const cacheKey = `GET:${buildUrl(url, opts.params)}`;
-        cacheService.set(cacheKey, result, cacheOpts.ttlMs, !!cacheOpts.persist);
+        const cacheKey = `GET_${buildUrl(url, opts.params).replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const ttlMinutes = Math.ceil(cacheOpts.ttlMs / (1000 * 60)); // Convert ms to minutes
+        cacheData(CACHE_NAMESPACES.API, cacheKey, result, ttlMinutes);
       }
     } catch (e) {
       // ignore cache write errors

@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -6,7 +6,8 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading: loading } = useAuth();
+  const { isAuthenticated, loading, userCreated } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     // Show loading state while authentication is being verified or user is being created
@@ -22,6 +23,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/home" replace />;
+  }
+
+  // If user is authenticated and user creation is complete,
+  // redirect to dashboard if they're on profile, home, or auth pages
+  if (isAuthenticated && userCreated && (
+    location.pathname === '/profile' || 
+    location.pathname === '/home' || 
+    location.pathname === '/auth'
+  )) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

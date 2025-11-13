@@ -3,6 +3,7 @@ import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, Edit, Trash2 
 import { useCurrency } from '../context/CurrencyContext';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { useImageGallery } from '../hooks/useImageGallery';
+import { useBackButton } from '../hooks/useBackButton';
 
 interface ProductImage {
   url: string;
@@ -170,6 +171,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 }) => {
   const { formatCurrency } = useCurrency();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Handle hardware back button on mobile
+  useBackButton(isOpen, onClose, 2);
 
   if (!isOpen) return null;
 

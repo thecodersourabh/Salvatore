@@ -4,6 +4,7 @@ import { teamService, TeamMember } from '../services/teamService';
 import { UserService } from '../services/userService';
 import { User } from '../types/user';
 import { useAuth } from '../context/AuthContext';
+import { useBackButton } from '../hooks/useBackButton';
 
 interface TeamMembersModalProps {
   isOpen: boolean;
@@ -25,6 +26,9 @@ export const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Handle hardware back button on mobile
+  useBackButton(isOpen, onClose, 2);
 
   // Helper to check if a userId matches the current user
   const isCurrentUser = (userId: string) => {

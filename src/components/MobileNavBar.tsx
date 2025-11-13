@@ -16,10 +16,6 @@ export function MobileNavBar({
   const location = useLocation();
   const { isAuthenticated, userContext } = useAuth();
   
-  // Don't show footer if already in native app
-  if (Capacitor.isNativePlatform()) {
-    return null;
-  }
 
   // Don't show footer if user is not logged in
   if (!isAuthenticated) {
@@ -70,7 +66,7 @@ export function MobileNavBar({
       fixed bottom-0 left-0 right-0 z-50 
       bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm
       border-t border-gray-200 dark:border-gray-700
-      px-3 py-1
+      px-3 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]
       md:hidden
       ${className}
     `.trim().replace(/\s+/g, ' ')}>

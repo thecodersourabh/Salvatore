@@ -10,9 +10,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -22,10 +19,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
-          
         }
       },
       {
@@ -35,10 +28,6 @@
         "category": "DIGITAL_REMOTE",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
-          
         }
       },
       {
@@ -48,9 +37,15 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
+        }
+      },
+      {
+        "name": "CCTV Camera Setup",
+        "description": "Security camera installation and surveillance system configuration",
+        "skills": ["CCTV installation", "IP camera setup", "DVR/NVR configuration", "Camera positioning", "Cable routing", "Network configuration", "Remote viewing setup", "Motion detection", "Night vision setup", "Storage configuration", "Mobile app setup", "Security system", "Surveillance installation", "Wireless cameras", "HD cameras"],
+        "category": "PHYSICAL_ONSITE",
+        "timeUnit": "hours",
+        "packageTiers": {
           
         }
       },
@@ -61,10 +56,6 @@
         "category": "CONSULTATION",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
-          
         }
       }
     ]
@@ -80,9 +71,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -92,9 +80,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -106,9 +91,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -119,9 +101,6 @@
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -131,9 +110,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -150,9 +126,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -162,9 +135,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -176,9 +146,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -188,9 +155,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -202,9 +166,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       }
     ]
@@ -213,67 +174,32 @@
     "description": "Expert woodworking and furniture services",
     "services": [
       {
-        "name": "Furniture Making",
-        "description": "Custom furniture design and creation",
-        "skills": ["Woodworking", "Furniture design", "CNC operation", "Finishing", "Tool operation", "Upholstery", "Custom joinery", "Custom furniture", "Wood furniture", "Handmade furniture"],
+        "name": "Custom Furniture & Cabinets",
+        "description": "Custom furniture design, cabinet making and installation",
+        "skills": ["Woodworking", "Furniture design", "Cabinet assembly", "Custom joinery", "Wall mounting", "Finishing", "Measurement", "Kitchen cabinets", "Bathroom vanity", "Custom furniture", "Built-in storage", "Modular furniture"],
         "category": "CREATIVE",
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
-        "name": "Wood Repair",
-        "description": "Repair and restoration of wooden items",
-        "skills": ["Wood filling", "Sanding", "Varnishing", "Painting", "Joinery", "Scratch repair", "Water damage fix", "Wood restoration", "Furniture repair", "Antique restoration"],
+        "name": "Wood Repair & Door Setup",
+        "description": "Repair and restoration of wooden furniture, fixtures, and door installation services",
+        "skills": ["Wood filling", "Sanding", "Varnishing", "Painting", "Joinery", "Scratch repair", "Water damage fix", "Wood restoration", "Furniture repair", "Antique restoration", "Door installation", "Door hanging", "Lock fitting", "Door alignment", "Door adjustment", "Smart lock install", "Weatherstripping", "Security doors", "Sliding doors", "Window repair"],
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
-        "name": "Cabinet Installation",
-        "description": "Custom cabinet making and installation",
-        "skills": ["Cabinet assembly", "Wall mounting", "Measurement", "Finishing", "Hinge installation", "Soft-close install", "Custom shelving", "Kitchen cabinets", "Bathroom vanity", "Modular storage"],
-        "category": "PHYSICAL_ONSITE",
-        "timeUnit": "days",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Home Office Setup",
-        "description": "Custom workspace and home office furniture",
-        "skills": ["Desk building", "Built-in shelves", "Storage solutions", "Ergonomic design", "Cable management", "Standing desk", "Home office furniture", "Custom workspace"],
-        "category": "PHYSICAL_ONSITE",
-        "timeUnit": "days",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Door Services",
-        "description": "Door installation, repair, and maintenance",
-        "skills": ["Door hanging", "Lock fitting", "Door alignment", "Adjustment", "Repair", "Smart lock install", "Weatherstripping", "Door installation", "Security doors", "Sliding doors"],
+        "name": "Home Furniture Setup",
+        "description": "Complete furniture assembly, arrangement and room setup services",
+        "skills": ["Furniture assembly", "Room planning", "Furniture arrangement", "Space optimization", "IKEA assembly", "Bed assembly", "Wardrobe setup", "Living room setup", "Bedroom setup", "Office setup", "Furniture positioning", "Room organization", "Interior arrangement", "Home staging"],
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -290,9 +216,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -302,9 +225,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -316,9 +236,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -328,9 +245,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -342,9 +256,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       }
     ]
@@ -353,67 +264,32 @@
     "description": "Custom clothing and alteration services",
     "services": [
       {
-        "name": "Custom Clothing",
-        "description": "Made-to-measure clothing creation",
-        "skills": ["Pattern making", "Sewing machine operation", "Fitting", "Fabric selection", "Embroidery", "Alteration", "Hand stitching", "Custom tailoring", "Bespoke clothing", "Fashion design"],
-        "category": "CREATIVE",
+        "name": "Men's Clothing & Alterations",
+        "description": "Custom men's wear, suits, shirts and tailoring services",
+        "skills": ["Men's suit tailoring", "Shirt fitting", "Trouser hemming", "Blazer alteration", "Formal wear", "Business attire", "Men's fashion", "Size adjustment", "Custom men's clothing", "Wedding suits", "Tuxedo fitting", "Men's alteration", "Waistcoat tailoring"],
+        "category": "TAILORING",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
           
         }
       },
       {
-        "name": "Alterations",
-        "description": "Clothing alterations and adjustments",
-        "skills": ["Hemming", "Resizing", "Repair", "Tailoring", "Zipper replacement", "Button sewing", "Sleeve adjustment", "Clothing alteration", "Garment fitting", "Size adjustment"],
-        "category": "PHYSICAL_ONSITE",
+        "name": "Women's Clothing & Alterations",
+        "description": "Custom women's wear, dresses, blouses and tailoring services",
+        "skills": ["Women's dress making", "Blouse fitting", "Saree blouse", "Lehenga tailoring", "Kurti design", "Western wear", "Dress alteration", "Women's fashion", "Bridal wear", "Party wear", "Ethnic wear", "Size fitting", "Custom women's clothing"],
+        "category": "TAILORING",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
           
         }
       },
       {
-        "name": "Repairs",
-        "description": "Clothing repair and mending",
-        "skills": ["Patchwork", "Stitching", "Button replacement", "Zipper repair", "Darning", "Hole repair", "Fabric glue", "Clothing mending", "Garment repair", "Fabric restoration"],
-        "category": "PHYSICAL_ONSITE",
+        "name": "Repairs & Mending",
+        "description": "Clothing repair and mending for all garments",
+        "skills": ["Zipper repair", "Button replacement", "Hole repair", "Patchwork", "Stitching repair", "Fabric restoration", "Darning", "Seam repair", "Clothing mending", "Garment restoration"],
+        "category": "TAILORING",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Sustainable Fashion",
-        "description": "Eco-friendly clothing services and upcycling",
-        "skills": ["Upcycling", "Clothing transformation", "Eco-friendly materials", "Vintage restoration", "Sustainable design", "Fabric recycling", "Zero waste fashion", "Ethical fashion"],
-        "category": "CREATIVE",
-        "timeUnit": "days",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Wedding Attire",
-        "description": "Custom wedding dress and formal wear services",
-        "skills": ["Dress design", "Fitting", "Embroidery", "Fabric selection", "Beading", "Veil design", "Corset fitting", "Wedding dress", "Bridal wear", "Formal wear"],
-        "category": "CREATIVE",
-        "timeUnit": "days",
-        "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -430,9 +306,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -442,9 +315,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -456,9 +326,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -468,10 +335,7 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
-          
+
         }
       },
       {
@@ -481,9 +345,6 @@
         "category": "HEALTHCARE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -500,9 +361,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -512,9 +370,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -526,9 +381,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -539,9 +391,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -551,9 +400,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -570,9 +416,6 @@
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -582,9 +425,6 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -596,9 +436,6 @@
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -608,9 +445,6 @@
         "category": "CREATIVE",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -627,9 +461,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -640,9 +471,6 @@
         "timeUnit": "days",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -652,10 +480,7 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
-          
+             
         }
       },
       {
@@ -665,9 +490,6 @@
         "category": "CONSULTATION",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -684,9 +506,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -696,9 +515,6 @@
         "category": "EDUCATION",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       },
@@ -710,9 +526,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -722,9 +535,6 @@
         "category": "EDUCATION",
         "timeUnit": "hours",
         "packageTiers": {
-          
-          
-          
           
         }
       }
@@ -741,9 +551,6 @@
         "timeUnit": "hours",
         "packageTiers": {
           
-          
-          
-          
         }
       },
       {
@@ -753,9 +560,6 @@
         "category": "CULINARY",
         "timeUnit": "days",
         "packageTiers": {
-          
-          
-          
           
         }
       },

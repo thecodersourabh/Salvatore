@@ -83,16 +83,6 @@
       "helperText": "How long will this take to complete?"
     },
     
-    "travel_coverage": {
-      "id": "travel_coverage",
-      "label": "Travel/Coverage Area",
-      "type": "text",
-      "placeholder": "e.g., Within 10km, City-wide, State-wide",
-      "required": false,
-      "helperText": "What's your service coverage area?",
-      "tiers": ["Standard", "Premium"]
-    },
-    
     "consultation_included": {
       "id": "consultation_included",
       "label": "Consultation/Planning Included?",
@@ -154,6 +144,15 @@
         "helperText": "How do you handle materials and parts?"
       },
       
+      "travel_coverage": {
+        "id": "travel_coverage",
+        "label": "Travel/Coverage Area",
+        "type": "text",
+        "placeholder": "e.g., Within 10km, City-wide, State-wide",
+        "required": false,
+        "helperText": "What's your service coverage area?"
+      },
+      
       "warranty_offered": {
         "id": "warranty_offered",
         "label": "Warranty/Guarantee Offered",
@@ -169,8 +168,24 @@
           "1 year"
         ],
         "required": true,
-        "helperText": "Do you offer any warranty on your work?",
-        "tiers": ["Standard", "Premium"]
+        "helperText": "Do you offer any warranty on your work?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Complete diagnostics included",
+          "Quality parts/materials used",
+          "Professional tools and equipment",
+          "Clean-up after service",
+          "Warranty on work performed",
+          "Follow-up support included"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -209,8 +224,24 @@
           "No source files"
         ],
         "required": true,
-        "helperText": "Will you provide source/editable files?",
-        "tiers": ["Premium"]
+        "helperText": "Will you provide source/editable files?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Responsive design included",
+          "SEO optimization",
+          "Source files provided",
+          "Post-launch support (30 days)",
+          "Unlimited revisions",
+          "Fast delivery"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -221,8 +252,7 @@
         "type": "textarea",
         "placeholder": "List your medical qualifications and certifications",
         "required": true,
-        "helperText": "Provide details of your professional credentials",
-        "tiers": ["Premium"]
+        "helperText": "Provide details of your professional credentials"
       },
       
       "follow_up_included": {
@@ -238,8 +268,7 @@
           "Unlimited follow-ups"
         ],
         "required": true,
-        "helperText": "Are follow-up consultations included?",
-        "tiers": ["Standard", "Premium"]
+        "helperText": "Are follow-up consultations included?"
       },
       
       "emergency_availability": {
@@ -252,8 +281,24 @@
           "24/7 availability"
         ],
         "required": true,
-        "helperText": "What are your emergency consultation hours?",
-        "tiers": ["Premium"]
+        "helperText": "What are your emergency consultation hours?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Licensed professional",
+          "Emergency consultation available",
+          "Follow-up included",
+          "Medical report provided",
+          "Prescription if needed",
+          "24/7 availability"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -288,6 +333,23 @@
         ],
         "required": true,
         "helperText": "What study materials do you provide?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Personalized learning plan",
+          "Progress tracking included",
+          "Study materials provided",
+          "Flexible scheduling",
+          "Doubt clearing sessions",
+          "Test preparation support"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -332,6 +394,23 @@
         ],
         "required": true,
         "helperText": "What quality of ingredients do you use?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Fresh ingredients guaranteed",
+          "Custom menu planning",
+          "Professional presentation",
+          "Dietary preferences accommodated",
+          "Setup and cleanup included",
+          "Tasting session available"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -368,6 +447,23 @@
         ],
         "required": true,
         "helperText": "What file formats will you deliver?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Multiple design concepts",
+          "Unlimited revisions",
+          "High-resolution files",
+          "Commercial usage rights",
+          "Fast turnaround",
+          "Professional consultation"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -407,8 +503,24 @@
           "Unlimited email support"
         ],
         "required": true,
-        "helperText": "What follow-up support do you offer?",
-        "tiers": ["Standard", "Premium"]
+        "helperText": "What follow-up support do you offer?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "One-on-one session",
+          "Detailed analysis report",
+          "Action plan included",
+          "Follow-up support",
+          "Confidential consultation",
+          "Expert recommendations"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     },
     
@@ -426,6 +538,15 @@
         ],
         "required": true,
         "helperText": "What type of vehicle will you use?"
+      },
+      
+      "travel_coverage": {
+        "id": "travel_coverage",
+        "label": "Service Coverage Area",
+        "type": "text",
+        "placeholder": "e.g., Within city, State-wide, Inter-state",
+        "required": false,
+        "helperText": "What areas do you cover for pickup/delivery?"
       },
       
       "loading_unloading_included": {
@@ -454,76 +575,123 @@
           "Full value insurance"
         ],
         "required": true,
-        "helperText": "What insurance coverage do you provide?",
-        "tiers": ["Standard", "Premium"]
+        "helperText": "What insurance coverage do you provide?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Door-to-door service",
+          "Real-time tracking",
+          "Professional handling",
+          "Insurance coverage",
+          "Flexible scheduling",
+          "Helper assistance included"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
+      }
+    },
+    
+    "TAILORING": {
+      "clothing_type": {
+        "id": "clothing_type",
+        "label": "Clothing Type Specialization",
+        "type": "multiselect",
+        "options": [
+          "Men's formal wear",
+          "Men's casual wear",
+          "Women's ethnic wear",
+          "Women's western wear",
+          "Bridal wear",
+          "Party wear",
+          "Traditional outfits",
+          "Business attire",
+          "Kids clothing"
+        ],
+        "required": true,
+        "helperText": "What types of clothing do you specialize in?"
+      },
+      
+      "fabric_provided": {
+        "id": "fabric_provided",
+        "label": "Fabric Arrangement",
+        "type": "select",
+        "options": [
+          "Customer provides fabric",
+          "I can arrange fabric with additional cost",
+          "Fabric included in package price",
+          "Both options available"
+        ],
+        "required": true,
+        "helperText": "How do you handle fabric for custom clothing?"
+      },
+      
+      "fitting_sessions": {
+        "id": "fitting_sessions",
+        "label": "Number of Fittings Included",
+        "type": "select",
+        "options": [
+          "1 fitting",
+          "2 fittings",
+          "3 fittings",
+          "4 fittings",
+          "Unlimited fittings"
+        ],
+        "required": true,
+        "helperText": "How many fitting sessions do you provide?"
+      },
+      
+      "alteration_included": {
+        "id": "alteration_included",
+        "label": "Minor Alterations Included?",
+        "type": "select",
+        "options": [
+          "No alterations after completion",
+          "Basic alterations included (7 days)",
+          "Basic alterations included (15 days)",
+          "Basic alterations included (30 days)",
+          "All alterations included"
+        ],
+        "required": true,
+        "helperText": "Do you provide post-completion alterations?"
+      },
+      
+      "measurement_service": {
+        "id": "measurement_service",
+        "label": "Measurement Service",
+        "type": "select",
+        "options": [
+          "Customer visits for measurements",
+          "Home visit for measurements",
+          "Both options available",
+          "Digital measurements accepted"
+        ],
+        "required": true,
+        "helperText": "How do you take measurements?"
+      },
+      
+      "features_included": {
+        "id": "features_included",
+        "label": "Key Features/Highlights",
+        "type": "multiselect",
+        "options": [
+          "Perfect fit guarantee",
+          "Premium quality stitching",
+          "Custom design consultation",
+          "Fabric selection guidance",
+          "Quick turnaround time",
+          "Multiple fittings included",
+          "Home pickup/delivery",
+          "Traditional craftsmanship"
+        ],
+        "required": false,
+        "helperText": "Select the key features that make your service stand out",
+        "maxSelections": 4
       }
     }
-  },
-  
-  "featurePlaceholders": {
-    "PHYSICAL_ONSITE": [
-      "Complete diagnostics included",
-      "Quality parts/materials used",
-      "Professional tools and equipment",
-      "Clean-up after service",
-      "Warranty on work performed",
-      "Follow-up support included"
-    ],
-    "DIGITAL_REMOTE": [
-      "Responsive design included",
-      "SEO optimization",
-      "Source files provided",
-      "Post-launch support (30 days)",
-      "Unlimited revisions",
-      "Fast delivery"
-    ],
-    "HEALTHCARE": [
-      "Licensed professional",
-      "Emergency consultation available",
-      "Follow-up included",
-      "Medical report provided",
-      "Prescription if needed",
-      "24/7 availability"
-    ],
-    "EDUCATION": [
-      "Personalized learning plan",
-      "Progress tracking included",
-      "Study materials provided",
-      "Flexible scheduling",
-      "Doubt clearing sessions",
-      "Test preparation support"
-    ],
-    "CULINARY": [
-      "Fresh ingredients guaranteed",
-      "Custom menu planning",
-      "Professional presentation",
-      "Dietary preferences accommodated",
-      "Setup and cleanup included",
-      "Tasting session available"
-    ],
-    "CREATIVE": [
-      "Multiple design concepts",
-      "Unlimited revisions",
-      "High-resolution files",
-      "Commercial usage rights",
-      "Fast turnaround",
-      "Professional consultation"
-    ],
-    "CONSULTATION": [
-      "One-on-one session",
-      "Detailed analysis report",
-      "Action plan included",
-      "Follow-up support",
-      "Confidential consultation",
-      "Expert recommendations"
-    ],
-    "LOGISTICS": [
-      "Door-to-door service",
-      "Real-time tracking",
-      "Professional handling",
-      "Insurance coverage",
-      "Flexible scheduling",
-      "Helper assistance included"
-    ]
   }
 }

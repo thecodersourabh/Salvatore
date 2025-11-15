@@ -15,12 +15,21 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
+        // Improved chunk naming with shorter hashes to reduce cache issues
+        chunkFileNames: '[name]-[hash:8].js',
+        entryFileNames: '[name]-[hash:8].js',
+        assetFileNames: '[name]-[hash:8].[ext]',
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
+          ui: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
+          // Separate lazy-loaded components into their own chunks
+          dashboard: ['src/components/Dashboard/QuickActions.tsx'],
         },
       },
     },
+    // Increase chunk size warning limit since we're using code splitting
+    chunkSizeWarningLimit: 1000,
   },
   define: {
     global: 'globalThis',

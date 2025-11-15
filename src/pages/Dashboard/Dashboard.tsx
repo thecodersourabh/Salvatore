@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -18,9 +18,10 @@ import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileComple
 import { useCurrency } from '../../context/CurrencyContext';
 import { ProductService } from "../../services/cachedServices";
 import { ProductResponse } from "../../services/productService";
+import { lazyWithRetry } from "../../utils/chunkLoader";
 
-// Lazy load non-critical components
-const QuickActions = lazy(() => import("../../components/Dashboard/QuickActions"));
+// Lazy load non-critical components with retry logic
+const QuickActions = lazyWithRetry(() => import("../../components/Dashboard/QuickActions"));
 
 export const Dashboard = () => {
   const navigate = useNavigate();

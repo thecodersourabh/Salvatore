@@ -6,7 +6,8 @@ import {
   CACHE_TTL,
   cacheData,
   getCachedData,
-  invalidateCache 
+  invalidateCache,
+  clearAuthenticationCache 
 } from '../utils/appCache';
 import { 
   emitProductUpdated, 
@@ -17,6 +18,15 @@ import { User } from '../types/user';
 import { ProductResponse } from './productService';
 import { OrderStats, OrderListResponse } from '../types/order';
 import { UserContext } from './ApiService';
+
+/**
+ * Helper function to check if error is authentication-related
+ */
+const isAuthError = (error: any): boolean => {
+  return error?.status === 401 || 
+         error?.message?.includes('401') ||
+         error?.message?.includes('Unauthorized');
+};
 
 /**
  * Cached service wrappers with automatic caching for better performance
@@ -45,6 +55,12 @@ export class CachedUserService {
       return user;
     } catch (error) {
       console.error('Cached getUserByEmail failed:', error);
+      
+      if (isAuthError(error)) {
+        clearAuthenticationCache();
+        throw error;
+      }
+      
       return null;
     }
   }
@@ -120,6 +136,12 @@ export class CachedProductService {
       return products;
     } catch (error) {
       console.error('Cached getUserProducts failed:', error);
+      
+      if (isAuthError(error)) {
+        clearAuthenticationCache();
+        throw error;
+      }
+      
       return [];
     }
   }
@@ -143,6 +165,12 @@ export class CachedProductService {
       return product;
     } catch (error) {
       console.error('Cached getProduct failed for:', productId, error);
+      
+      if (isAuthError(error)) {
+        clearAuthenticationCache();
+        throw error;
+      }
+      
       return null;
     }
   }
@@ -240,7 +268,12 @@ export class CachedOrderService {
       return stats;
     } catch (error) {
       console.error('Cached getOrderStats failed:', error);
-      // Return null instead of throwing to allow graceful degradation
+      
+      if (isAuthError(error)) {
+        clearAuthenticationCache();
+        throw error;
+      }
+      
       return null;
     }
   }
@@ -250,6 +283,12 @@ export class CachedOrderService {
       return await baseOrderService.getOrders();
     } catch (error) {
       console.error('Cached getOrders failed:', error);
+      
+      if (isAuthError(error)) {
+        clearAuthenticationCache();
+        throw error;
+      }
+      
       return { 
         orders: [], 
         pagination: { total: 0, totalPages: 0, currentPage: 1, limit: 10, hasNext: false, hasPrev: false },

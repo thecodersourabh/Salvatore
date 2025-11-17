@@ -41,7 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     user,
     isLoading,
-    getIdTokenClaims
+    getIdTokenClaims,
+    getAccessTokenSilently
   } = useAuth0();
 
   // State management
@@ -56,11 +57,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchToken = async () => {
       if (isAuthenticated && getIdTokenClaims) {
         try {
+          // Get fresh access token to ensure session is valid
+          if (getAccessTokenSilently) {
+            try {
+              await getAccessTokenSilently({ cacheMode: 'off' });
+            } catch (accessTokenError) {
+              // Continue with ID token if access token fails
+            }
+          }
+          
           const claims = await getIdTokenClaims();
           const token = claims?.__raw || null;
           setIdToken(token);
           
-          // Store token in localStorage for consistent access across services
           if (token) {
             storeToken(token);
           }
@@ -75,33 +84,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     fetchToken();
-  }, [isAuthenticated, getIdTokenClaims]);
+  }, [isAuthenticated, getIdTokenClaims, getAccessTokenSilently, authRefreshTrigger]);
 
   // Set up token refresh callback for API service
   useEffect(() => {
-    if (getIdTokenClaims) {
+    if (getIdTokenClaims && getAccessTokenSilently) {
       const refreshCallback = async (): Promise<string | null> => {
         try {
-          console.log('🔄 AuthContext: Refreshing token via getIdTokenClaims...');
+          // Force token refresh by getting fresh access token first
+          await getAccessTokenSilently({ cacheMode: 'off' });
+          
+          // Get fresh ID token claims
           const claims = await getIdTokenClaims();
           const newToken = claims?.__raw || null;
           
           if (newToken) {
             setIdToken(newToken);
             storeToken(newToken);
-            console.log('✅ AuthContext: Token refreshed successfully');
           }
           
           return newToken;
         } catch (error) {
-          console.error('❌ AuthContext: Token refresh failed:', error);
+          console.error('Token refresh failed:', error);
           return null;
         }
       };
       
       setTokenRefreshCallback(refreshCallback);
     }
-  }, [getIdTokenClaims]);
+  }, [getIdTokenClaims, getAccessTokenSilently]);
 
   // Listen for auth state refresh events from deep link handler
   useEffect(() => {

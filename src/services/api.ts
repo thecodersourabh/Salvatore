@@ -20,6 +20,7 @@ const getUserId = (): string => {
 export interface ApiOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, any>;
   body?: any;
+  idToken?: string; // Custom token for retry scenarios
   // Optional caching controls for GET
   cacheOptions?: {
     ttlMs?: number; // time-to-live in ms. If omitted, caching disabled.
@@ -74,7 +75,7 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
       );
     }
 
-  const { params, cacheOptions, ...init } = options as any;
+  const { params, cacheOptions, idToken, ...init } = options as any;
     const url = buildUrl(endpoint, params);
 
     const method = ((init.method as string) || 'GET').toUpperCase();
@@ -94,7 +95,7 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
     }
 
     // Get token from localStorage (Auth0 default)
-    let token = getStoredToken((init as any).idToken);
+    let token = getStoredToken(idToken);
 
     // Check if token is expired and refresh if needed (only if not already retrying)
     if (token && !isRetryAfterRefresh) {
@@ -151,10 +152,15 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
           if (newToken) {
             // Retry the request with the new token
             console.log('🔄 Retrying request with refreshed token...');
-            return makeRequest<T>(endpoint, {
+            console.log('🔍 New token length:', newToken.length, 'Token starts with:', newToken.substring(0, 20) + '...');
+            
+            // Create a new options object with the refreshed token
+            const retryOptions = {
               ...options,
               idToken: newToken
-            } as ApiOptions, true);
+            } as ApiOptions;
+            
+            return makeRequest<T>(endpoint, retryOptions, true);
           } else {
             // Token refresh failed, proceed with error handling
             console.warn('⚠️ Token refresh failed, redirecting to login may be required');

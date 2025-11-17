@@ -144,6 +144,14 @@ export const CACHE_TTL = {
   EXTENDED: 60,  // 1 hour - for static data
 } as const;
 
+// Clear user-related cache when authentication fails
+export const clearAuthenticationCache = (): void => {
+  // Clear only user-specific cached data, not all cache
+  appCache.invalidatePattern(CACHE_NAMESPACES.USER);
+  appCache.invalidatePattern(CACHE_NAMESPACES.PRODUCT);
+  appCache.invalidatePattern(CACHE_NAMESPACES.STATS);
+};
+
 // Auto cleanup every 5 minutes
 setInterval(() => {
   appCache.cleanup();

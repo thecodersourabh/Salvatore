@@ -177,7 +177,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   return (
     <div className="fixed bottom-6 right-6 z-50 max-sm:inset-0 max-sm:bottom-0 max-sm:right-0" style={{ marginRight: window.innerWidth < 640 ? '0px' : `${marginRight}px` }} onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:pt-[max(3rem,env(safe-area-inset-top))] max-sm:pb-20 flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[460px] h-[520px] max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:pt-[max(3rem,env(safe-area-inset-top))] max-sm:pb-16 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Conversation Header */}
@@ -306,7 +306,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
               );
               return (
                 <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] md:max-w-[70%] p-3 rounded-2xl ${
+                  <div className={`max-w-[75%] md:max-w-[70%] p-4 rounded-2xl ${
                     isMe 
                       ? 'bg-rose-600 text-white rounded-br-sm' 
                       : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border dark:border-gray-700 rounded-bl-sm'
@@ -325,7 +325,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
         </div>
 
         {/* Message Input */}
-        <form onSubmit={onSendMessage} className="p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-900">
+        <form onSubmit={onSendMessage} className="p-4 border-t dark:border-gray-700 bg-white dark:bg-gray-900">
           <div className="flex items-center space-x-2">
             <input
               type="text"

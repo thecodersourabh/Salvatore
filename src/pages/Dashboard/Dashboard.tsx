@@ -123,7 +123,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
+    <div className="bg-gray-50 dark:bg-gray-900 pb-16 md:pb-0">
       {/* Network Error Message */}
       {networkError && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
@@ -219,7 +219,7 @@ export const Dashboard = () => {
       </div>
 
       {/* Products Management Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -292,7 +292,7 @@ export const Dashboard = () => {
       {/* Lazy-loaded Quick Actions Section */}
       <Suspense fallback={
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="animate-pulse">
               <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-32 mx-auto mb-6"></div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

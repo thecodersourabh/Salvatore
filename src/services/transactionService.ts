@@ -1,6 +1,6 @@
 import { api } from './api';
 import { ApiService } from './ApiService';
-const txUrl = import.meta.env.VITE_API_TRANSACTION_URL;
+const txUrl = import.meta.env.VITE_API_ORDERS_URL;
 
 export interface Transaction {
   id: string;

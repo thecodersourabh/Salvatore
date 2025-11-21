@@ -142,6 +142,24 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
             ...additionalData
           });
           break;
+        case 'ready':
+          updatedOrder = await orderService.markOrderReady(order.id, additionalData);
+          break;
+        case 'packing_in_progress':
+          updatedOrder = await orderService.markOrderPackingInProgress(order.id, additionalData);
+          break;
+        case 'packed':
+          updatedOrder = await orderService.markOrderPacked(order.id, additionalData);
+          break;
+        case 'ready_to_dispatch':
+          updatedOrder = await orderService.markOrderReadyToDispatch(order.id, additionalData);
+          break;
+        case 'in_transit':
+          updatedOrder = await orderService.markOrderInTransit(order.id, additionalData);
+          break;
+        case 'delivered':
+          updatedOrder = await orderService.markOrderDelivered(order.id, additionalData);
+          break;
         default:
           updatedOrder = await orderService.updateOrder(order.id, {
             status: newStatus,
@@ -188,12 +206,17 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
   };
 
   const getStatusColor = (status: OrderStatus): string => {
-    const colors = {
+    const colors: Record<OrderStatus, string> = {
       pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
       confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       processing: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
       'in-progress': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       ready: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+      packing_in_progress: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+      packed: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+      ready_to_dispatch: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+      in_transit: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+      delivered: 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200',
       completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       rejected: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
@@ -211,11 +234,6 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
     return colors[priority as keyof typeof colors] || colors.normal;
   };
 
-  const canAccept = order?.status === 'pending';
-  const canReject = ['pending', 'confirmed'].includes(order?.status || '');
-  const canStart = order?.status === 'confirmed';
-  const canComplete = order?.status === 'in-progress';
-
   if (!isOpen) return null;
 
   return (
@@ -227,37 +245,39 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
       />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-        <div className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-xl mx-2 sm:mx-0">
+      <div className="flex min-h-screen items-start sm:items-center justify-center p-0 sm:p-4">
+        <div className="relative w-full h-screen sm:h-auto sm:max-w-4xl sm:mx-4 bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
+          <div className="flex items-start justify-between px-4 py-3 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-start space-x-2 sm:space-x-4 flex-1 min-w-0">
+              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 flex-shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                   Order {order.orderNumber || `#${order.id?.substring(0, 8) || 'N/A'}`}
                 </h2>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0 mt-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status || 'pending')}`}>
-                    {(order.status || 'pending').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status || 'pending')}`}>
+                    {(order.status || 'pending').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(order.priority || 'normal')}`}>
-                    {(order.priority || 'normal').toUpperCase()}
-                  </span>
+                  {order.priority && order.priority !== 'normal' && (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.priority)}`}>
+                      {order.priority.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="ml-2 p-1 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 flex-shrink-0"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="max-h-[80vh] overflow-y-auto">
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="flex-1 overflow-y-auto" style={{maxHeight: 'calc(100vh - 200px)'}}>
+            <div className="px-4 py-3 sm:p-6 space-y-4 sm:space-y-6">
               
               {/* Error Message */}
               {error && (
@@ -280,26 +300,26 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                 className="mb-6"
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                 
                 {/* Customer Information */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <User className="h-5 w-5 mr-2 text-rose-600" />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-rose-600" />
                     Customer Information
                   </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-900 dark:text-white font-medium">{(order.customer as any)?.contactInfo?.name || order.customer?.name || 'Unknown Customer'}</span>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <User className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-900 dark:text-white font-medium break-words">{(order.customer as any)?.contactInfo?.name || order.customer?.name || 'Unknown Customer'}</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600 dark:text-gray-300">{(order.customer as any)?.contactInfo?.email || order.customer?.email || 'No email'}</span>
+                    <div className="flex items-start space-x-3">
+                      <Mail className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 break-all">{(order.customer as any)?.contactInfo?.email || order.customer?.email || 'No email'}</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600 dark:text-gray-300">{(order.customer as any)?.contactInfo?.phone || order.customer?.phone || 'No phone'}</span>
+                    <div className="flex items-start space-x-3">
+                      <Phone className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">{(order.customer as any)?.contactInfo?.phone || order.customer?.phone || 'No phone'}</span>
                     </div>
                     <div className="flex items-start space-x-3">
                       <MapPin className="h-4 w-4 text-gray-500 mt-1" />
@@ -450,63 +470,61 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-900 rounded-b-lg">
-            <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-between">
-              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                {canAccept && (
-                  <button
-                    onClick={() => handleStatusUpdate('confirmed')}
-                    disabled={loading}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Accept Order</span>
-                    <span className="sm:hidden">Accept</span>
-                  </button>
-                )}
-                
-                {canReject && (
-                  <button
-                    onClick={() => setShowRejectForm(true)}
-                    disabled={loading}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </button>
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 pb-24 sm:px-6 sm:py-4 sm:pb-4 bg-gray-50 dark:bg-gray-900 sm:rounded-b-lg">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2 sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:w-auto">
+                {/* Show Accept/Reject for pending orders */}
+                {order?.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate('confirmed')}
+                      disabled={loading}
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <span>Accept Order</span>
+                    </button>
+                    <button
+                      onClick={() => setShowRejectForm(true)}
+                      disabled={loading}
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject
+                    </button>
+                  </>
                 )}
 
-                {canStart && (
+                {/* Show Start button for confirmed orders */}
+                {order?.status === 'confirmed' && (
                   <button
                     onClick={() => handleStatusUpdate('in-progress')}
                     disabled={loading}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="hidden sm:inline">Start Work</span>
-                    <span className="sm:hidden">Start</span>
+                    <span>Start Work</span>
                   </button>
                 )}
 
-                {canComplete && (
+                {/* Show Complete button for in-progress orders */}
+                {order?.status === 'in-progress' && (
                   <button
                     onClick={() => handleStatusUpdate('completed')}
                     disabled={loading}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="hidden sm:inline">Complete Order</span>
-                    <span className="sm:hidden">Complete</span>
+                    <span>Complete Order</span>
                   </button>
                 )}
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div className="w-full sm:w-auto">
                 <button
                   onClick={() => setShowMessageForm(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Message Customer</span>
-                  <span className="sm:hidden">Message</span>
+                  <span>Message Customer</span>
                 </button>
               </div>
             </div>

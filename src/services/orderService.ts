@@ -19,6 +19,22 @@ import {
 import { showLocalNotification } from './notificationService';
 
 
+/**
+ * Order Service - Manages order lifecycle and status transitions
+ * 
+ * Detailed Status Flow Timeline:
+ * 1. pending → confirmed → processing → in-progress
+ * 2. From 'confirmed': → processing, in-progress, packing_in_progress, cancelled
+ * 3. From 'processing': → ready, packing_in_progress, cancelled, in-progress
+ * 4. From 'in-progress': → ready, packing_in_progress, cancelled, completed
+ * 5. From 'ready': → in_transit, packing_in_progress, delivered, completed
+ * 6. From 'packing_in_progress': → packed, cancelled
+ * 7. From 'packed': → ready_to_dispatch, cancelled
+ * 8. From 'ready_to_dispatch': → in_transit, cancelled
+ * 9. From 'in_transit': → delivered
+ * 10. From 'delivered': → completed
+ */
+
 // Prefer explicit orders URL from env; fall back to VITE_API_URL + /api, or relative '/api' when not provided
 const ordersUrl = import.meta.env.VITE_API_ORDERS_URL || (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api');
 
@@ -168,6 +184,180 @@ class OrderService extends ApiService {
     }
 
     return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as ready (step before completion or further processing)
+  async markOrderReady(
+    orderId: string, 
+    readyData?: {
+      notes?: string;
+      completionPhotos?: string[];
+      finalCost?: number;
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'ready' as OrderStatus,
+      ...readyData
+    });
+    if (!(data as any).serviceProviderId) {
+      (data as any).serviceProviderId = this.userContext!.id;
+    }
+
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/ready`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order ready';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as packing in progress
+  async markOrderPackingInProgress(
+    orderId: string,
+    packingData?: {
+      notes?: string;
+      packingStartTime?: string;
+      expectedPackingCompletion?: string;
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'packing_in_progress' as OrderStatus,
+      ...packingData
+    });
+    
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/packing`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order as packing in progress';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as packed
+  async markOrderPacked(
+    orderId: string,
+    packingData?: {
+      notes?: string;
+      packingCompletedTime?: string;
+      packingSlip?: string;
+      weight?: number;
+      dimensions?: { length: number; width: number; height: number };
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'packed' as OrderStatus,
+      ...packingData
+    });
+    
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/packed`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order as packed';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as ready to dispatch
+  async markOrderReadyToDispatch(
+    orderId: string,
+    dispatchData?: {
+      notes?: string;
+      scheduledDispatchTime?: string;
+      carrier?: string;
+      trackingNumber?: string;
+      dispatchAddress?: string;
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'ready_to_dispatch' as OrderStatus,
+      ...dispatchData
+    });
+    
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/ready-to-dispatch`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order as ready to dispatch';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as in transit
+  async markOrderInTransit(
+    orderId: string,
+    transitData?: {
+      notes?: string;
+      trackingNumber?: string;
+      estimatedDelivery?: string;
+      carrier?: string;
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'in_transit' as OrderStatus,
+      ...transitData
+    });
+    
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/transit`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order as in transit';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Mark order as delivered
+  async markOrderDelivered(
+    orderId: string,
+    deliveryData?: {
+      notes?: string;
+      deliveryTime?: string;
+      deliveryConfirmation?: string;
+      recipientSignature?: string;
+    }
+  ): Promise<Order> {
+    this.validateUserContext();
+    const data = this.addUserContext({
+      status: 'delivered' as OrderStatus,
+      ...deliveryData
+    });
+    
+    const response: any = await api.post(`${ordersUrl}/orders/${orderId}/delivered`, data, this.getConfig());
+    if (response && typeof response === 'object' && 'success' in response && response.success === false) {
+      const errMsg = (response.error && (response.error.message || response.error)) || response.message || 'Failed to mark order as delivered';
+      throw new Error(errMsg);
+    }
+
+    return response?.data ? response.data as Order : response as Order;
+  }
+
+  // Get valid status transitions based on current status
+  static getValidTransitions(currentStatus: OrderStatus): OrderStatus[] {
+    const transitions: Record<OrderStatus, OrderStatus[]> = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['processing', 'in-progress', 'packing_in_progress', 'cancelled'],
+      processing: ['ready', 'packing_in_progress', 'cancelled', 'in-progress'],
+      'in-progress': ['ready', 'packing_in_progress', 'cancelled', 'completed'],
+      ready: ['in_transit', 'packing_in_progress', 'delivered', 'completed'],
+      packing_in_progress: ['packed', 'cancelled'],
+      packed: ['ready_to_dispatch', 'cancelled'],
+      ready_to_dispatch: ['in_transit', 'cancelled'],
+      in_transit: ['delivered'],
+      delivered: ['completed'],
+      completed: [],
+      cancelled: [],
+      rejected: []
+    };
+    
+    return transitions[currentStatus] || [];
   }
 
   // Request order modification
@@ -664,3 +854,4 @@ class OrderService extends ApiService {
 
 // Create and export the service instance
 export const orderService = new OrderService();
+export { OrderService };

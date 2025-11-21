@@ -4,6 +4,11 @@ export type OrderStatus =
   | 'processing'
   | 'in-progress'
   | 'ready'
+  | 'packing_in_progress'
+  | 'packed'
+  | 'ready_to_dispatch'
+  | 'in_transit'
+  | 'delivered'
   | 'completed'
   | 'cancelled'
   | 'rejected';

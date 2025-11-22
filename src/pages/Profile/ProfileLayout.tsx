@@ -1,9 +1,10 @@
 
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect } from "react";
 import { StepProvider } from '../../context/StepContext';
 import { ProfileCompletion } from "./ProfileCompletion";
+import { ProfileView } from "./ProfileView";
 
 // Profile completion calculation
 interface Auth0User {
@@ -51,6 +52,8 @@ function getProfileCompletion(user: Auth0User | any): number {
 
 export const ProfileLayout = () => {
   const auth = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const profileCompletion = getProfileCompletion(auth.userContext);
 
   useEffect(() => {
@@ -58,20 +61,23 @@ export const ProfileLayout = () => {
     getProfileCompletion(auth.userContext);
   }, [auth.userContext]);
 
+  // Check if this is the /profile/complete route - always show ProfileCompletion
+  const isCompleteRoute = location.pathname === '/profile/complete';
+
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-20 md:pb-0">
       <StepProvider>
-        {/* Show ProfileCompletion if profile is incomplete */}
-        {profileCompletion < 100 && (
+        {/* Show ProfileCompletion if it's /profile/complete route OR profile is incomplete */}
+        {(isCompleteRoute || profileCompletion < 100) ? (
           <div className="w-full">
             <ProfileCompletion />
           </div>
+        ) : (
+          <div className="w-full">
+            {/* Show ProfileView for current user when profile is complete */}
+            <ProfileView />
+          </div>
         )}
-        
-        {/* Main content */}
-        <div className={`w-full ${profileCompletion < 100 ? 'mt-6' : ''}`}>
-          <Outlet />
-        </div>
       </StepProvider>
     </div>
   );

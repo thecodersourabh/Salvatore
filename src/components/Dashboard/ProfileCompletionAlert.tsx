@@ -12,7 +12,7 @@ export const ProfileCompletionAlert = ({ onClose, completion, profile }: IProfil
   const navigate = useNavigate();
 
   const handleStartProfileSetup = () => {
-    navigate('/profile');
+    navigate('/profile/complete');
   };
 
   return (

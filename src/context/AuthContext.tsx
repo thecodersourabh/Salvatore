@@ -62,7 +62,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
               await getAccessTokenSilently({ cacheMode: 'off' });
             } catch (accessTokenError) {
-              // Continue with ID token if access token fails
+              // Check for refresh token errors
+              if (accessTokenError?.message?.includes('refresh token') || 
+                  accessTokenError?.message?.includes('403') ||
+                  accessTokenError?.message?.includes('Forbidden') ||
+                  accessTokenError?.message?.includes('Unknown or invalid refresh token')) {
+                console.warn('Invalid refresh token detected during initial fetch, logging out');
+                clearToken();
+                setIdToken(null);
+                logout({ 
+                  logoutParams: {
+                    returnTo: window.location.origin
+                  }
+                });
+                return;
+              }
+              // Continue with ID token if access token fails for other reasons
             }
           }
           
@@ -84,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     fetchToken();
-  }, [isAuthenticated, getIdTokenClaims, getAccessTokenSilently, authRefreshTrigger]);
+  }, [isAuthenticated, getIdTokenClaims, getAccessTokenSilently, authRefreshTrigger, logout]);
 
   // Set up token refresh callback for API service
   useEffect(() => {
@@ -106,13 +121,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return newToken;
         } catch (error) {
           console.error('Token refresh failed:', error);
+          
+          // Check if it's a refresh token error (403/forbidden or specific error message)
+          if (error?.message?.includes('refresh token') || 
+              error?.message?.includes('403') ||
+              error?.message?.includes('Forbidden') ||
+              error?.message?.includes('Unknown or invalid refresh token')) {
+            console.warn('Invalid refresh token detected, clearing auth state');
+            
+            // Clear all stored tokens
+            clearToken();
+            setIdToken(null);
+            
+            // Force logout to clear Auth0 state
+            try {
+              logout({ 
+                logoutParams: {
+                  returnTo: window.location.origin
+                }
+              });
+            } catch (logoutError) {
+              console.error('Error during logout:', logoutError);
+              // Force reload if logout fails
+              window.location.reload();
+            }
+          }
+          
           return null;
         }
       };
       
       setTokenRefreshCallback(refreshCallback);
     }
-  }, [getIdTokenClaims, getAccessTokenSilently]);
+  }, [getIdTokenClaims, getAccessTokenSilently, logout]);
 
   // Listen for auth state refresh events from deep link handler
   useEffect(() => {

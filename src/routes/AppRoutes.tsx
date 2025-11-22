@@ -36,6 +36,11 @@ export const AppRoutes = () => {
           <ProfileLayout />
         </ProtectedRoute>
       } />
+      <Route path="/profile/complete" element={
+        <ProtectedRoute>
+          <ProfileLayout />
+        </ProtectedRoute>
+      } />
       <Route path="/profile/:username" element={
         <ProtectedRoute>
           <ProfileView />

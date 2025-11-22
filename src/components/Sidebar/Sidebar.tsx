@@ -112,7 +112,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Profile Info */}
           <Link 
-            to="/profile" 
+            to="/profile/complete" 
             onClick={onClose}
             className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors sidebar-focusable"
           >

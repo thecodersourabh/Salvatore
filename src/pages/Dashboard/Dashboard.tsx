@@ -264,7 +264,7 @@ export const Dashboard = () => {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No products yet</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">You haven't added any service products. Create your first listing to start receiving bookings.</p>
               <div className="flex items-center justify-center gap-3">
-                <button onClick={() => navigate('/profile/edit')} className="button-primary px-4 py-2">Complete Profile</button>
+                <button onClick={() => navigate('/profile/complete')} className="button-primary px-4 py-2">Complete Profile</button>
                 <button onClick={() => navigate('/add-product')} className="button-secondary px-4 py-2">Add Service</button>
               </div>
             </div>

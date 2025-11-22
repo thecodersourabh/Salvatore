@@ -471,7 +471,7 @@ export const ProfileView = () => {
                         </div>
                         <div className="flex-shrink-0 ml-6">
                           <button
-                            onClick={() => navigate('/profile')}
+                            onClick={() => navigate('/profile/complete')}
                             className="flex items-center space-x-1 text-sm font-medium text-yellow-800 hover:text-yellow-900 cursor-pointer"
                           >
                             <span>Complete Now</span>

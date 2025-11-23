@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { AddressService } from '../../../services';
 import { Address as ApiAddress, CreateAddressRequest, UpdateAddressRequest } from '../../../types/user';
+import { CountrySelect } from '../../../components/ui';
+import { countries, Country, getCountryByCode, getCountryByPhoneCode } from '../../../data/countries';
 
 interface Address {
   id?: string;
@@ -26,7 +28,9 @@ interface Address {
   state: string;
   zipCode: string;
   country: string;
+  countryCode: string;
   phone: string;
+  phoneCode: string;
   isDefault: boolean;
 }
 
@@ -75,10 +79,77 @@ export const Addresses = () => {
     city: '',
     state: '',
     zipCode: '',
-    country: '',
+    country: 'India',
+    countryCode: 'IN',
     phone: '',
+    phoneCode: '+91',
     isDefault: false
   });
+
+  // Detect browser autofill and update form state
+  useEffect(() => {
+    const detectAutofill = () => {
+      // Check for autofilled values after a short delay
+      setTimeout(() => {
+        const inputs = [
+          { id: 'address-name', field: 'name' },
+          { id: 'address-street', field: 'street' },
+          { id: 'address-city', field: 'city' },
+          { id: 'address-state', field: 'state' },
+          { id: 'address-zipcode', field: 'zipCode' },
+          { id: 'address-phone', field: 'phone' }
+        ];
+
+        const updates: Partial<Address> = {};
+        let hasUpdates = false;
+
+        inputs.forEach(({ id, field }) => {
+          const input = document.getElementById(id) as HTMLInputElement;
+          if (input?.value && input.value !== (formData as any)[field]) {
+            (updates as any)[field] = input.value;
+            hasUpdates = true;
+          }
+        });
+
+        if (hasUpdates) {
+          setFormData(prev => ({ ...prev, ...updates }));
+        }
+      }, 100);
+    };
+
+    // Multiple event listeners for better autofill detection
+    const events = ['input', 'change', 'blur', 'focus'];
+    const handleAutofillEvents = () => {
+      detectAutofill();
+    };
+
+    // Add event listeners to form inputs
+    const addListeners = () => {
+      const formElement = document.querySelector('form');
+      if (formElement) {
+        events.forEach(event => {
+          formElement.addEventListener(event, handleAutofillEvents, true);
+        });
+      }
+    };
+
+    // Add listeners after component mounts
+    setTimeout(addListeners, 100);
+
+    // Also check on window focus (helps with browser autofill)
+    window.addEventListener('focus', handleAutofillEvents);
+    
+    // Cleanup
+    return () => {
+      const formElement = document.querySelector('form');
+      if (formElement) {
+        events.forEach(event => {
+          formElement.removeEventListener(event, handleAutofillEvents, true);
+        });
+      }
+      window.removeEventListener('focus', handleAutofillEvents);
+    };
+  }, [formData]);
 
   // Load addresses when component mounts
   useEffect(() => {
@@ -100,18 +171,45 @@ export const Addresses = () => {
         
         const userAddresses = await AddressService.getUserAddresses(actualUserId);
         
-        setAddresses(userAddresses.map((addr: ApiAddress) => ({
-          id: addr.addressId,
-          type: addr.type as 'home' | 'office' | 'work' | 'other',
-          name: user?.name || user?.email || '',
-          street: addr.street,
-          city: addr.city,
-          state: addr.state,
-          zipCode: addr.zipCode,
-          country: addr.country,
-          phone: addr.phone,
-          isDefault: addr.isDefault
-        })));
+        setAddresses(userAddresses.map((addr: ApiAddress) => {
+          // Parse phone to separate country code and number if stored together
+          let phoneCode = '+91';
+          let phone = addr.phone || '';
+          
+          // If phone already has country code, try to separate it
+          if (phone.startsWith('+')) {
+            const phoneMatch = phone.match(/^(\+\d{1,4})\s?(.*)$/);
+            if (phoneMatch) {
+              phoneCode = phoneMatch[1];
+              phone = phoneMatch[2];
+            }
+          }
+          
+          // Find country by phone code or default to India
+          const country = getCountryByPhoneCode?.(phoneCode) || getCountryByCode('IN')!;
+          
+          console.log('🔍 Loading address from API:', {
+            original: addr,
+            parsedPhone: { phoneCode, phone },
+            detectedCountry: country,
+            finalCountry: addr.country || country.name
+          });
+          
+          return {
+            id: addr.addressId,
+            type: addr.type as 'home' | 'office' | 'work' | 'other',
+            name: user?.name || user?.email || '',
+            street: addr.street,
+            city: addr.city,
+            state: addr.state,
+            zipCode: addr.zipCode,
+            country: addr.country || country.name,
+            countryCode: country.code,
+            phone: phone,
+            phoneCode: phoneCode,
+            isDefault: addr.isDefault
+          };
+        }));
         setError(null);
       } catch (err) {
         console.error('Failed to load addresses:', err);
@@ -179,8 +277,8 @@ export const Addresses = () => {
         city: formData.city!,
         state: formData.state!,
         zipCode: formData.zipCode || '',
-        country: formData.country || 'United States',
-        phone: formData.phone || '',
+        country: formData.country || 'India',
+        phone: `${formData.phoneCode || '+91'} ${formData.phone || ''}`.trim(),
         isDefault: formData.isDefault || false
       };
 
@@ -218,6 +316,11 @@ export const Addresses = () => {
       } else {
         // Create new address
         savedAddress = await AddressService.createAddress(addressData);
+        
+        // Parse phone for display
+        let phoneCode = formData.phoneCode || '+91';
+        let phone = formData.phone || '';
+        
         const newAddress: Address = {
           id: savedAddress.addressId,
           type: savedAddress.type as 'home' | 'office' | 'work' | 'other',
@@ -226,8 +329,10 @@ export const Addresses = () => {
           city: savedAddress.city,
           state: savedAddress.state,
           zipCode: savedAddress.zipCode,
-          country: savedAddress.country,
-          phone: savedAddress.phone,
+          country: formData.country || savedAddress.country,
+          countryCode: formData.countryCode || 'IN',
+          phone: phone,
+          phoneCode: phoneCode,
           isDefault: formData.isDefault || false
         };
         setAddresses(prev => [...prev, newAddress]);
@@ -317,8 +422,10 @@ export const Addresses = () => {
       city: '',
       state: '',
       zipCode: '',
-      country: 'United States',
+      country: 'India',
+      countryCode: 'IN',
       phone: '',
+      phoneCode: '+91',
       isDefault: false
     });
     setError(null);
@@ -348,8 +455,10 @@ export const Addresses = () => {
                   city: '',
                   state: '',
                   zipCode: '',
-                  country: 'United States',
+                  country: 'India',
+                  countryCode: 'IN',
                   phone: '',
+                  phoneCode: '+91',
                   isDefault: false
                 });
                 setIsAddModalOpen(true);
@@ -410,13 +519,42 @@ export const Addresses = () => {
                       <h3 className="text-base font-medium text-gray-900 dark:text-white truncate pr-16">{address.name}</h3>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 break-words">{address.street}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-300">{address.city}, {address.state} {address.zipCode}</p>
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Phone: {address.phone}</p>
+                      <div className="mt-2 flex items-center space-x-4">
+                        <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300">
+                          <span>{getCountryByCode(address.countryCode)?.flag || '🌍'}</span>
+                          <span>{address.country}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300">
+                          <span>📞</span>
+                          <span>{address.phoneCode} {address.phone}</span>
+                        </div>
+                      </div>
                       
                       <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-3 sm:gap-4">
                         <button
                           onClick={() => {
                             setEditingAddress(address);
-                            setFormData(address);
+                            
+                            // Properly set country data for editing
+                            let countryCode = address.countryCode || 'IN';
+                            let phoneCode = address.phoneCode || '+91';
+                            
+                            // If we don't have proper country data, try to detect from stored country name
+                            if (!address.countryCode && address.country) {
+                              const detectedCountry = countries.find(c => c.name === address.country);
+                              if (detectedCountry) {
+                                countryCode = detectedCountry.code;
+                                phoneCode = detectedCountry.phoneCode;
+                              }
+                            }
+                            
+                            setFormData({
+                              ...address,
+                              countryCode: countryCode,
+                              phoneCode: phoneCode,
+                              // Ensure we have proper country name
+                              country: getCountryByCode(countryCode)?.name || address.country || 'India'
+                            });
                             setIsAddModalOpen(true);
                           }}
                           className="inline-flex items-center px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -483,25 +621,78 @@ export const Addresses = () => {
                 <X className="h-6 w-6" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="mt-3 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-3 space-y-4" autoComplete="on">
               <div>
-                <IonInput
+                <input
+                  type="text"
+                  name="name"
+                  id="address-name"
+                  autoComplete="name"
                   value={formData.name || ''}
-                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, name: (e.detail as any).value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Full Name"
-                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
                   required
                 />
               </div>
+              {/* Country Selection */}
               <div>
-                <IonInput
-                  value={formData.phone || ''}
-                  type="tel"
-                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, phone: (e.detail as any).value })}
-                  placeholder="Phone Number"
-                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
-                  required
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Country
+                </label>
+                {/* Hidden input for browser autofill */}
+                <input
+                  type="hidden"
+                  name="country"
+                  autoComplete="country"
+                  value={formData.country || 'India'}
+                  readOnly
                 />
+                <CountrySelect
+                  value={formData.countryCode || 'IN'}
+                  onChange={(country: Country) => {
+                    setFormData({
+                      ...formData,
+                      country: country.name,
+                      countryCode: country.code,
+                      phoneCode: country.phoneCode
+                    });
+                  }}
+                  placeholder="Select country"
+                  disabled={saving}
+                  className=""
+                />
+              </div>
+              {/* Phone Number with Country Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                {/* Hidden full phone number input for autofill */}
+                <input
+                  type="hidden"
+                  name="tel"
+                  autoComplete="tel"
+                  value={`${formData.phoneCode || '+91'} ${formData.phone || ''}`.trim()}
+                  readOnly
+                />
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    <span className="text-base">{getCountryByCode(formData.countryCode || 'IN')?.flag || '🇮🇳'}</span>
+                    <span>{formData.phoneCode || '+91'}</span>
+                  </div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    id="address-phone"
+                    autoComplete="tel-national"
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="Enter phone number"
+                    className="flex-1 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <IonSelect
@@ -518,40 +709,56 @@ export const Addresses = () => {
                 </IonSelect>
               </div>
               <div>
-                <IonInput
+                <input
+                  type="text"
+                  name="street"
+                  id="address-street"
+                  autoComplete="street-address"
                   value={formData.street || ''}
-                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, street: (e.detail as any).value })}
+                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                   placeholder="Street Address"
-                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
                   required
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <IonInput
+                  <input
+                    type="text"
+                    name="city"
+                    id="address-city"
+                    autoComplete="address-level2"
                     value={formData.city || ''}
-                    onIonInput={(e: CustomEvent) => setFormData({ ...formData, city: (e.detail as any).value })}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     placeholder="City"
-                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
                     required
                   />
                 </div>
                 <div>
-                  <IonInput
+                  <input
+                    type="text"
+                    name="state"
+                    id="address-state"
+                    autoComplete="address-level1"
                     value={formData.state || ''}
-                    onIonInput={(e: CustomEvent) => setFormData({ ...formData, state: (e.detail as any).value })}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     placeholder="State"
-                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                    className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
                     required
                   />
                 </div>
               </div>
               <div>
-                <IonInput
+                <input
+                  type="text"
+                  name="zipCode"
+                  id="address-zipcode"
+                  autoComplete="postal-code"
                   value={formData.zipCode || ''}
-                  onIonInput={(e: CustomEvent) => setFormData({ ...formData, zipCode: (e.detail as any).value })}
+                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                   placeholder="ZIP Code"
-                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-base text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 placeholder-gray-500 dark:placeholder-gray-400"
                   required
                 />
               </div>
@@ -580,7 +787,7 @@ export const Addresses = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={saving || !formData.street || !formData.city || !formData.state}
+                    disabled={saving || !formData.street || !formData.city || !formData.state || !formData.phone}
                     className="w-full sm:w-1/2 inline-flex justify-center px-4 py-2.5 border border-transparent text-base font-medium rounded-lg text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving...' : (editingAddress ? 'Save Changes' : 'Add Address')}

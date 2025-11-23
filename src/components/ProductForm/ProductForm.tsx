@@ -9,6 +9,7 @@ import { ProductService } from "../../services/cachedServices";
 import { ProductService as BaseProductService } from "../../services/productService";
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
+import { MobileSelect } from "../ui/MobileSelect";
 
 type ServiceDef = any;
 
@@ -685,21 +686,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16 md:pb-0">
         {/* Fixed sub-header positioned below main navigation */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 w-full shadow-md sticky top-0 z-10">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-2 sm:px-4 py-2 sm:py-3 w-full shadow-md sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-8 py-1 sm:py-3">
             <div className="flex items-center justify-between">
               {/* Left side - Title only */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                   </svg>
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-sm sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                     {editProductId ? 'Edit Service' : 'Create New Service'}
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                     {editProductId 
                       ? 'Update your service details and pricing'
                       : 'Set up your service packages and pricing'
@@ -709,27 +710,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               </div>
 
               {/* Right side - Submit button */}
-              <div>
+              <div className="flex-shrink-0 ml-2">
                 {/* Submit button */}
                 <button 
                   type="submit" 
                   form="product-form"
                   disabled={submitting || !isFormValid} 
-                  className={`relative px-6 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                  className={`relative px-3 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
                     (submitting || !isFormValid) ? 'opacity-60 cursor-not-allowed hover:transform-none hover:shadow-lg' : ''
                   }`}
                 >
                   {submitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      <span className="text-sm font-medium">Processing...</span>
+                      <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Processing...</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm font-semibold">{editProductId ? 'Update Service' : 'Create Service'}</span>
+                      <span className="text-xs sm:text-sm font-semibold">{editProductId ? 'Update' : 'Create'}</span>
                     </>
                   )}
                   
@@ -775,48 +776,87 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         {/* Sector & Service selectors */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Sector <span className="text-rose-500">*</span>
-              </label>
-              <select 
-                value={category || ""} 
-                onChange={(e) => setCategory(e.target.value || null)} 
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                required
-                disabled={submitting}
-              >
-                <option value="">Choose a sector</option>
-                {sectors.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+            <div>
+              {/* Mobile Select - visible only on small screens */}
+              <div className="block md:hidden">
+                <MobileSelect
+                  label="Sector"
+                  value={category || ""}
+                  placeholder="Choose a sector"
+                  options={sectors.map(s => ({ value: s, label: s }))}
+                  onChange={(value) => setCategory(value || null)}
+                  required
+                  disabled={submitting}
+                  className=""
+                />
+              </div>
+              
+              {/* Desktop Select - visible only on medium screens and up */}
+              <div className="hidden md:block space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Sector <span className="text-rose-500">*</span>
+                </label>
+                <select 
+                  value={category || ""} 
+                  onChange={(e) => setCategory(e.target.value || null)} 
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">Choose a sector</option>
+                  {sectors.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="lg:col-span-2 space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Service / Template <span className="text-rose-500">*</span>
-              </label>
-              <select 
-                value={selectedService?.name || ""} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedServiceNames(val ? [val] : []);
-                  const svc = serviceList.find((s: any) => s.name === val) || null;
-                  setSelectedService(svc);
-                  setTags([]);
-                }} 
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                required
-                disabled={!category || submitting}
-              >
-                <option value="">
-                  {!category ? "Select a sector first" : "Choose a service template"}
-                </option>
-                {serviceList.map((s: any) => (
-                  <option key={s.name} value={s.name}>{s.name}</option>
-                ))}
-              </select>
+            <div className="lg:col-span-2">
+              {/* Mobile Select - visible only on small screens */}
+              <div className="block md:hidden">
+                <MobileSelect
+                  label="Service / Template"
+                  value={selectedService?.name || ""}
+                  placeholder={!category ? "Select a sector first" : "Choose a service template"}
+                  options={serviceList.map((s: any) => ({ value: s.name, label: s.name }))}
+                  onChange={(value) => {
+                    setSelectedServiceNames(value ? [value] : []);
+                    const svc = serviceList.find((s: any) => s.name === value) || null;
+                    setSelectedService(svc);
+                    setTags([]);
+                  }}
+                  required
+                  disabled={!category || submitting}
+                  className=""
+                />
+              </div>
+              
+              {/* Desktop Select - visible only on medium screens and up */}
+              <div className="hidden md:block space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Service / Template <span className="text-rose-500">*</span>
+                </label>
+                <select 
+                  value={selectedService?.name || ""} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedServiceNames(val ? [val] : []);
+                    const svc = serviceList.find((s: any) => s.name === val) || null;
+                    setSelectedService(svc);
+                    setTags([]);
+                  }} 
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                  disabled={!category || submitting}
+                >
+                  <option value="">
+                    {!category ? "Select a sector first" : "Choose a service template"}
+                  </option>
+                  {serviceList.map((s: any) => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1200,16 +1240,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                                       className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors resize-none"
                                     />
                                   ) : fieldType === 'select' && options.length ? (
-                                    <select
-                                      aria-label={qKey}
-                                      required={isReq}
-                                      value={fullFormAnswersPerTier[t]?.[qKey] || svcPerTierDefault || ''}
-                                      onChange={(e) => setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: e.target.value } }))}
-                                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                                    >
-                                      <option value="">{placeholder || 'Select an option'}</option>
-                                      {options.map(opt => (<option key={opt} value={opt}>{opt}</option>))}
-                                    </select>
+                                    <div>
+                                      {/* Mobile Select - visible only on small screens */}
+                                      <div className="block md:hidden">
+                                        <MobileSelect
+                                          value={fullFormAnswersPerTier[t]?.[qKey] || svcPerTierDefault || ''}
+                                          placeholder={placeholder || 'Select an option'}
+                                          options={options.map(opt => ({ value: opt, label: opt }))}
+                                          onChange={(value) => setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: value } }))}
+                                          required={isReq}
+                                          className=""
+                                        />
+                                      </div>
+                                      
+                                      {/* Desktop Select - visible only on medium screens and up */}
+                                      <div className="hidden md:block">
+                                        <select
+                                          aria-label={qKey}
+                                          required={isReq}
+                                          value={fullFormAnswersPerTier[t]?.[qKey] || svcPerTierDefault || ''}
+                                          onChange={(e) => setFullFormAnswersPerTier(prev => ({ ...prev, [t]: { ...(prev[t] || {}), [qKey]: e.target.value } }))}
+                                          className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                                        >
+                                          <option value="">{placeholder || 'Select an option'}</option>
+                                          {options.map(opt => (<option key={opt} value={opt}>{opt}</option>))}
+                                        </select>
+                                      </div>
+                                    </div>
                                   ) : fieldType === 'multiselect' && options.length ? (
                                     <div className="space-y-2">
                                       <div className="grid grid-cols-2 gap-2">

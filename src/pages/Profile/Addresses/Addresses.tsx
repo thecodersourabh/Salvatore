@@ -303,9 +303,17 @@ export const Addresses = () => {
           isDefault: formData.isDefault !== undefined ? formData.isDefault : addresses.find(a => a.id === editingAddress.id)!.isDefault
         } as Address;
         
-        setAddresses(prev => prev.map(addr => 
-          addr.id === editingAddress.id ? updatedAddress : addr
-        ));
+        // Update addresses with proper default handling
+        setAddresses(prev => prev.map(addr => {
+          if (addr.id === editingAddress.id) {
+            return updatedAddress;
+          }
+          // If setting current address as default, remove default from others
+          return {
+            ...addr,
+            isDefault: formData.isDefault ? false : addr.isDefault
+          };
+        }));
         
         // If this address was set as default, notify other components
         if (formData.isDefault) {
@@ -335,7 +343,15 @@ export const Addresses = () => {
           phoneCode: phoneCode,
           isDefault: formData.isDefault || false
         };
-        setAddresses(prev => [...prev, newAddress]);
+        
+        // Add new address and handle default properly
+        setAddresses(prev => {
+          const updatedAddresses = newAddress.isDefault 
+            // If new address is default, remove default from existing addresses
+            ? prev.map(addr => ({ ...addr, isDefault: false }))
+            : prev;
+          return [...updatedAddresses, newAddress];
+        });
         
         // If this new address was set as default, notify other components
         if (newAddress.isDefault && newAddress.id) {

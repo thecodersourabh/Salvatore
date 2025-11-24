@@ -8,6 +8,35 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Task to generate debug keystore if it doesn't exist
+task generateDebugKeystore {
+    doLast {
+        def debugKeystore = file('keystore/debug.keystore')
+        if (!debugKeystore.exists()) {
+            println "Debug keystore not found. Generating debug keystore for CI/CD..."
+            
+            // Create keystore directory if it doesn't exist
+            debugKeystore.getParentFile().mkdirs()
+            
+            // Generate debug keystore
+            exec {
+                commandLine 'keytool', '-genkey', '-v',
+                    '-keystore', debugKeystore.absolutePath,
+                    '-storepass', 'android',
+                    '-alias', 'androiddebugkey',
+                    '-keypass', 'android',
+                    '-keyalg', 'RSA',
+                    '-keysize', '2048',
+                    '-validity', '10000',
+                    '-dname', 'CN=Android Debug,O=Android,C=US'
+            }
+            println "Debug keystore generated successfully at: ${debugKeystore.absolutePath}"
+        } else {
+            println "Debug keystore already exists at: ${debugKeystore.absolutePath}"
+        }
+    }
+}
+
 android {
     namespace "com.salvatore.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -62,6 +91,14 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+// Make debug keystore generation run before validation tasks
+preBuild.dependsOn generateDebugKeystore
+tasks.whenTaskAdded { task ->
+    if (task.name == 'validateSigningDebug') {
+        task.dependsOn generateDebugKeystore
     }
 }
 

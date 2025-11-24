@@ -2,6 +2,12 @@
 
 Salvatore is a web-based project that leverages **TypeScript**, **JavaScript**, **HTML**, and **CSS** to deliver a comprehensive platform for professional services management.
 
+## Vision
+
+This platform connects end users who have queries/problems with the exact users on the platform who can solve those problems. We don't solve the problems ourselves - instead, we serve as an intelligent matching laboratory that precisely connects problem-holders with solution-providers within our community.
+
+Service providers complete detailed skill profiles (expertise areas, proficiency levels, experience), while clients can filter and search through these capabilities to find the perfect match for their specific needs. The platform enables direct peer-to-peer problem resolution through sophisticated skill-based matching and filtering.
+
 ## Features
 
 - **TypeScript-Powered:** Leverages the power of TypeScript for robust and scalable development.

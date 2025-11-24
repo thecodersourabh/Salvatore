@@ -1,9 +1,41 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
+// Load keystore properties
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "com.salvatore.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
+    signingConfigs {
+        debug {
+            storeFile file('keystore/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            // Support both .keystore and .jks files
+            def keystoreFile = file('keystore/salvatore-release-key.keystore')
+            def jksFile = file('keystore/salvatore-app-release.jks')
+            
+            if (jksFile.exists()) {
+                storeFile jksFile
+            } else if (keystoreFile.exists()) {
+                storeFile keystoreFile
+            }
+            
+            storePassword keystoreProperties['SALVATORE_RELEASE_STORE_PASSWORD'] ?: ''
+            keyAlias keystoreProperties['SALVATORE_RELEASE_KEY_ALIAS'] ?: ''
+            keyPassword keystoreProperties['SALVATORE_RELEASE_KEY_PASSWORD'] ?: ''
+        }
+    }
+    
     defaultConfig {
         applicationId "com.salvatore.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -18,9 +50,13 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {

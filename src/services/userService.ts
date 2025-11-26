@@ -118,12 +118,15 @@ export class UserService {
     try {
       const profileData = {
         ...profile,
-        skills:
-          profile.skills?.map((skill) => ({
-            name: skill.name,
-            level: skill.level,
-            yearsOfExperience: skill.yearsOfExperience,
-          })) || [],
+        // Only include skills if caller provided them. Do not default to an empty
+        // array because that would overwrite existing skills on partial updates.
+        skills: profile.skills
+          ? profile.skills.map((skill) => ({
+              name: skill.name,
+              level: skill.level,
+              yearsOfExperience: skill.yearsOfExperience,
+            }))
+          : undefined,
         availability: profile.availability
           ? {
               weekdays: profile.availability.weekdays,
@@ -152,17 +155,38 @@ export class UserService {
             }
           : undefined,
         preferences: profile.preferences
-          ? {
-              notificationSettings: {
-                email: profile.preferences.notificationSettings.email,
-                push: profile.preferences.notificationSettings.push,
-                sms: profile.preferences.notificationSettings.sms,
-              },
-              visibility: {
-                public: profile.preferences.visibility.public,
-                searchable: profile.preferences.visibility.searchable,
-              },
-            }
+          ? (() => {
+              const ns: any = profile.preferences.notificationSettings || {};
+              // Build flattened notificationSettings payload: global channels + per-category booleans
+              const notificationSettings: any = {
+                email: ns.email,
+                push: ns.push,
+                sms: ns.sms,
+              };
+              // If nested categories provided (per-channel), treat category enabled if any channel enabled
+              if (ns.categories && typeof ns.categories === 'object') {
+                Object.keys(ns.categories).forEach(k => {
+                  const c = ns.categories[k];
+                  notificationSettings[k] = !!(c?.email || c?.push || c?.sms);
+                });
+              }
+              // Also copy any flattened category boolean fields that may be present
+              Object.keys(ns).forEach(k => {
+                if (!['email', 'push', 'sms', 'categories'].includes(k)) {
+                  notificationSettings[k] = ns[k];
+                }
+              });
+
+              return {
+                notificationSettings,
+                visibility: profile.preferences.visibility
+                  ? {
+                      public: profile.preferences.visibility.public,
+                      searchable: profile.preferences.visibility.searchable,
+                    }
+                  : undefined,
+              };
+            })()
           : undefined,
         pricing: profile.pricing && 'model' in profile.pricing
           ? {

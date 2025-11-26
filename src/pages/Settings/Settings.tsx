@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -7,6 +7,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { translations } from '../../utils/translations';
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useAuth } from '../../context/AuthContext';
+import { UserService } from '../../services';
+
 
 export const Settings: React.FC = () => {
   const { language, setLanguage } = useLanguage();
@@ -14,6 +17,75 @@ export const Settings: React.FC = () => {
   const t = translations[language];
   const { currency, setCurrency } = useCurrency();
   const navigate = useNavigate();
+  const auth = useAuth();
+
+  const [notifSettings, setNotifSettings] = useState<{ email: boolean; push: boolean; sms: boolean }>({
+    email: true,
+    push: true,
+    sms: true
+  });
+
+  const categoryList: { key: string; label: string }[] = [
+    { key: 'inboxMessages', label: 'Inbox messages' },
+    { key: 'orderMessages', label: 'Order messages' },
+    { key: 'orderUpdates', label: 'Order updates' },
+    { key: 'ratingReminders', label: 'Rating reminders' },
+    { key: 'buyerBriefs', label: 'Buyer briefs' },
+    { key: 'accountUpdates', label: 'Account updates' },
+    { key: 'realtime', label: 'Real-time notifications' }
+  ];
+
+  const [categorySettings, setCategorySettings] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const apiUser = auth.apiUser;
+    if (apiUser && apiUser.preferences && apiUser.preferences.notificationSettings) {
+      const ns = apiUser.preferences.notificationSettings as any;
+      setNotifSettings({
+        email: !!ns.email,
+        push: !!ns.push,
+        sms: !!ns.sms
+      });
+      // Initialize per-category boolean settings. Support nested `categories` or flat keys.
+      const catsNested = ns?.categories;
+      const mapped: Record<string, boolean> = {};
+      if (catsNested && typeof catsNested === 'object') {
+        Object.keys(catsNested).forEach(k => {
+          const c = catsNested[k];
+          // treat category as enabled if any channel is enabled
+          mapped[k] = !!(c?.email || c?.push || c?.sms);
+        });
+      }
+      // also pick up flattened boolean fields if present
+      categoryList.forEach(c => {
+        const flat = ns[c.key];
+        mapped[c.key] = typeof flat === 'boolean' ? flat : (mapped[c.key] ?? true);
+      });
+      setCategorySettings(mapped);
+    }
+  }, [auth.apiUser]);
+
+  const saveNotificationPreferences = async (settings: { email: boolean; push: boolean; sms: boolean }, categories?: Record<string, boolean>) => {
+    try {
+      if (!auth.user?.email) return;
+      // Build flattened notificationSettings: global channels + per-category booleans
+      const notificationSettings: any = { ...settings };
+      const catsToUse = categories || categorySettings;
+      Object.keys(catsToUse || {}).forEach(k => {
+        notificationSettings[k] = catsToUse[k];
+      });
+      await UserService.updateUser(auth.user.email, {
+        preferences: {
+          notificationSettings,
+          visibility: auth.apiUser?.preferences?.visibility || { public: true, searchable: true }
+        }
+      });
+      // Update local state (already set by caller) and optionally request a refresh elsewhere
+      console.log('Notification preferences saved');
+    } catch (error) {
+      console.error('Failed to save notification preferences', error);
+    }
+  };
 
   // Handle Android back button
   useEffect(() => {
@@ -100,12 +172,47 @@ export const Settings: React.FC = () => {
                 Select the notifications you want and how you'd like to receive them. When necessary, we'll send essential account and order notifications.
               </IonNote>
               <IonList lines="full" className="rounded-lg border border-gray-200 dark:border-gray-700">
-                {["Inbox messages", "Order messages", "Order updates", "Rating reminders", "Buyer briefs", "Account updates"].map(label => (
-                  <IonItem key={label} className="border-b border-gray-100 dark:border-gray-800">
-                    <IonLabel>{label}</IonLabel>
-                    <IonToggle slot="end" color="primary" />
-                  </IonItem>
-                ))}
+                <IonItem className="border-b border-gray-100 dark:border-gray-800">
+                  <IonLabel>Email</IonLabel>
+                  <IonToggle slot="end" color="primary" checked={notifSettings.email} onIonChange={e => {
+                    const v = !!e.detail.checked;
+                    const newSettings = { ...notifSettings, email: v };
+                    setNotifSettings(newSettings);
+                    saveNotificationPreferences(newSettings);
+                  }} />
+                </IonItem>
+                <IonItem className="border-b border-gray-100 dark:border-gray-800">
+                  <IonLabel>Push</IonLabel>
+                  <IonToggle slot="end" color="primary" checked={notifSettings.push} onIonChange={e => {
+                    const v = !!e.detail.checked;
+                    const newSettings = { ...notifSettings, push: v };
+                    setNotifSettings(newSettings);
+                    saveNotificationPreferences(newSettings);
+                  }} />
+                </IonItem>
+                <IonItem className="border-b border-gray-100 dark:border-gray-800">
+                  <IonLabel>SMS</IonLabel>
+                  <IonToggle slot="end" color="primary" checked={notifSettings.sms} onIonChange={e => {
+                    const v = !!e.detail.checked;
+                    const newSettings = { ...notifSettings, sms: v };
+                    setNotifSettings(newSettings);
+                    saveNotificationPreferences(newSettings);
+                  }} />
+                </IonItem>
+                {categoryList.map(cat => {
+                  const enabled = !!categorySettings[cat.key];
+                  return (
+                    <IonItem key={cat.key} className="border-b border-gray-100 dark:border-gray-800">
+                      <IonLabel>{cat.label}</IonLabel>
+                      <IonToggle slot="end" color="primary" checked={enabled} onIonChange={e => {
+                        const v = !!e.detail.checked;
+                        const newCats = { ...categorySettings, [cat.key]: v };
+                        setCategorySettings(newCats);
+                        saveNotificationPreferences(notifSettings, newCats);
+                      }} />
+                    </IonItem>
+                  );
+                })}
               </IonList>
             </div>
           </IonAccordion>

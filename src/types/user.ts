@@ -98,6 +98,13 @@ export interface User {
       email: boolean;
       push: boolean;
       sms: boolean;
+      inboxMessages: boolean;
+      orderMessages: boolean;
+      orderUpdates: boolean;
+      ratingReminders: boolean;
+      buyerBriefs: boolean;
+      accountUpdates: boolean;
+      realtime: boolean;
     };
     visibility: {
       public: boolean;

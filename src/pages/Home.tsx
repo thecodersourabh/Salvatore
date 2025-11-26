@@ -8,9 +8,7 @@ import {
   Star, 
   Users, 
   CheckCircle,
-  Smartphone,
-  Shield,
-  Clock
+  Shield
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import bannerImage from "../assets/banner.png";
@@ -120,14 +118,14 @@ export const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
               <div className="bg-gradient-to-br from-rose-500 to-rose-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Smartphone className="h-8 w-8 text-white" />
+                <Zap className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Mobile-First Design</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Smart Matching</h3>
               <p className="text-gray-600 leading-relaxed">
-                Optimized for mobile and web with a responsive design that works seamlessly across all devices.
+                Smart matching connects you with the best providers quickly using profile, skills, and past performance signals.
               </p>
             </div>
-            
+
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                 <Shield className="h-8 w-8 text-white" />
@@ -138,7 +136,6 @@ export const Home = () => {
               </p>
             </div>
 
-            {/* Split trusted-professional attributes into separate cards */}
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
               <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                 <Users className="h-8 w-8 text-white" />
@@ -156,14 +153,6 @@ export const Home = () => {
             </div>
 
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Building2 className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Work & Education</h3>
-              <p className="text-gray-600 leading-relaxed">Relevant work experience and accredited expertise.</p>
-            </div>
-
-            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
               <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
@@ -172,45 +161,11 @@ export const Home = () => {
             </div>
 
             <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Smartphone className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Building2 className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Active Digital Presence</h3>
-              <p className="text-gray-600 leading-relaxed">Up-to-date profiles across relevant networks following platform guidelines.</p>
-            </div>
-
-            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <User className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Language Proficiency</h3>
-              <p className="text-gray-600 leading-relaxed">Fluent communication in English and/or Hindi.</p>
-            </div>
-
-            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-rose-400 to-rose-500 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">High Motivation</h3>
-              <p className="text-gray-600 leading-relaxed">Professionally motivated to work with businesses and deliver results.</p>
-            </div>
-
-            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Star className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Performance Metrics</h3>
-              <p className="text-gray-600 leading-relaxed">Top ratings and reviews demonstrating consistent excellence.</p>
-            </div>
-            
-            <div className="group flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-200">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Clock className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">24/7 Support</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Round-the-clock customer support to help you with any questions or issues you may have.
-              </p>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Work & Education</h3>
+              <p className="text-gray-600 leading-relaxed">Relevant work experience and accredited expertise.</p>
             </div>
           </div>
         </div>

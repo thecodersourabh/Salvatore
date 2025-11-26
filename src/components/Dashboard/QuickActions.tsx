@@ -15,7 +15,7 @@ const QuickActions = memo(() => {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
-            onClick={() => navigate('/payments')}
+            onClick={() => navigate('/orders')}
             className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow cursor-pointer"
           >
             <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -26,7 +26,8 @@ const QuickActions = memo(() => {
           </div>
           
           <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow">
-            <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div onClick={() => navigate('/payments')}
+            className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
               <TrendingUp className="h-6 w-6 text-rose-600" />
             </div>
             <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Analytics</h4>
@@ -34,7 +35,8 @@ const QuickActions = memo(() => {
           </div>
           
           <div className="text-center p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow cursor-pointer">
-            <div className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div onClick={() => navigate('/payments')}
+            className="bg-rose-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
               {currency === 'USD' ? (
                 <DollarSign className="h-6 w-6 text-rose-600" />
               ) : (

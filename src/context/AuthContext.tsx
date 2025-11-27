@@ -62,11 +62,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
               await getAccessTokenSilently({ cacheMode: 'off' });
             } catch (accessTokenError) {
-              // Check for refresh token errors
-              if (accessTokenError?.message?.includes('refresh token') || 
-                  accessTokenError?.message?.includes('403') ||
-                  accessTokenError?.message?.includes('Forbidden') ||
-                  accessTokenError?.message?.includes('Unknown or invalid refresh token')) {
+              // Check for refresh token errors. Cast to any because TS catch vars may be typed as unknown/{}
+              const _msg = (accessTokenError as any)?.message as string | undefined;
+              if (_msg?.includes('refresh token') || 
+                  _msg?.includes('403') ||
+                  _msg?.includes('Forbidden') ||
+                  _msg?.includes('Unknown or invalid refresh token')) {
                 console.warn('Invalid refresh token detected during initial fetch, logging out');
                 clearToken();
                 setIdToken(null);
@@ -121,18 +122,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return newToken;
         } catch (error) {
           console.error('Token refresh failed:', error);
-          
+
           // Check if it's a refresh token error (403/forbidden or specific error message)
-          if (error?.message?.includes('refresh token') || 
-              error?.message?.includes('403') ||
-              error?.message?.includes('Forbidden') ||
-              error?.message?.includes('Unknown or invalid refresh token')) {
+          const _msg = (error as any)?.message as string | undefined;
+          if (_msg?.includes('refresh token') || 
+              _msg?.includes('403') ||
+              _msg?.includes('Forbidden') ||
+              _msg?.includes('Unknown or invalid refresh token')) {
             console.warn('Invalid refresh token detected, clearing auth state');
-            
+
             // Clear all stored tokens
             clearToken();
             setIdToken(null);
-            
+
             // Force logout to clear Auth0 state
             try {
               logout({ 
@@ -146,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               window.location.reload();
             }
           }
-          
+
           return null;
         }
       };

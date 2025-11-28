@@ -281,22 +281,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
   const handleRemoveImage = (index: number) => {
     const existingImagesCount = existingImages.length;
-    
+
     if (index < existingImagesCount) {
-      // Removing an existing image
+      // Removing an existing image: update only `existingImages`.
+      // `imagePreviews` is reserved for newly selected File previews (blob: URLs),
+      // so we should not touch it here.
       setExistingImages(prev => prev.filter((_, i) => i !== index));
-      setImagePreviews(prev => prev.filter((_, i) => i !== index));
     } else {
       // Removing a new image (File object)
       const newImageIndex = index - existingImagesCount;
       
       setImages(prev => prev.filter((_, i) => i !== newImageIndex));
       setImagePreviews(prev => {
-        const removed = prev[index];
-        if (removed && removed.startsWith('blob:')) {
-          URL.revokeObjectURL(removed);
+        const removed = prev[newImageIndex];
+        if (removed && removed.startsWith && removed.startsWith('blob:')) {
+          try { URL.revokeObjectURL(removed); } catch (err) { /* noop */ }
         }
-        return prev.filter((_, i) => i !== index);
+        return prev.filter((_, i) => i !== newImageIndex);
       });
     }
   };
@@ -435,15 +436,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         
         // Load existing images from product
         if (product.images && product.images.length > 0) {
-          // Store existing images separately 
+          // Store existing images separately; do NOT put them into `imagePreviews`.
+          // `imagePreviews` is intended only for newly selected File previews (blob: URLs).
           setExistingImages(product.images);
-          
-          // Create preview URLs from existing images for display
-          const existingPreviews = product.images.map(img => img.url);
-          setImagePreviews(existingPreviews);
-          
+
           // Clear any new images since we're loading existing ones
           setImages([]);
+          // Ensure previews for new images are empty initially
+          setImagePreviews([]);
         }
         
         // Load existing video from product
@@ -1209,11 +1209,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                         <img src={image.url} className="w-full h-full object-cover" alt={`Existing service image ${i + 1}`} />
                       </div>
-                      {image.isPrimary && (
-                        <div className="absolute top-1 left-1 bg-rose-500 text-white text-xs px-1 py-0.5 rounded">
-                          Primary
-                        </div>
-                      )}
+                      {/* removed Primary badge for cleaner thumbnail UI */}
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(i)}
@@ -1260,9 +1256,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                           </div>
                         </div>
                       </div>
-                      <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
-                        Video
-                      </div>
+                      {/* removed Video badge for cleaner thumbnail UI */}
                       <button
                         type="button"
                         onClick={() => handleRemoveVideo(i)}
@@ -1292,9 +1286,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                           </div>
                         </div>
                       </div>
-                      <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
-                        Video
-                      </div>
+                      {/* removed Video badge for cleaner thumbnail UI */}
                       <button
                         type="button"
                         onClick={() => handleRemoveVideo(existingVideos.length + i)}

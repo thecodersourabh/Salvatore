@@ -9,6 +9,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  worker: {
+    format: 'es',
+  },
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,

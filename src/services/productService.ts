@@ -44,6 +44,8 @@ export interface CreateProductRequest {
     isPrimary: boolean;
     order: number;
   }>;
+  videoKey?: string;
+  videoUrl?: string;
   specifications: TierBasedSpecifications;
   availability: {
     inStock: boolean;
@@ -66,6 +68,7 @@ export interface ProductResponse {
   id?: string;
   productId?: string;  // API returns productId instead of id
   name: string;
+  title?: string; // Custom business name/title separate from product name
   description: string;
   brand: string;
   price: number;
@@ -142,25 +145,33 @@ export class ProductService {
       } else {
       }
 
-      // Upload video to CDN if provided (currently not connected to API)
-      /* 
+      // Upload video to CDN if provided (handle like images)
       let videoKey: string | undefined;
+      let videoUrl: string | undefined;
       if (request.video) {
         try {
+          const usernamePart = username;
+          // Upload video using the same pattern as images for consistency
           videoKey = await ImageService.uploadImage({
-            username,
+            username: usernamePart,
             file: request.video,
             folder: 'products/videos'
           });
+          videoUrl = ImageService.getImageUrl(videoKey);
         } catch (uploadError) {
           console.error('Failed to upload video:', uploadError);
           throw new Error(`Failed to upload video: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
         }
       }
-      */
 
       // Transform form data to API format
       const apiProductData = ProductService.transformFormDataToApiFormat(request.productData, cdnImageUrls);
+
+      // Attach video metadata if uploaded
+      if (videoKey) {
+        (apiProductData as any).videoKey = videoKey;
+        (apiProductData as any).videoUrl = videoUrl;
+      }
 
       // Create product via API with JSON data (no FormData needed)
       const result = await this.createProductJson(apiProductData);
@@ -226,7 +237,7 @@ export class ProductService {
     });
 
     return {
-      name: formData.title || formData.name || 'Untitled Service',
+      name: formData.name,
       description: formData.fullFormAnswersPerTier?.[selectedTier]?.description || 
                    `Professional ${formData.name || 'service'} with ${selectedTier} tier features`,
       brand: formData.fullFormAnswersPerTier?.[selectedTier]?.brand || 
@@ -478,6 +489,7 @@ export class ProductService {
         }
       }
       
+      // Clean up video files from CDN (treat like images)
       if (product.videoKey) {
         console.log('Cleaning up product video from CDN...');
         try {
@@ -617,6 +629,61 @@ export class ProductService {
       
     } catch (error) {
       console.error('Error updating product images:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update product video (replace existing with new one)
+   */
+  static async updateProductVideo(productId: string, newVideo: File): Promise<string> {
+    try {
+      const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
+      
+      // Get current product to find existing video key
+      const apiUrl = `${this.getApiUrl()}/${productId}`;
+      const currentProduct = await api.get<ProductResponse>(apiUrl);
+      
+      // Delete existing video from CDN if it exists
+      if (currentProduct.videoKey) {
+        console.log('Removing existing product video...');
+        try {
+          await ImageService.deleteImage(currentProduct.videoKey);
+        } catch (error) {
+          console.warn('Failed to delete existing video:', currentProduct.videoKey, error);
+        }
+      }
+      
+      // Upload new video using ImageService (like images)
+      let videoKey: string;
+      if (newVideo.size < (10 * 1024 * 1024)) {
+        // Small video - use ImageService
+        videoKey = await ImageService.uploadImage({
+          username,
+          file: newVideo,
+          folder: 'products/videos'
+        });
+      } else {
+        // Large video - use VideoService multipart
+        const timestamp = Date.now();
+        const safeFileName = newVideo.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const customKey = `${username}/products/videos/${timestamp}_${safeFileName}`;
+        const VideoService = await import('./videoService');
+        videoKey = await VideoService.default.uploadMultipart(newVideo, customKey);
+      }
+      
+      // Update product record with new video
+      const updateData: Partial<CreateProductRequest> = {
+        videoKey,
+        videoUrl: ImageService.getImageUrl(videoKey)
+      };
+      
+      await this.updateProduct(productId, updateData);
+      
+      return videoKey;
+      
+    } catch (error) {
+      console.error('Error updating product video:', error);
       throw error;
     }
   }

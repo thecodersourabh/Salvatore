@@ -1,4 +1,4 @@
-import { useState, Suspense } from "react";
+import React, { useState, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -23,10 +23,27 @@ import { lazyWithRetry } from "../../utils/chunkLoader";
 // Lazy load non-critical components with retry logic
 const QuickActions = lazyWithRetry(() => import("../../components/Dashboard/QuickActions"));
 
-export const Dashboard = () => {
+export const Dashboard = React.memo(() => {
+
+  
   const navigate = useNavigate();
   const { user, idToken } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null; idToken: string | null };
   const { formatCurrency } = useCurrency();
+  
+
+  
+  // More stable memoization to prevent unnecessary re-renders
+  const memoizedUser = useMemo(() => {
+    if (!user) return null;
+    return {
+      email: user.email,
+      sub: user.sub, 
+      id: user.id,
+      name: user.name
+    };
+  }, [user?.email, user?.sub, user?.id, user?.name]);
+  
+  const memoizedIdToken = useMemo(() => idToken, [idToken]);
   
   // Use the optimized dashboard hook
   const {
@@ -37,9 +54,9 @@ export const Dashboard = () => {
     loading,
     error: networkError,
     refetch,
-    updateProducts,
+    updateProductsState,
     invalidateCache
-  } = useDashboard(user, idToken);
+  } = useDashboard(memoizedUser, memoizedIdToken);
 
   // Local state for UI components
   const [showProfileAlert, setShowProfileAlert] = useState(false);
@@ -68,7 +85,7 @@ export const Dashboard = () => {
   const handleProductDelete = async (productId: string) => {
     try {
       // Optimistically update UI
-      updateProducts(prev => prev.filter(p => (p?.productId || p?.id) !== productId));
+      updateProductsState(prev => prev.filter(p => (p?.productId || p?.id) !== productId));
       
       // Make API call
       await ProductService.deleteProduct(productId);
@@ -76,12 +93,12 @@ export const Dashboard = () => {
       // Invalidate cache to ensure fresh data on next load
       invalidateCache('products');
       
-      console.log('Product deleted successfully');
+
     } catch (error) {
       console.error('Error deleting product:', error);
       // Revert optimistic update by refetching
       refetch();
-      console.log('Failed to delete product. Please try again.');
+
     }
   };
 
@@ -93,7 +110,7 @@ export const Dashboard = () => {
       const newActiveState = !product.isActive;
       
       // Optimistically update UI
-      updateProducts(prev => prev.map(p => 
+      updateProductsState(prev => prev.map(p => 
         (p?.productId || p?.id) === productId ? { ...p, isActive: newActiveState } : p
       ));
       
@@ -105,12 +122,12 @@ export const Dashboard = () => {
       invalidateCache('products');
       refetch();
       
-      console.log(`Product ${!newActiveState ? 'deactivated' : 'activated'} successfully`);
+
     } catch (error) {
       console.error('Error toggling product status:', error);
       // Revert optimistic update by refetching
       refetch();
-      console.log('Failed to update product status. Please try again.');
+
     }
   };
 
@@ -328,4 +345,4 @@ export const Dashboard = () => {
       )}
     </div>
   );
-};
+});

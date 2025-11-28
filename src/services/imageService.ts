@@ -77,35 +77,49 @@ export class ImageService {
   /**
    * Upload image to S3 using presigned URL
    */
-  static async uploadToS3(presignedUrl: string, file: File): Promise<void> {
-    try {
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type
-        }
-      });
+  static async uploadToS3(presignedUrl: string, file: File, onProgress?: (percent: number) => void): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', presignedUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
-      if (!uploadResponse.ok) {
-        throw new Error(`S3 upload failed with status: ${uploadResponse.status}`);
+        xhr.upload.onprogress = (event: ProgressEvent) => {
+          if (event.lengthComputable && typeof onProgress === 'function') {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            try { onProgress(percent); } catch (e) { /* ignore */ }
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`S3 upload failed with status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.onabort = () => reject(new Error('Upload aborted'));
+
+        xhr.send(file);
+      } catch (error) {
+        console.error('Error uploading to S3 (xhr):', error);
+        reject(error);
       }
-    } catch (error) {
-      console.error('Error uploading to S3:', error);
-      throw error;
-    }
+    });
   }
 
   /**
    * Upload image with automatic presigned URL handling
    */
-  static async uploadImage({ username, file, folder = 'profile' }: ImageUploadOptions): Promise<string> {
+  static async uploadImage({ username, file, folder = 'profile' }: ImageUploadOptions, onProgress?: (percent: number) => void): Promise<string> {
     try {
       // Get presigned URL
       const presignedResponse = await this.getPresignedUrl(file.name, username, file.type, folder);
       
-      // Upload to S3
-      await this.uploadToS3(presignedResponse.url, file);
+      // Upload to S3 with optional progress callback
+      await this.uploadToS3(presignedResponse.url, file, onProgress);
       
       // Wait for S3 consistency
       await new Promise(resolve => setTimeout(resolve, 2000));

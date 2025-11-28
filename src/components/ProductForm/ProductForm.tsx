@@ -10,6 +10,9 @@ import { ProductService as BaseProductService } from "../../services/productServ
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
 import { MobileSelect } from "../ui/MobileSelect";
+import { validateVideoUpload, generateProductVideoKey as createProductVideoKey } from "../../utils/videoUtils";
+import { backgroundUploadService } from "../../services/backgroundUploadService";
+import { UPLOAD_LIMITS } from "../../constants";
 
 type ServiceDef = any;
 
@@ -21,6 +24,7 @@ interface ProductFormProps {
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editProductId = null }) => {
+
   const sectors = useMemo(() => Object.keys(sectorServices), []);
 
   const [category, setCategory] = useState<string | null>(null); // renamed from sector
@@ -38,10 +42,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<Array<{url: string, isPrimary: boolean, order: number}>>([]);
-  const [video, setVideo] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [videos, setVideos] = useState<File[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
+  const [existingVideos, setExistingVideos] = useState<Array<{url: string}>>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isVideoDragging, setIsVideoDragging] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState<number | null>(null);
+  const [videoUploadProgress, setVideoUploadProgress] = useState<number | null>(null);
   
   // Toast state for validation feedback
   const [validationError, setValidationError] = useState('');
@@ -192,9 +198,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
   useEffect(() => {
     return () => {
       imagePreviews.forEach(u => URL.revokeObjectURL(u));
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      videoPreviews.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [imagePreviews, videoPreview]);
+  }, [imagePreviews, videoPreviews]);
 
   // Prevent default drag behavior on the document
   useEffect(() => {
@@ -214,6 +220,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       document.removeEventListener('drop', handleDocumentDrop);
     };
   }, []);
+
+  // Debug effect to track video upload progress
+  useEffect(() => {
+
+  }, [videoUploadProgress]);
 
   // Validation helper function
   const showValidationError = (message: string, field: string = '') => {
@@ -318,68 +329,68 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      handleImageAdd(files);
-    }
-  };
-
-  // Drag and drop handlers for video
-  const handleVideoDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsVideoDragging(true);
-  };
-
-  const handleVideoDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsVideoDragging(false);
-    }
-  };
-
-  const handleVideoDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleVideoDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsVideoDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0]; // Only take the first file for video
-      const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/quicktime', 'video/x-msvideo'];
+      // Separate video and image files
+      const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
       
-      if (allowedVideoTypes.includes(file.type.toLowerCase()) || file.type.startsWith('video/')) {
-        handleVideoAdd(file);
-      } else {
-        showValidationError('Please drop a valid video file (MP4, MOV, AVI)', 'video');
+      // Handle video files (respect configured limit)
+      if (videoFiles.length > 0) {
+        const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
+        const remainingSlots = maxVideos - (videos.length + existingVideos.length);
+        if (remainingSlots > 0) {
+          const videosToAdd = videoFiles.slice(0, remainingSlots);
+          videosToAdd.forEach(file => handleVideoAdd(file));
+        } else {
+          showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
+        }
+      }
+      
+      // Handle image files
+      if (imageFiles.length > 0) {
+        const fileList = new DataTransfer();
+        imageFiles.forEach(file => fileList.items.add(file));
+        handleImageAdd(fileList.files);
       }
     }
   };
 
   const handleVideoAdd = (file: File | null) => {
     if (!file) return;
-    if (!file.type.startsWith('video/')) {
-      showValidationError('Only video files are allowed', 'video');
+    
+    // Check if we've reached the configured limit
+    const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
+    if (videos.length + existingVideos.length >= maxVideos) {
+      showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
       return;
     }
-    const maxSizeMB = 200; // 200 MB
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      showValidationError(`Video too large. Maximum size is ${maxSizeMB} MB`, 'video');
+    
+    // Use validation utility
+    const validation = validateVideoUpload(file);
+    if (!validation.isValid) {
+      showValidationError(validation.error!, 'video');
       return;
     }
-    if (videoPreview) URL.revokeObjectURL(videoPreview);
-    setVideo(file);
-    setVideoPreview(URL.createObjectURL(file));
+    
+    const preview = URL.createObjectURL(file);
+    setVideos(prev => [...prev, file]);
+    setVideoPreviews(prev => [...prev, preview]);
   };
 
-  const handleRemoveVideo = () => {
-    if (videoPreview) URL.revokeObjectURL(videoPreview);
-    setVideo(null);
-    setVideoPreview(null);
+  const handleRemoveVideo = (index: number) => {
+    const isExisting = index < existingVideos.length;
+    
+    if (isExisting) {
+      // Remove from existing videos
+      setExistingVideos(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove from new videos
+      const newVideoIndex = index - existingVideos.length;
+      if (videoPreviews[newVideoIndex]) {
+        URL.revokeObjectURL(videoPreviews[newVideoIndex]);
+      }
+      setVideos(prev => prev.filter((_, i) => i !== newVideoIndex));
+      setVideoPreviews(prev => prev.filter((_, i) => i !== newVideoIndex));
+    }
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -435,6 +446,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           setImages([]);
         }
         
+        // Load existing video from product
+        if (product.videoKey) {
+          const videoUrl = ImageService.getImageUrl(product.videoKey);
+          setExistingVideos([{ url: videoUrl }]);
+          // Clear any new videos since we're loading existing one
+          setVideos([]);
+          setVideoPreviews([]);
+        }
+        
       } catch (error) {
         console.error('Failed to load product for editing:', error);
       } finally {
@@ -445,7 +465,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     loadProductForEditing();
   }, [editProductId]);
 
-  // Separate effect to handle service selection after category is set
+  // Separate effect to handle service selection after category is set (fallback)
   useEffect(() => {
     const loadServiceFromCategory = async () => {
       if (!editProductId || !category) return;
@@ -482,15 +502,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       return;
     }
     
-    // Debug authentication status
-    console.log('Debug Auth Info:', {
-      isAuthenticated: authUser !== null,
-      userId: authUser?.userId,
-      userSub: authUser?.sub,
-      userRole: authUser?.role,
-      localStorageUserId: localStorage.getItem('x-user-id'),
-      localStorageToken: localStorage.getItem('idToken') ? 'Present' : 'Missing'
-    });
+
     
     if (!authUser?.userId) {
       showValidationError('You must be logged in to create or update products. Please log in and try again.', 'auth');
@@ -571,15 +583,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           try {
             const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
             
-            // Upload new images
+            // Upload new images with progress
             const newImageKeys: string[] = [];
+            let uploadedImages = 0;
             for (let i = 0; i < images.length; i++) {
               const imageKey = await ImageService.uploadImage({
                 username,
                 file: images[i],
                 folder: 'products'
+              }, (percent) => {
+                // compute cumulative percent across files
+                const perFileWeight = 1 / images.length;
+                const completed = uploadedImages;
+                const overall = Math.round(((completed + (percent/100)) * perFileWeight) * 100);
+                setImageUploadProgress(overall);
               });
               newImageKeys.push(imageKey);
+              uploadedImages += 1;
             }
             
             // Add new images to the array
@@ -601,20 +621,150 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         const apiProductData = BaseProductService.transformFormDataToApiFormat(productData, allImages.map(img => img.url));
         // Manually add the images array since transformFormDataToApiFormat might not handle this correctly
         (apiProductData as any).images = allImages;
+
+        // Handle video updates for existing products
+        if (videos.length > 0) {
+          // User added new videos
+          const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
+          const smallVideos = videos.filter(v => v.size < (10 * 1024 * 1024));
+          const largeVideos = videos.filter(v => v.size >= (10 * 1024 * 1024));
+          
+          // Upload small videos synchronously
+          if (smallVideos.length > 0) {
+            try {
+              const videoUploadPromises = smallVideos.map(video => 
+                ImageService.uploadImage({
+                  username,
+                  file: video,
+                  folder: 'products/videos'
+                }, (percent) => setVideoUploadProgress(percent))
+              );
+              
+              const videoKeys = await Promise.all(videoUploadPromises);
+              // For now, just use the first video for compatibility
+              if (videoKeys.length > 0) {
+                const videoUrl = ImageService.getImageUrl(videoKeys[0]);
+                (apiProductData as any).videoKey = videoKeys[0];
+                (apiProductData as any).videoUrl = videoUrl;
+              }
+            } catch (videoError) {
+              console.error('Failed to upload videos:', videoError);
+              throw new Error('Failed to upload videos');
+            }
+          }
+          
+          // Start background uploads for large videos
+          if (largeVideos.length > 0) {
+            const productIdForUpdate = editProductId;
+            
+            largeVideos.forEach(video => {
+              const videoKeyCustom = createProductVideoKey(username, video.name);
+              
+              backgroundUploadService.startUpload({
+                id: `video_${Date.now()}_${video.name}`,
+                file: video,
+                key: videoKeyCustom,
+                fileName: video.name,
+                onProgress: (progress) => {
+                  setVideoUploadProgress(progress.progress);
+                },
+                onComplete: async (key) => {
+                  setVideoUploadProgress(null);
+                  if (productIdForUpdate) {
+                    try {
+                      await ProductService.updateProduct(productIdForUpdate, {
+                        videoKey: key,
+                        videoUrl: ImageService.getImageUrl(key)
+                      });
+                    } catch (error) {
+                      console.error('Failed to update product with video after upload:', error);
+                    }
+                  }
+                },
+                onError: (error) => {
+                  setVideoUploadProgress(null);
+                  console.error('Background video upload failed:', error);
+                }
+              });
+            });
+          }
+        } else if (existingVideos.length === 0) {
+          // User removed existing videos and didn't add new ones
+          (apiProductData as any).videoKey = null;
+          (apiProductData as any).videoUrl = null;
+        }
         
         await ProductService.updateProduct(editProductId, apiProductData);
         
         showSuccessMessage('Product updated successfully!');
       } else {
         // Create new product
+        const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
         
-        await ProductService.createProduct({
-          productData,
-          images,
-          video,
-        });
-        
-        showSuccessMessage('Product created successfully!');
+        // Check if we have videos that need uploading
+        if (videos.length > 0) {
+          // Separate small and large videos
+          const smallVideos = videos.filter(v => v.size < (10 * 1024 * 1024));
+          const largeVideos = videos.filter(v => v.size >= (10 * 1024 * 1024) && v.size <= (200 * 1024 * 1024));
+          
+          if (largeVideos.length > 0) {
+            // Large videos present - create product first, then upload videos in background
+            const newProduct = await ProductService.createProduct({
+              productData,
+              images,
+              videos: smallVideos, // Include small videos synchronously
+            });
+            
+            const productId = newProduct.productId || newProduct.id;
+            if (productId) {
+              // Start background upload for each large video
+              largeVideos.forEach(video => {
+                const videoKeyCustom = createProductVideoKey(username, video.name);
+                
+                backgroundUploadService.startUpload({
+                  id: `video_${Date.now()}_${video.name}`,
+                  file: video,
+                  key: videoKeyCustom,
+                  fileName: video.name,
+                  onProgress: (progress) => {
+                    setVideoUploadProgress(progress.progress);
+                  },
+                  onComplete: async (key) => {
+                    try {
+                      await ProductService.updateProduct(productId, {
+                        videoKey: key,
+                        videoUrl: ImageService.getImageUrl(key)
+                      });
+                    } catch (error) {
+                      console.error('Failed to update new product with video after upload:', error);
+                    }
+                  },
+                  onError: (error) => {
+                    setVideoUploadProgress(null);
+                    showValidationError(`Failed to upload video: ${error}`, 'general');
+                  }
+                });
+              });
+            }
+            
+            showSuccessMessage('Product created successfully! Large videos are uploading in background.');
+          } else {
+            // All small videos - upload everything synchronously
+            await ProductService.createProduct({
+              productData,
+              images,
+              videos: smallVideos,
+            });
+            showSuccessMessage('Product created successfully with videos!');
+          }
+        } else {
+          // No videos - regular create
+          await ProductService.createProduct({
+            productData,
+            images,
+          });
+          showSuccessMessage('Product created successfully!');
+        }
       }
       
       // After successful operation, redirect to dashboard
@@ -761,11 +911,38 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           {/* Loading Overlay */}
           {submitting && (
             <div className="absolute inset-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center space-x-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
-                <span className="text-gray-900 dark:text-white font-medium">
-                  {editProductId ? 'Updating Service...' : 'Creating Service...'}
-                </span>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700 w-96">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{editProductId ? 'Updating Service...' : 'Creating Service...'}</div>
+                    <div className="text-xs text-gray-500">This may take a few minutes for large videos. Please keep this window open.</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {(imageUploadProgress !== null) && (
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Uploading images — {imageUploadProgress}%</div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div style={{ width: `${imageUploadProgress}%` }} className="h-2 bg-rose-600"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(videoUploadProgress !== null) && (
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Uploading video — {videoUploadProgress}%</div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div style={{ width: `${videoUploadProgress}%` }} className="h-2 bg-blue-600"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(imageUploadProgress === null && videoUploadProgress === null) && (
+                    <div className="text-sm text-gray-600">Preparing files for upload...</div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -938,22 +1115,52 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Service Media</h3>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Images Upload */}
+          <div className="space-y-4">
+            {/* Media Upload - Images and Video */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Service Images
+                  Service Media
                 </label>
-                <span className="text-xs text-gray-500">Up to 6 images</span>
+                <div className="flex space-x-4 text-xs text-gray-500">
+                  <span>{`Up to ${UPLOAD_LIMITS.IMAGES.MAX_COUNT} images`}</span>
+                  <span>•</span>
+                  <span>{`Up to ${UPLOAD_LIMITS.VIDEOS.MAX_COUNT} videos (${UPLOAD_LIMITS.VIDEOS.MAX_SIZE_MB}MB max)`}</span>
+                </div>
               </div>
               
               <div className="relative">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   multiple
-                  onChange={(e) => handleImageAdd(e.target.files)}
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      // Separate video and image files
+                      const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+                      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                      
+      // Handle video files (respect configured limit)
+      if (videoFiles.length > 0) {
+        const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
+        const remainingSlots = maxVideos - (videos.length + existingVideos.length);
+        if (remainingSlots > 0) {
+          const videosToAdd = videoFiles.slice(0, remainingSlots);
+          videosToAdd.forEach(file => handleVideoAdd(file));
+        } else {
+          showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
+        }
+      }
+
+      // Handle image files
+      if (imageFiles.length > 0) {
+        const fileList = new DataTransfer();
+        imageFiles.forEach(file => fileList.items.add(file));
+        handleImageAdd(fileList.files);
+      }
+                    }
+                  }}
                   className="hidden"
                   id="image-upload"
                   disabled={submitting}
@@ -979,7 +1186,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                       </svg>
                       <p className={`text-sm transition-colors ${isDragging ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         {isDragging ? (
-                          <span className="font-semibold">Drop images here</span>
+                          <span className="font-semibold">Drop images and videos here</span>
                         ) : (
                           <>
                             <span className="font-semibold">Click to upload</span> or drag and drop
@@ -987,15 +1194,38 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                         )}
                       </p>
                       <p className={`text-xs transition-colors ${isDragging ? 'text-rose-500 dark:text-rose-400' : 'text-gray-400'}`}>
-                        PNG, JPG, GIF up to 10MB
+                        PNG, JPG, GIF up to 10MB • MP4, MOV, AVI up to 20MB
                       </p>
                     </div>
                   </label>
                 </div>
               </div>
 
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-3 gap-3">
+              {(imagePreviews.length > 0 || videoPreviews.length > 0 || existingImages.length > 0 || existingVideos.length > 0) && (
+                <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2">
+                  {/* Existing images */}
+                  {existingImages.map((image, i) => (
+                    <div key={`existing-${i}`} className="relative group">
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                        <img src={image.url} className="w-full h-full object-cover" alt={`Existing service image ${i + 1}`} />
+                      </div>
+                      {image.isPrimary && (
+                        <div className="absolute top-1 left-1 bg-rose-500 text-white text-xs px-1 py-0.5 rounded">
+                          Primary
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(i)}
+                        disabled={submitting}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* New images */}
                   {imagePreviews.map((src, i) => (
                     <div key={src} className="relative group">
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -1003,85 +1233,78 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleRemoveImage(i)}
+                        onClick={() => handleRemoveImage(existingImages.length + i)}
                         disabled={submitting}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         ×
                       </button>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-
-            {/* Video Upload */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Promo Video
-                </label>
-                <span className="text-xs text-gray-500">Optional, max 200MB</span>
-              </div>
-
-              {!videoPreview ? (
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => handleVideoAdd(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="video-upload"
-                    disabled={submitting}
-                  />
-                  <div
-                    onDragEnter={handleVideoDragEnter}
-                    onDragLeave={handleVideoDragLeave}
-                    onDragOver={handleVideoDragOver}
-                    onDrop={handleVideoDrop}
-                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
-                      isVideoDragging 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-105' 
-                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    <label
-                      htmlFor="video-upload"
-                      className={`flex flex-col items-center justify-center w-full h-full ${submitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg className={`w-8 h-8 mb-2 transition-colors ${isVideoDragging ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <p className={`text-sm transition-colors ${isVideoDragging ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                          {isVideoDragging ? (
-                            <span className="font-semibold">Drop video here</span>
-                          ) : (
-                            <>
-                              <span className="font-semibold">Click to upload</span> or drag and drop video
-                            </>
-                          )}
-                        </p>
-                        <p className={`text-xs transition-colors ${isVideoDragging ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400'}`}>
-                          MP4, MOV, AVI up to 200MB
-                        </p>
+                  
+                  {/* Existing videos */}
+                  {existingVideos.map((video, i) => (
+                    <div key={`existing-video-${i}`} className="relative group">
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-900">
+                        <video 
+                          src={video.url} 
+                          className="w-full h-full object-cover" 
+                          muted
+                        />
+                        {/* Video play icon overlay */}
+                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                          <div className="w-6 h-6 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                            <svg className="w-3 h-3 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative rounded-lg overflow-hidden bg-black">
-                    <video src={videoPreview} controls className="w-full h-48 object-contain" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveVideo}
-                    disabled={submitting}
-                    className="w-full px-4 py-2 text-sm text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Remove Video
-                  </button>
+                      <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                        Video
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVideo(i)}
+                        disabled={submitting}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* New videos */}
+                  {videoPreviews.map((src, i) => (
+                    <div key={src} className="relative group">
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-900">
+                        <video 
+                          src={src} 
+                          className="w-full h-full object-cover" 
+                          muted
+                        />
+                        {/* Video play icon overlay */}
+                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                          <div className="w-6 h-6 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                            <svg className="w-3 h-3 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                        Video
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVideo(existingVideos.length + i)}
+                        disabled={submitting}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1402,7 +1625,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
                 setDeliveryTimes({ Basic: "", Standard: "", Premium: "" });
                 setImages([]);
                 setImagePreviews([]);
-                handleRemoveVideo();
+                handleRemoveVideo(0);
               }}
               className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
             >

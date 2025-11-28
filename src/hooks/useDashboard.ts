@@ -30,125 +30,95 @@ export const useDashboard = (user: any, idToken: string | null) => {
       profileCompletion: 0,
       activeOrdersCount: null,
     },
-    loading: true,
+    loading: false,
     error: null,
   });
 
-  const calculateProfileCompletion = (profile: User): number => {
-    let completed = 0;
-    if (profile?.displayName) completed += 20;
-    if (profile?.sector) completed += 20;
-    if (profile?.phone) completed += 20;
-    if (Array.isArray(profile?.skills) && profile.skills.length > 0) completed += 20;
-    if (profile?.availability) completed += 20;
-    return completed;
-  };
-
-  const calculateActiveOrders = (stats: OrderStats): number => {
-    if (typeof stats?.totalOrders === 'number') {
-      const total = stats.totalOrders || 0;
-      const completed = typeof stats.completedOrders === 'number' ? stats.completedOrders : 0;
-      const cancelled = typeof stats.cancelledOrders === 'number' ? stats.cancelledOrders : 0;
-      return Math.max(0, total - completed - cancelled);
-    } else if (Array.isArray(stats?.statusBreakdown) && stats.statusBreakdown.length > 0) {
-      return stats.statusBreakdown
-        .filter(s => ['pending', 'confirmed', 'in-progress'].includes(s.status))
-        .reduce((sum, s) => sum + (s.count || 0), 0);
-    }
-    return 0;
+  // Helper function to calculate profile completion
+  const calculateProfileCompletion = (profile: User | null): number => {
+    if (!profile) return 0;
+    
+    const requiredFields = ['name', 'email', 'bio'];
+    const completedFields = requiredFields.filter(field => {
+      const value = profile[field as keyof User];
+      return value && value.toString().trim() !== '';
+    });
+    
+    return Math.round((completedFields.length / requiredFields.length) * 100);
   };
 
   const fetchDashboardData = useCallback(async () => {
     // Wait for both user and idToken to be available
-    if (!user?.email || !idToken) {
-      setState(prev => ({ ...prev, loading: !user?.email ? true : false }));
+    const userEmail = user?.email;
+    const userId = getUserId(user);
+    
+    if (!userEmail || !idToken || !userId) {
+      setState(prev => ({ ...prev, loading: !userEmail ? true : false }));
       return;
     }
 
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
-      const userId = getUserId(user);
-      if (!userId) {
-        throw new Error('Unable to determine user ID');
-      }
-
-      // Set up order service context FIRST for cached service
+      // Set up order service context
       if (idToken && user) {
-        try {
-          const mappedId = user.sub ? (localStorage.getItem(`auth0_${user.sub}`) || user.sub) : user.id || '';
-          if (mappedId) {
-            orderService.setUserContext({ 
-              id: mappedId, 
-              email: user.email || mappedId, 
-              name: user.name || user.email || ''
-            });
-          }
-        } catch (contextError) {
-          console.error('Failed to set order service context:', contextError);
-        }
+        orderService.setUserContext({ 
+          id: userId, 
+          email: userEmail,
+          name: user.name || userEmail 
+        });
       }
 
-      // Execute all API calls in parallel - cached services handle caching automatically
-      const promises = [
-        UserService.getUserByEmail(user.email),
+      // Fetch all dashboard data in parallel
+      const [profile, products, orderStats] = await Promise.all([
+        UserService.getUserByEmail(userEmail),
         ProductService.getUserProducts(userId),
-        // Only try to get order stats if we have a token and user context is set
-        idToken && orderService.getUserContext() 
-          ? orderService.getOrderStats('month') 
-          : Promise.resolve(null),
-      ];
+        orderService.getOrderStats('month')
+      ]);
 
-      const [profileResponse, productsResponse, orderStatsResponse] = await Promise.allSettled(promises);
+      const profileCompletion = calculateProfileCompletion(profile);
+      const activeOrdersCount = orderStats?.totalOrders || 0;
 
-      // Process profile data
-      const profile = profileResponse.status === 'fulfilled' && profileResponse.value 
-        ? profileResponse.value as User 
-        : null;
-      const profileCompletion = profile ? calculateProfileCompletion(profile) : 0;
-
-      // Process products data
-      const products = productsResponse.status === 'fulfilled' && Array.isArray(productsResponse.value) 
-        ? productsResponse.value as ProductResponse[]
-        : [];
-
-      // Process order stats data
-      let orderStats: OrderStats | null = null;
-      let activeOrdersCount: number | null = null;
-
-      if (orderStatsResponse.status === 'fulfilled' && orderStatsResponse.value) {
-        orderStats = orderStatsResponse.value as OrderStats;
-        activeOrdersCount = orderStats ? calculateActiveOrders(orderStats) : 0;
-      } else {
-        // No order stats available
-        activeOrdersCount = null;
-      }
-
-      // Update state with all data
       setState({
         data: {
           profile,
           products,
           orderStats,
           profileCompletion,
-          activeOrdersCount,
+          activeOrdersCount
         },
         loading: false,
-        error: null,
+        error: null
       });
-
-    } catch (error) {
-      console.error('Dashboard data fetch error:', error);
+    } catch (error: any) {
+      console.error('Failed to fetch dashboard data:', error);
       setState(prev => ({
         ...prev,
         loading: false,
-        error: {
-          type: ErrorType.NETWORK,
-          message: 'Unable to load dashboard data. Please check your internet connection.',
-        },
+        error: { type: 'api' as ErrorType, message: error.message || 'Failed to load dashboard' }
       }));
     }
-  }, [user, idToken]);
+  }, [user?.email, user?.sub, user?.id, idToken]);
+
+  // Separate function to update only products without full reload
+  const updateProducts = useCallback(async () => {
+    const userId = getUserId(user);
+    if (!userId) return;
+
+    try {
+      console.log('Updating products only, not full dashboard');
+      const products = await ProductService.getUserProducts(userId);
+      setState(prev => ({
+        ...prev,
+        data: {
+          ...prev.data,
+          products
+        }
+      }));
+    } catch (error: any) {
+      console.error('Failed to update products:', error);
+    }
+  }, [user?.email, user?.sub, user?.id]);
 
   // Refresh data function for manual retry
   const refetch = useCallback(() => {
@@ -156,7 +126,7 @@ export const useDashboard = (user: any, idToken: string | null) => {
   }, [fetchDashboardData]);
 
   // Update products in state (for optimistic updates)
-  const updateProducts = useCallback((updaterFn: (products: ProductResponse[]) => ProductResponse[]) => {
+  const updateProductsState = useCallback((updaterFn: (products: ProductResponse[]) => ProductResponse[]) => {
     setState(prev => ({
       ...prev,
       data: {
@@ -166,20 +136,37 @@ export const useDashboard = (user: any, idToken: string | null) => {
     }));
   }, []);
 
+  // Initial data fetch
   useEffect(() => {
+    console.log('Dashboard render, user:', user?.email, 'idToken:', !!idToken);
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Listen for product changes and refetch data
+  // Listen for product changes and update only products
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
+    
     const unsubscribe = onProductChanged((eventType, data) => {
       console.log('Product change detected:', eventType, data);
-      // Refetch dashboard data when products are created, updated, or deleted
-      fetchDashboardData();
+      
+      // Clear existing timer
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      
+      // Debounce refetch to prevent rapid successive calls
+      debounceTimer = setTimeout(() => {
+        updateProducts(); // Only update products, not entire dashboard
+      }, 500); // Wait 500ms after last change before refetching
     });
 
-    return unsubscribe;
-  }, [fetchDashboardData]);
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      unsubscribe();
+    };
+  }, [updateProducts]);
 
   // Invalidate cache function for manual cache clearing
   const invalidateCacheFn = useCallback((dataType?: string) => {
@@ -188,11 +175,13 @@ export const useDashboard = (user: any, idToken: string | null) => {
       UserService.invalidateUserCache('*');
     } else if (dataType === 'products') {
       ProductService.invalidateProductCache('*');
+    } else if (dataType === 'orders') {
+      orderService.invalidateOrderCache('*');
     } else {
-      // Invalidate all caches
+      // Clear all caches
       UserService.invalidateUserCache('*');
       ProductService.invalidateProductCache('*');
-      orderService.invalidateOrderCache();
+      orderService.invalidateOrderCache('*');
     }
   }, []);
 
@@ -202,6 +191,7 @@ export const useDashboard = (user: any, idToken: string | null) => {
     error: state.error,
     refetch,
     updateProducts,
+    updateProductsState,
     invalidateCache: invalidateCacheFn,
   };
 };

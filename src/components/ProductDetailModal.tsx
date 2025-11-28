@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Star, Tag, Calendar, Package, Eye, CheckCircle, Clock, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { ConfirmationModal } from './ui/ConfirmationModal';
-import { useImageGallery } from '../hooks/useImageGallery';
+import { useImageGallery, ImageItem } from '../hooks/useImageGallery';
 import { useBackButton } from '../hooks/useBackButton';
 
 interface ProductImage {
@@ -37,6 +37,8 @@ interface Product {
     inStock: boolean;
     quantity: number;
   };
+  videoKey?: string;
+  videoUrl?: string;
 }
 
 interface ProductDetailModalProps {
@@ -179,27 +181,78 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const productId = product.id || product.productId || '';
   
-  // Transform product images for the gallery hook
-  const galleryImages = (product.images || []).map((img, index) => ({
-    key: `image_${index}`,
-    url: img.url,
-    isPrimary: img.isPrimary
-  }));
+  // Transform product images and video for the unified gallery
+  const mediaItems: (ImageItem & { type: 'image' | 'video'; isPrimary?: boolean })[] = [
+    // Add images first
+    ...(product.images || []).map((img, index) => ({
+      key: `image_${index}`,
+      url: img.url,
+      type: 'image' as const,
+      isPrimary: img.isPrimary
+    })),
+    // Add video if exists
+    ...(product.videoKey || product.videoUrl ? [{
+      key: 'video_main',
+      url: product.videoUrl || '',
+      type: 'video' as const,
+      isPrimary: false
+    }] : [])
+  ];
 
-  // Use the image gallery hook
+  // Use the image gallery hook with unified media
   const { 
     currentImage, 
     currentIndex,
     selectImage, 
-    isTransitioning,
-    hasMultipleImages
+    isTransitioning
   } = useImageGallery({ 
-    images: galleryImages,
+    images: mediaItems,
     autoSwitchInterval: 0, // Disable auto-switching for modal
-    initialImage: galleryImages.find(img => img.isPrimary)?.key || galleryImages[0]?.key
+    initialImage: mediaItems.find(item => item.isPrimary)?.key || mediaItems[0]?.key
   });
 
-  const primaryImage = currentImage?.url || 'https://via.placeholder.com/600x400?text=No+Image';
+  const currentMedia = currentImage as (ImageItem & { type: 'image' | 'video'; isPrimary?: boolean }) | null;
+  const fallbackImage = 'https://via.placeholder.com/600x400?text=No+Image';
+
+  // Navigation functions for gallery
+  const navigateToNext = useCallback(() => {
+    if (mediaItems.length > 1) {
+      const nextIndex = (currentIndex + 1) % mediaItems.length;
+      selectImage(mediaItems[nextIndex].key);
+    }
+  }, [currentIndex, mediaItems, selectImage]);
+
+  const navigateToPrev = useCallback(() => {
+    if (mediaItems.length > 1) {
+      const prevIndex = currentIndex === 0 ? mediaItems.length - 1 : currentIndex - 1;
+      selectImage(mediaItems[prevIndex].key);
+    }
+  }, [currentIndex, mediaItems, selectImage]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          navigateToPrev();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          navigateToNext();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [isOpen, navigateToNext, navigateToPrev, onClose]);
 
   const rating = product.averageRating || product.rating || 0;
   const reviewCount = product.totalReviews || product.reviewCount || 0;
@@ -261,41 +314,156 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Content */}
         <div className="p-6 max-sm:p-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-sm:gap-4">
-            {/* Left Column - Image */}
+            {/* Left Column - Unified Media Gallery */}
             <div className="space-y-4">
-              <div className="aspect-square max-sm:aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                <img
-                  src={primaryImage}
-                  alt={product.name}
-                  className={`w-full h-full object-cover transition-opacity duration-200 ${
-                    isTransitioning ? 'opacity-70' : 'opacity-100'
-                  }`}
-                />
+              {/* Main Media Display with Navigation */}
+              <div className="relative aspect-square max-sm:aspect-video bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden shadow-md group">
+                {currentMedia?.type === 'video' ? (
+                  <video 
+                    controls 
+                    className="w-full h-full object-contain"
+                    src={currentMedia.url}
+                    poster={mediaItems.find(item => item.type === 'image')?.url || fallbackImage}
+                    preload="metadata"
+                    key={currentMedia.key} // Force re-render when video changes
+                  >
+                    <source src={currentMedia.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <img
+                    src={currentMedia?.url || fallbackImage}
+                    alt={product.name}
+                    className={`w-full h-full object-cover transition-all duration-300 ${
+                      isTransitioning ? 'opacity-70 scale-105' : 'opacity-100 scale-100'
+                    }`}
+                  />
+                )}
+                
+                {/* Navigation Arrows (only show if multiple media items) */}
+                {mediaItems.length > 1 && (
+                  <>
+                    <button
+                      onClick={navigateToPrev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      title="Previous media (←)"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={navigateToNext}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      title="Next media (→)"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Media Counter with Type Indicator */}
+                    <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      {currentMedia?.type === 'video' && (
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      )}
+                      {currentIndex + 1} / {mediaItems.length}
+                    </div>
+                  </>
+                )}
               </div>
               
-              {/* Additional Images - Now Clickable */}
-              {hasMultipleImages && (
-                <div className="grid grid-cols-4 max-sm:grid-cols-3 gap-2">
-                  {galleryImages.slice(0, 8).map((image, index) => {
-                    const isSelected = currentIndex === index;
-                    return (
-                      <button
-                        key={image.key}
-                        onClick={() => selectImage(image.key)}
-                        className={`aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                          isSelected 
-                            ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' 
-                            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <img
-                          src={image.url}
-                          alt={`${product.name} view ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    );
-                  })}
+              {/* Enhanced Media Thumbnail Gallery */}
+              {mediaItems.length > 1 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Media Gallery ({mediaItems.length} items)
+                    </h4>
+                    <span className="text-xs text-gray-500">
+                      {currentIndex + 1} of {mediaItems.length}
+                    </span>
+                  </div>
+                  
+                  {/* Responsive Media Thumbnail Grid */}
+                  <div className="relative">
+                    <div className="grid grid-cols-6 max-sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800 pr-2">
+                      {mediaItems.map((media, index) => {
+                        const isSelected = currentIndex === index;
+                        const mediaItem = media as (ImageItem & { type: 'image' | 'video'; isPrimary?: boolean });
+                        return (
+                          <button
+                            key={mediaItem.key}
+                            onClick={() => selectImage(mediaItem.key)}
+                            className={`relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg transform focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                              isSelected 
+                                ? 'border-rose-500 ring-2 ring-rose-200 dark:ring-rose-800 shadow-md scale-105' 
+                                : 'border-transparent hover:border-rose-300 dark:hover:border-rose-700'
+                            }`}
+                          >
+                            {mediaItem.type === 'video' ? (
+                              <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
+                                <video 
+                                  className="w-full h-full object-cover" 
+                                  src={mediaItem.url}
+                                  muted
+                                  preload="metadata"
+                                />
+                                {/* Video play icon overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-gray-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <img
+                                src={mediaItem.url}
+                                alt={`${product.name} view ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            
+                            {/* Selected indicator */}
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center">
+                                <div className="w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Media type and number badge */}
+                            <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                              {mediaItem.type === 'video' && (
+                                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              )}
+                              {index + 1}
+                            </div>
+                            
+                            {/* Primary image indicator */}
+                            {mediaItem.isPrimary && (
+                              <div className="absolute top-1 right-1 bg-rose-500 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                                ★
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Scroll hint for many items */}
+                    {mediaItems.length > 12 && (
+                      <div className="absolute -right-1 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

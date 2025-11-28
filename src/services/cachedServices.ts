@@ -179,8 +179,11 @@ export class CachedProductService {
     try {
       const product = await BaseProductService.createProduct(productData);
       
-      // Invalidate user's product list cache (we'll use a general invalidation)
-      invalidateCache(CACHE_NAMESPACES.PRODUCT);
+      // Invalidate only the user's product list cache, not the entire product namespace
+      const userId = product.createdBy || localStorage.getItem('x-user-id') || localStorage.getItem('username');
+      if (userId) {
+        invalidateCache(CACHE_NAMESPACES.PRODUCT, userId, 'list');
+      }
       
       // Emit event to notify other components
       emitProductCreated(product.productId || product.id);
@@ -196,9 +199,12 @@ export class CachedProductService {
     try {
       const product = await BaseProductService.updateProduct(productId, productData);
       
-      // Invalidate caches
+      // Invalidate specific product cache and the user's product list cache
       invalidateCache(CACHE_NAMESPACES.PRODUCT, productId);
-      invalidateCache(CACHE_NAMESPACES.PRODUCT);
+      const userId = product.createdBy || localStorage.getItem('x-user-id') || localStorage.getItem('username');
+      if (userId) {
+        invalidateCache(CACHE_NAMESPACES.PRODUCT, userId, 'list');
+      }
       
       // Emit event to notify other components
       emitProductUpdated(productId);
@@ -214,9 +220,12 @@ export class CachedProductService {
     try {
       await BaseProductService.deleteProduct(productId);
       
-      // Invalidate caches
+      // Invalidate specific product cache and the user's product list cache
       invalidateCache(CACHE_NAMESPACES.PRODUCT, productId);
-      invalidateCache(CACHE_NAMESPACES.PRODUCT);
+      const userId = localStorage.getItem('x-user-id') || localStorage.getItem('username');
+      if (userId) {
+        invalidateCache(CACHE_NAMESPACES.PRODUCT, userId, 'list');
+      }
       
       // Emit event to notify other components
       emitProductDeleted(productId);

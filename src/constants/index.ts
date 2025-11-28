@@ -62,3 +62,21 @@ export const SPLASH_CONFIG = {
   SHOW_LOADING: true,
   BRAND_COLOR: '#e11d48',
 } as const;
+
+// Media upload configuration
+export const UPLOAD_LIMITS = {
+  IMAGES: {
+    MAX_COUNT: 6,
+    MAX_SIZE_MB: 10,
+    ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+  },
+  VIDEOS: {
+    MAX_COUNT: 3,
+    MAX_SIZE_MB: 200,
+    ALLOWED_TYPES: ['video/mp4', 'video/mov', 'video/avi', 'video/quicktime', 'video/x-msvideo'],
+  },
+  GRID_DISPLAY: {
+    COLUMNS_DESKTOP: 6,
+    COLUMNS_MOBILE: 4,
+  },
+} as const;

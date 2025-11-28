@@ -1593,9 +1593,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           </div>
         </div>
        
-        {/* Bottom actions - Cancel and Reset only */}
+        {/* Bottom actions - Cancel, Reset and Submit (Create/Update) */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto">
+            {/* Bottom Submit Button (mirrors header) */}
+            <button 
+              type="submit"
+              form="product-form"
+              disabled={submitting || !isFormValid}
+              className={`relative px-3 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                (submitting || !isFormValid) ? 'opacity-60 cursor-not-allowed hover:transform-none hover:shadow-lg' : ''
+              }`}
+            >
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Processing...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-xs sm:text-sm font-semibold">{editProductId ? 'Update' : 'Create'}</span>
+                </>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => navigate('/', { replace: true })}
@@ -1627,7 +1651,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
               <span>Reset Form</span>
             </button>
           </div>
-          </div>
+        </div>
           </div>
         </form>
         )}

@@ -246,16 +246,16 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
 
       {/* Modal */}
       <div className="flex min-h-screen items-start sm:items-center justify-center p-0 sm:p-4">
-        <div className="relative w-full h-screen sm:h-auto sm:max-w-4xl sm:mx-4 bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl overflow-hidden">
+        <div className="relative w-full h-screen sm:h-auto sm:max-w-4xl sm:mx-4 bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl overflow-hidden max-sm:pt-[max(env(safe-area-inset-top),3rem)]">
           {/* Header */}
-          <div className="flex items-start justify-between px-4 py-3 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-start space-x-2 sm:space-x-4 flex-1 min-w-0">
-              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 flex-shrink-0 mt-0.5" />
+          <div className="flex items-center justify-between px-4 py-3 sm:p-6 border-b border-gray-200 dark:border-gray-700 max-sm:sticky max-sm:top-0 max-sm:bg-white max-sm:dark:bg-gray-800 max-sm:z-10">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                  Order {order.orderNumber || `#${order.id?.substring(0, 8) || 'N/A'}`}
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+                  <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                    Order {order.orderNumber || `#${order.id?.substring(0, 8) || 'N/A'}`}
+                  </h2>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status || 'pending')}`}>
                     {(order.status || 'pending').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
@@ -276,7 +276,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto" style={{maxHeight: 'calc(100vh - 200px)'}}>
+          <div className="flex-1 overflow-y-auto max-sm:max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-200px)]">
             <div className="px-4 py-3 sm:p-6 space-y-4 sm:space-y-6">
               
               {/* Error Message */}
@@ -470,7 +470,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 pb-24 sm:px-6 sm:py-4 sm:pb-4 bg-gray-50 dark:bg-gray-900 sm:rounded-b-lg">
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 dark:bg-gray-900 sm:rounded-b-lg max-sm:sticky max-sm:bottom-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2 sm:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:w-auto">
                 {/* Show Accept/Reject for pending orders */}

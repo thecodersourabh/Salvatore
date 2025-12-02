@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, Eye, Edit, Trash2, Share2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 
@@ -23,6 +24,9 @@ interface Product {
   specifications?: any;  // API specifications can vary in structure
   rating?: number;
   reviewCount?: number;
+  averageRating?: number;  // API field for average rating
+  totalReviews?: number;   // API field for total reviews
+  totalRatings?: number;   // API field for total ratings
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -46,6 +50,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showActions = true
 }) => {
   const { formatCurrency } = useCurrency();
+  const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -71,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleView = () => {
-    onView?.(product);
+    navigate(`/products/${productId}`);
   };
 
   const primaryImage = product.images?.find(img => img.isPrimary)?.url || 
@@ -121,14 +126,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Product Info */}
       <div className="p-4">
-        {/* Category */}
-        {product.category && (
-          <div className="mb-2">
+        {/* Category and Rating */}
+        <div className="flex items-center justify-between mb-2">
+          {product.category && (
             <span className="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded">
               {product.category}
             </span>
-          </div>
-        )}
+          )}
+          
+          {/* Rating Display */}
+          {(product.averageRating !== undefined || product.rating !== undefined) && (
+            <div className="flex items-center bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+              <span>{(product.averageRating || product.rating || 0).toFixed(1)}</span>
+              <Star className="h-3 w-3 ml-1 fill-current" />
+            </div>
+          )}
+        </div>
 
         {/* Product Name */}
         <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 text-sm leading-tight">
@@ -140,20 +153,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.description}
         </p>
 
-        {/* Rating & Reviews */}
-        {product.rating && (
-          <div className="flex items-center mb-3">
-            <div className="flex items-center bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
-              <span>{product.rating.toFixed(1)}</span>
-              <Star className="h-3 w-3 ml-1 fill-current" />
-            </div>
-            {product.reviewCount && (
-              <span className="text-gray-500 text-xs ml-2">
-                ({product.reviewCount.toLocaleString()})
-              </span>
-            )}
-          </div>
-        )}
+
 
         {/* Tags/Skills */}
         {(() => {
@@ -242,11 +242,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigator.share?.({ 
-                    title: product.name, 
-                    text: product.description,
-                    url: window.location.href 
-                  });
+                  const productUrl = `${window.location.origin}/products/${productId}`;
+                  if (navigator.share) {
+                    navigator.share({ 
+                      title: product.name, 
+                      text: product.description,
+                      url: productUrl
+                    });
+                  } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(productUrl).then(() => {
+                      // You could show a toast notification here
+                      alert('Product link copied to clipboard!');
+                    });
+                  }
                 }}
                 className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                 title="Share"

@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { App as CapacitorApp } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+import { usePageBackButton } from '../../hooks/useBackButton';
 import ProductForm from "../../components/ProductForm/ProductForm";
 
 export const AddProductPage: React.FC = () => {
@@ -10,32 +9,9 @@ export const AddProductPage: React.FC = () => {
   const editProductId = searchParams.get("edit");
 
   // Handle Android back button
-  useEffect(() => {
-    let backButtonListener: any = null;
-
-    const setupBackButtonHandler = async () => {
-      if (!Capacitor.isNativePlatform()) return;
-
-      try {
-        // Listen for the hardware back button
-        backButtonListener = await CapacitorApp.addListener('backButton', () => {
-          // Navigate back to dashboard
-          navigate('/', { replace: true });
-        });
-      } catch (error) {
-        console.error('Failed to setup back button handler:', error);
-      }
-    };
-
-    setupBackButtonHandler();
-
-    // Cleanup listener when component unmounts
-    return () => {
-      if (backButtonListener) {
-        backButtonListener.remove();
-      }
-    };
-  }, [navigate]);
+  usePageBackButton(() => {
+    navigate('/', { replace: true });
+  });
 
   return (
     <div>

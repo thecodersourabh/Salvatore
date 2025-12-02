@@ -15,6 +15,7 @@ import { Settings } from "../pages/Settings/Settings";
 import PaymentPage from "../pages/Payments/PaymentPage";
 import NotificationTestPage from "../pages/NotificationTestPage";
 import AddProductPage from "../pages/Services/AddProduct";
+import { ProductDetailPage } from "../pages/Products/ProductDetailPage";
 
 export const AppRoutes = () => {
   return (
@@ -80,6 +81,9 @@ export const AppRoutes = () => {
         <ProtectedRoute>
           <AddProductPage />
         </ProtectedRoute>
+      } />
+      <Route path="/products/:productId" element={
+        <ProductDetailPage />
       } />
     </Routes>
   );

@@ -11,13 +11,11 @@ import {
 import { NetworkErrorMessage } from "../../components/ui/NetworkErrorMessage";
 import StatSkeleton from '../../components/ui/StatSkeleton';
 import { ProductCard } from "../../components/ProductCard";
-import { ProductDetailModal } from "../../components/ProductDetailModal";
 import { useDashboard } from "../../hooks/useDashboard";
 import { User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
 import { useCurrency } from '../../context/CurrencyContext';
 import { ProductService } from "../../services/cachedServices";
-import { ProductResponse } from "../../services/productService";
 import { lazyWithRetry } from "../../utils/chunkLoader";
 
 // Lazy load non-critical components with retry logic
@@ -60,8 +58,6 @@ export const Dashboard = React.memo(() => {
 
   // Local state for UI components
   const [showProfileAlert, setShowProfileAlert] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductResponse | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Calculate stats based on products
   const safeUserProducts = Array.isArray(products) ? products : [];
@@ -295,10 +291,6 @@ export const Dashboard = React.memo(() => {
                 onEdit={(product) => navigate(`/add-product?edit=${product.productId || product.id}`)}
                 onDelete={(productId) => handleProductDelete(productId)}
                 onToggleActive={(productId) => handleProductToggle(productId)}
-                onView={(product) => {
-                  setSelectedProduct(product as ProductResponse);
-                  setIsDetailModalOpen(true);
-                }}
                 showActions={true}
               />
             ))}
@@ -327,22 +319,6 @@ export const Dashboard = React.memo(() => {
       }>
         <QuickActions />
       </Suspense>
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <ProductDetailModal
-          product={selectedProduct}
-          isOpen={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false);
-            setSelectedProduct(null);
-          }}
-          onEdit={(product) => {
-            navigate(`/add-product?edit=${product.productId || product.id}`);
-          }}
-          onDelete={handleProductDelete}
-        />
-      )}
     </div>
   );
 });

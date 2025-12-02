@@ -40,3 +40,40 @@ export const useBackButton = (
     };
   }, [isOpen, onClose, priority]);
 };
+
+/**
+ * Custom hook to handle hardware back button for page navigation on mobile devices
+ * @param onBackPress - Function to call when back button is pressed
+ * @param enabled - Whether the back button handling is enabled (default: true)
+ */
+export const usePageBackButton = (
+  onBackPress: () => void,
+  enabled: boolean = true
+) => {
+  useEffect(() => {
+    if (!enabled || !Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    let backButtonListener: any = null;
+
+    const setupBackButtonHandler = async () => {
+      try {
+        backButtonListener = await App.addListener('backButton', () => {
+          onBackPress();
+        });
+      } catch (error) {
+        // Not on mobile platform or listener setup failed, ignore
+        console.warn('Page back button listener setup failed:', error);
+      }
+    };
+
+    void setupBackButtonHandler();
+
+    return () => {
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
+    };
+  }, [onBackPress, enabled]);
+};

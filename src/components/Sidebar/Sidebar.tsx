@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../store/useAuth";
 import { useCart } from "../../context/CartContext";
 import { usePlatform } from "../../hooks/usePlatform";
 import { 
@@ -37,7 +37,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const handleLogout = () => {
     onClose(); // Close sidebar before logout
-    logout(); // This will now use the configured logout URL from AuthContext
+    logout(); // This will now use the configured logout URL from Redux auth
   };
 
   const menuItems = [

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../store/useAuth';
 import { useStep } from '../../context/StepContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useImageGallery } from '../../hooks/useImageGallery';

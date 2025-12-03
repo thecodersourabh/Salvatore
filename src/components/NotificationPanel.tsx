@@ -7,7 +7,7 @@ import { Notification } from '../services/notificationService';
 import { orderService } from '../services/orderService';
 import { OrderDetails } from '../pages/Orders/OrderDetails';
 import { Order } from '../types/order';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../store/useAuth';
 
 export const NotificationPanel = () => {
   const {

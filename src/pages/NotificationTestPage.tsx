@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonItem, IonLabel, IonIcon, IonBadge, IonButtons, IonInput, IonText } from '@ionic/react';
 import { close } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../store/useAuth';
 import { 
   showLocalNotification, 
   checkNotificationStatus,

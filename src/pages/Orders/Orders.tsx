@@ -7,7 +7,7 @@ import { orderService } from '../../services/orderService';
 import { Order, OrderStatus, OrderListParams, OrderListResponse } from '../../types/order';
 import { useDebounce } from '../../hooks/useDebounce';
 import { OrderDetails } from './OrderDetails';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../store/useAuth';
 
 interface OrdersState {
   orders: Order[];

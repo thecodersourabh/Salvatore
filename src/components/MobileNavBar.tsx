@@ -1,7 +1,7 @@
 import { IonIcon } from '@ionic/react';
 import { homeOutline, personOutline, home, person, chatbubbleOutline, chatbubble } from 'ionicons/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../store/useAuth';
 
 interface MobileNavBarProps {
   className?: string;

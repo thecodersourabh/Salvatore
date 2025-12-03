@@ -1,6 +1,6 @@
 import React, { useState, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../store/useAuth";
 import {
   TrendingUp,
   DollarSign,
@@ -22,11 +22,21 @@ import { lazyWithRetry } from "../../utils/chunkLoader";
 const QuickActions = lazyWithRetry(() => import("../../components/Dashboard/QuickActions"));
 
 export const Dashboard = React.memo(() => {
-
-  
   const navigate = useNavigate();
-  const { user, idToken } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null; idToken: string | null };
+  const { user, idToken, loading: authLoading, userCreated } = useAuth() as { user: (User & { serviceProviderProfile?: User; sub?: string }) | null; idToken: string | null; loading: boolean; userCreated: boolean };
   const { formatCurrency } = useCurrency();
+
+  // Wait for auth to finish loading and user to be created before showing dashboard
+  if (authLoading || !userCreated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 border-t-transparent"></div>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
 
   
@@ -36,7 +46,7 @@ export const Dashboard = React.memo(() => {
     return {
       email: user.email,
       sub: user.sub, 
-      id: user.id,
+      id: user.id, // Use the correct id property
       name: user.name
     };
   }, [user?.email, user?.sub, user?.id, user?.name]);
@@ -322,3 +332,6 @@ export const Dashboard = React.memo(() => {
     </div>
   );
 });
+
+// Set display name for better debugging
+Dashboard.displayName = 'Dashboard';

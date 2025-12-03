@@ -1,6 +1,6 @@
 
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../store/useAuth";
 import { useEffect } from "react";
 import { StepProvider } from '../../context/StepContext';
 import { ProfileCompletion } from "./ProfileCompletion";

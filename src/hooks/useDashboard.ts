@@ -106,7 +106,6 @@ export const useDashboard = (user: any, idToken: string | null) => {
     if (!userId) return;
 
     try {
-      console.log('Updating products only, not full dashboard');
       const products = await ProductService.getUserProducts(userId);
       setState(prev => ({
         ...prev,
@@ -138,7 +137,6 @@ export const useDashboard = (user: any, idToken: string | null) => {
 
   // Initial data fetch
   useEffect(() => {
-    console.log('Dashboard render, user:', user?.email, 'idToken:', !!idToken);
     fetchDashboardData();
   }, [fetchDashboardData]);
 
@@ -146,9 +144,7 @@ export const useDashboard = (user: any, idToken: string | null) => {
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
     
-    const unsubscribe = onProductChanged((eventType, data) => {
-      console.log('Product change detected:', eventType, data);
-      
+    const unsubscribe = onProductChanged((_eventType, _data) => {
       // Clear existing timer
       if (debounceTimer) {
         clearTimeout(debounceTimer);

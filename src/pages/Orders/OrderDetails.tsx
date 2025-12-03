@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Order, OrderStatus } from '../../types/order';
 import { orderService } from '../../services/orderService';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../store/useAuth';
 import OrderTracker from '../../components/OrderTracker';
 
 interface OrderDetailsProps {

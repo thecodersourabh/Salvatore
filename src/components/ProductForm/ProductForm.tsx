@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import sectorServices from "../../config/sectorServices.json";
 import packageTierTemplates from "../../config/packageTierTemplates.json";
 import { Edit2, Check, X as XIcon } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../store/useAuth";
 import { ProductService } from "../../services/cachedServices";
 import { ProductService as BaseProductService } from "../../services/productService";
 import { ImageService } from "../../services/imageService";

@@ -2,9 +2,15 @@ import { useState, useEffect } from 'react';
 import { HashRouter as Router } from "react-router-dom";
 import { useTransition } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+
+// Redux
+import { store, persistor } from './store';
+import { ReduxAuthProvider } from './store/ReduxAuthProvider';
 
 // Components
 import { Navigation } from "./components/Navigation";
@@ -16,7 +22,6 @@ import { AppRoutes } from "./routes/AppRoutes";
 
 // Context
 import { CartProvider } from "./context/CartContext";
-import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -221,7 +226,7 @@ function MyApp() {
       <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
         {isPending && <TransitionIndicator />}
         
-        <AuthProvider>
+        <ReduxAuthProvider>
           <NotificationProvider>
             <WebSocketProvider>
               <CartProvider>
@@ -249,7 +254,7 @@ function MyApp() {
             </CartProvider>
             </WebSocketProvider>
           </NotificationProvider>
-        </AuthProvider>
+        </ReduxAuthProvider>
       </div>
     </Router>
   );
@@ -270,12 +275,16 @@ export default function App() {
   };
 
   return (
-    <Auth0Provider {...auth0Config}>
-      <ThemeProvider>
-        <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
-          <MyApp />
-        </MobileSplashScreen>
-      </ThemeProvider>
-    </Auth0Provider>
+    <Provider store={store}>
+      <PersistGate loading={<LoadingSpinner />} persistor={persistor}>
+        <Auth0Provider {...auth0Config}>
+          <ThemeProvider>
+            <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
+              <MyApp />
+            </MobileSplashScreen>
+          </ThemeProvider>
+        </Auth0Provider>
+      </PersistGate>
+    </Provider>
   );
 }

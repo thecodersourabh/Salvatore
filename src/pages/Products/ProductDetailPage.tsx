@@ -5,7 +5,7 @@ import { usePageBackButton } from '../../hooks/useBackButton';
 import { ProductResponse } from '../../services/productService';
 import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, X, Home, Trash2 } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../store/useAuth';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 
 export const ProductDetailPage: React.FC = () => {

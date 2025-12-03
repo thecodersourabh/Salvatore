@@ -10,11 +10,25 @@ import {
   CheckCircle,
   Shield
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../store/useAuth";
 import bannerImage from "../assets/banner.png";
 
 export const Home = () => {
-  const { loginWithRedirect } = useAuth();
+  const { loginWithRedirect, isAuthenticated, userCreated, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (isAuthenticated && userCreated && !loading) {
+      const redirectTimer = setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 10); // Minimal delay for state stability
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthenticated, userCreated, loading, navigate]);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">

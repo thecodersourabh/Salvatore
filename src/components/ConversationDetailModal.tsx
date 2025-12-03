@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { X, Send, MoreVertical, Users, Edit2, Wifi, WifiOff, Trash2, LogOut } from 'lucide-react';
 import { TeamMembersModal } from './TeamMembersModal';
 import { teamService } from '../services/teamService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../store/useAuth';
 import { useWebSocketContext } from '../context/WebSocketContext';
 
 interface ConversationDetailModalProps {

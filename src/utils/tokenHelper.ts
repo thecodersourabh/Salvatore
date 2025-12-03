@@ -7,7 +7,7 @@
  * - Token storage management
  */
 
-// Token refresh callback - will be set by AuthContext
+// Token refresh callback - will be set by ReduxAuthProvider
 let tokenRefreshCallback: (() => Promise<string | null>) | null = null;
 
 export const setTokenRefreshCallback = (callback: () => Promise<string | null>) => {
@@ -84,7 +84,6 @@ export const refreshTokenSilently = async (): Promise<string | null> => {
   isRefreshingToken = true;
   refreshPromise = (async () => {
     try {
-      console.log('🔄 Refreshing token silently...');
       
       if (!tokenRefreshCallback) {
         console.warn('⚠️ Token refresh callback not set');
@@ -95,7 +94,6 @@ export const refreshTokenSilently = async (): Promise<string | null> => {
       
       if (newToken) {
         storeToken(newToken);
-        console.log('✅ Token refreshed successfully');
         return newToken;
       }
       
@@ -121,10 +119,8 @@ export const ensureValidToken = async (token: string | null): Promise<string | n
   if (!token) return null;
   
   if (isTokenExpired(token)) {
-    console.log('🔐 Token is expired, refreshing before API call...');
     const newToken = await refreshTokenSilently();
     if (newToken) {
-      console.log('✅ Using refreshed token for API call');
       return newToken;
     } else {
       console.warn('⚠️ Token refresh failed, proceeding with expired token');

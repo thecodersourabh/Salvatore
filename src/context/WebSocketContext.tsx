@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useCallback } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { MessageData } from '../services/websocketService';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../store/useAuth';
 import { Notification } from '../services/notificationService';
 import { UserService } from '../services/userService';
 import { Capacitor } from '@capacitor/core';

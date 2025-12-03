@@ -7,7 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { translations } from '../../utils/translations';
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
 import { useCurrency } from '../../context/CurrencyContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../store/useAuth';
 import { UserService } from '../../services';
 
 

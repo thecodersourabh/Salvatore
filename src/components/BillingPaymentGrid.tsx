@@ -5,7 +5,7 @@ import { ColDef, GridReadyEvent } from 'ag-grid-community';
 import { Search, Download } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { transactionService } from '../services/transactionService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../store/useAuth';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 

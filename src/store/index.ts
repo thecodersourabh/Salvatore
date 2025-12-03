@@ -10,6 +10,7 @@ import webSocketReducer from './slices/webSocketSlice';
 import themeReducer from './slices/themeSlice';
 import languageReducer from './slices/languageSlice';
 import stepReducer from './slices/stepSlice';
+import locationReducer from './slices/locationSlice';
 import { userApi } from './api/userApi';
 import { authMiddleware } from './middleware/authMiddleware';
 
@@ -34,6 +35,15 @@ const languagePersistConfig = {
   storage,
 };
 
+// Persist configuration for location slice
+const locationPersistConfig = {
+  key: 'location',
+  version: 1,
+  storage,
+  // Only persist essential location data, not loading states
+  whitelist: ['locationData', 'currentLocation', 'lastUpdated', 'permissionGranted']
+};
+
 // Root reducer with all slices
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
@@ -44,6 +54,7 @@ const rootReducer = {
   websocket: webSocketReducer,
   theme: persistReducer(themePersistConfig, themeReducer),
   language: persistReducer(languagePersistConfig, languageReducer),
+  location: persistReducer(locationPersistConfig, locationReducer),
   step: stepReducer,
   [userApi.reducerPath]: userApi.reducer,
 };
@@ -57,7 +68,7 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
         // Ignore date serialization warnings since we're converting to ISO strings
         ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
-        ignoredPaths: ['auth.user.lastLogin', 'notifications.notifications.timestamp', 'websocket.messages.timestamp', 'wishlist.items.createdAt'],
+        ignoredPaths: ['auth.user.lastLogin', 'notifications.notifications.timestamp', 'websocket.messages.timestamp', 'wishlist.items.createdAt', 'location.lastUpdated'],
       },
     })
       .concat(userApi.middleware)

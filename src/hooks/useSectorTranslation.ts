@@ -67,11 +67,25 @@ export const useSectorTranslation = () => {
   const toEnglish = useCallback((sector: string): string => {
     if (!sector) return '';
     
-    const normalizedSector = sector.trim();
+    let normalizedSector = sector.trim();
     
-    // If it's already in English sectors
+    // Try with original case first
     if (englishSectorKeys.includes(normalizedSector as EnglishSectorKey)) {
       return normalizedSector;
+    }
+    
+    // Try with capitalized first letter (most common case)
+    const capitalizedSector = normalizedSector.charAt(0).toUpperCase() + normalizedSector.slice(1).toLowerCase();
+    if (englishSectorKeys.includes(capitalizedSector as EnglishSectorKey)) {
+      return capitalizedSector;
+    }
+    
+    // Try to find case-insensitive match
+    const caseInsensitiveMatch = englishSectorKeys.find(
+      key => key.toLowerCase() === normalizedSector.toLowerCase()
+    );
+    if (caseInsensitiveMatch) {
+      return caseInsensitiveMatch;
     }
     
     // Try to find Hindi to English translation
@@ -80,29 +94,89 @@ export const useSectorTranslation = () => {
       return englishSector;
     }
     
-    // Log warning and return original if no translation found
-    console.warn(`Could not translate sector to English: ${sector}`);
-    return normalizedSector;
+    // Handle common variations and fallbacks
+    const sectorMapping: Record<string, string> = {
+      'technology': 'Technology',
+      'tech': 'Technology',
+      'electrician': 'Electrician',
+      'electric': 'Electrician',
+      'electrical': 'Electrician',
+      'plumber': 'Plumber',
+      'plumbing': 'Plumber',
+      'carpenter': 'Carpenter',
+      'carpentry': 'Carpenter',
+      'mechanic': 'Mechanic',
+      'mechanical': 'Mechanic',
+      'tailor': 'Tailor',
+      'tailoring': 'Tailor',
+      'stitching': 'Tailor',
+      'beautician': 'Beautician',
+      'beauty': 'Beautician',
+      'salon': 'Beautician',
+      'cleaner': 'Cleaner',
+      'cleaning': 'Cleaner',
+      'painter': 'Painter',
+      'painting': 'Painter',
+      'gardener': 'Gardener',
+      'gardening': 'Gardener',
+      'tutor': 'Tutor',
+      'teaching': 'Tutor',
+      'education': 'Tutor',
+      'chef': 'Chef',
+      'cooking': 'Chef',
+      'catering': 'Chef',
+      'agency': 'Agency',
+      'courier': 'Courier',
+      'delivery': 'Courier',
+      'shipping': 'Courier',
+      'healthcare': 'Healthcare',
+      'health': 'Healthcare',
+      'medical': 'Healthcare',
+      'astrologer': 'Astrologer',
+      'astrology': 'Astrologer',
+      'other': 'Other',
+      'service': 'Other',
+      'services': 'Other'
+    };
+    
+    const mappedSector = sectorMapping[normalizedSector.toLowerCase()];
+    if (mappedSector) {
+      return mappedSector;
+    }
+    
+    // If no translation found, return capitalized version
+    return capitalizedSector;
   }, []); // No dependencies as it uses only constant values
   
   const toHindi = useCallback((sector: string): string => {
     if (!sector) return '';
     
-    const normalizedSector = sector.trim();
+    let normalizedSector = sector.trim();
     
     // If it's already in Hindi sectors
     if (hindiSectorKeys.includes(normalizedSector as HindiSectorKey)) {
       return normalizedSector;
     }
     
-    // Try to find English to Hindi translation
-    const hindiSector = knownTranslations[normalizedSector as EnglishSectorKey];
+    // Try with capitalized first letter first
+    const capitalizedSector = normalizedSector.charAt(0).toUpperCase() + normalizedSector.slice(1).toLowerCase();
+    
+    // Try to find English to Hindi translation using the capitalized version
+    const hindiSector = knownTranslations[capitalizedSector as EnglishSectorKey];
     if (hindiSector) {
       return hindiSector;
     }
     
-    // Log warning and return original if no translation found
-    console.warn(`Could not translate sector to Hindi: ${sector}`);
+    // Try case-insensitive match
+    const caseInsensitiveMatch = Object.keys(knownTranslations).find(
+      key => key.toLowerCase() === normalizedSector.toLowerCase()
+    );
+    if (caseInsensitiveMatch) {
+      const hindiMatch = knownTranslations[caseInsensitiveMatch as EnglishSectorKey];
+      if (hindiMatch) return hindiMatch;
+    }
+    
+    // Return original if no translation found (could be already in correct format)
     return normalizedSector;
   }, []); // No dependencies as it uses only constant values
   

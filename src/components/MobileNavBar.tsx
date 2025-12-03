@@ -1,5 +1,5 @@
 import { IonIcon } from '@ionic/react';
-import { homeOutline, personOutline, home, person, chatbubbleOutline, chatbubble } from 'ionicons/icons';
+import { homeOutline, personOutline, home, person, chatbubbleOutline, chatbubble, flashOutline, flash, bulbOutline, bulb } from 'ionicons/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -69,7 +69,7 @@ export function MobileNavBar({
       md:hidden
       ${className}
     `.trim().replace(/\s+/g, ' ')}>
-      <div className="max-w-sm mx-auto">
+      <div className="max-w-md mx-auto">
         <div className="flex items-center justify-around">
           
           {/* Home Button */}
@@ -77,7 +77,7 @@ export function MobileNavBar({
             onClick={() => handleNavigation('/')}
             className={`
               flex flex-col items-center justify-center
-              px-2 py-1 rounded-lg 
+              px-1.5 py-1 rounded-lg 
               transition-colors duration-200
               ${isActive('/') 
                 ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20' 
@@ -93,12 +93,33 @@ export function MobileNavBar({
             <span className="text-xs font-medium">Home</span>
           </button>
 
+          {/* Quick Service Button */}
+          <button
+            onClick={() => handleNavigation('/quick-service')}
+            className={`
+              flex flex-col items-center justify-center
+              px-1.5 py-1 rounded-lg 
+              transition-colors duration-200
+              ${isActive('/quick-service') 
+                ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400'
+              }
+            `.trim().replace(/\s+/g, ' ')}
+            aria-label="Quick Service"
+          >
+            <IonIcon 
+              icon={isActive('/quick-service') ? flash : flashOutline} 
+              className="w-5 h-5 mb-0.5" 
+            />
+            <span className="text-xs font-medium">Quick</span>
+          </button>
+
           {/* Chat Button */}
           <button
             onClick={handleChatNavigation}
             className={`
               flex flex-col items-center justify-center
-              px-2 py-1 rounded-lg 
+              px-1.5 py-1 rounded-lg 
               transition-colors duration-200
               ${isActive('/chat') 
                 ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20' 
@@ -114,12 +135,33 @@ export function MobileNavBar({
             <span className="text-xs font-medium">Chat</span>
           </button>
 
+          {/* Prime Solution Button */}
+          <button
+            onClick={() => handleNavigation('/solution-query')}
+            className={`
+              flex flex-col items-center justify-center
+              px-1.5 py-1 rounded-lg 
+              transition-colors duration-200
+              ${isActive('/solution-query') 
+                ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400'
+              }
+            `.trim().replace(/\s+/g, ' ')}
+            aria-label="Prime Solution"
+          >
+            <IonIcon 
+              icon={isActive('/solution-query') ? bulb : bulbOutline} 
+              className="w-5 h-5 mb-0.5" 
+            />
+            <span className="text-xs font-medium">Solution</span>
+          </button>
+
           {/* Profile Button */}
           <button
             onClick={handleProfileNavigation}
             className={`
               flex flex-col items-center justify-center
-              px-2 py-1 rounded-lg 
+              px-1.5 py-1 rounded-lg 
               transition-colors duration-200
               ${isActive('/profile') 
                 ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20' 

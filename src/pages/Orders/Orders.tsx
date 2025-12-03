@@ -338,7 +338,7 @@ export const Orders = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 pb-24 md:pb-8 bg-white dark:bg-gray-900">
+    <div className="max-w-7xl mx-auto px-4 pb-20 md:pb-8 bg-white dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         {/* Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">

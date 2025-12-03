@@ -128,17 +128,28 @@ export class LocationService {
   }
 
   /**
-   * Get reverse geocoded address from coordinates
+   * Get reverse geocoded address from coordinates using free Nominatim API
    */
   static async reverseGeocode(latitude: number, longitude: number): Promise<LocationAddress> {
     try {
-      // Using OpenStreetMap Nominatim API for reverse geocoding (free)
+      // Add retry mechanism and timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Salvatore App/1.0 (location service)'
+          },
+          signal: controller.signal
+        }
       );
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch address data');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -157,13 +168,89 @@ export class LocationService {
       };
     } catch (error) {
       console.warn('Reverse geocoding failed:', error);
-      // Return fallback values
+      
+      // Just throw the error, don't return fallback data
+      // Let the calling code decide what to do with the error
+      throw new Error(`Geocoding failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Search for places using free Nominatim API
+   */
+  static async searchPlaces(query: string, location?: LocationCoordinates): Promise<any[]> {
+    try {
+      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=en`;
+      
+      if (location) {
+        // Add proximity bias for better results near current location
+        url += `&viewbox=${location.longitude-0.1},${location.latitude+0.1},${location.longitude+0.1},${location.latitude-0.1}&bounded=1`;
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Salvatore App/1.0 (location service)'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to search places');
+      }
+      
+      const data = await response.json();
+      
+      // Format results to match expected structure
+      return data.map((place: any) => ({
+        place_id: place.place_id,
+        name: place.name || place.display_name.split(',')[0],
+        formatted_address: place.display_name,
+        geometry: {
+          location: {
+            lat: parseFloat(place.lat),
+            lng: parseFloat(place.lon)
+          }
+        }
+      }));
+    } catch (error) {
+      console.warn('Places search failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get place details by place ID using Nominatim
+   */
+  static async getPlaceDetails(placeId: string): Promise<any> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/details.php?osmtype=N&osmid=${placeId}&format=json&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Salvatore App/1.0 (location service)'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to get place details');
+      }
+      
+      const data = await response.json();
+      
       return {
-        city: 'Unknown City',
-        state: 'Unknown State',
-        country: 'Unknown Country',
-        fullAddress: 'Address lookup failed'
+        place_id: placeId,
+        name: data.localname || data.names?.name || 'Unknown Place',
+        formatted_address: data.addresstags?.['addr:full'] || 'Address not available',
+        geometry: {
+          location: {
+            lat: parseFloat(data.centroid?.coordinates[1] || '0'),
+            lng: parseFloat(data.centroid?.coordinates[0] || '0')
+          }
+        }
       };
+    } catch (error) {
+      console.warn('Get place details failed:', error);
+      throw error;
     }
   }
 
@@ -195,5 +282,26 @@ export class LocationService {
     } catch (error) {
       return { granted: false, denied: true, asked: true };
     }
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   */
+  static calculateDistance(
+    lat1: number, lng1: number,
+    lat2: number, lng2: number
+  ): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = this.toRad(lat2 - lat1);
+    const dLng = this.toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private static toRad(value: number): number {
+    return value * Math.PI / 180;
   }
 }

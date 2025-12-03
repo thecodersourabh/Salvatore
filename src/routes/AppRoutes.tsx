@@ -1,9 +1,13 @@
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "../components/ProtectedRoute";
+import { useAuth } from "../hooks/useAuth";
 
 // Pages
 import { About } from "../pages/About";
 import { Home } from "../pages/Home";
+import { ClientHome } from "../pages/ClientHome";
+import { QuickService } from "../pages/QuickService";
+import { SolutionQuery } from "../pages/SolutionQuery";
 import { Auth } from "../pages/Auth/Auth";
 import { Dashboard } from "../pages/Dashboard/Dashboard";
 import { ProfileLayout } from "../pages/Profile/ProfileLayout";
@@ -18,14 +22,39 @@ import AddProductPage from "../pages/Services/AddProduct";
 import { ProductDetailPage } from "../pages/Products/ProductDetailPage";
 
 export const AppRoutes = () => {
+  const { user } = useAuth();
+  
+  // Determine if user is a client (not a service provider)
+  const isClient = user && !user.serviceProviderProfile;
+  
   return (
     <Routes>
       <Route path="/" element={
         <ProtectedRoute>
-          <Dashboard />
+          {isClient ? <ClientHome /> : <Dashboard />}
         </ProtectedRoute>
       } />
       <Route path="/home" element={<Home />} />
+      <Route path="/client-home" element={
+        <ProtectedRoute>
+          <ClientHome />
+        </ProtectedRoute>
+      } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/quick-service" element={
+        <ProtectedRoute>
+          <QuickService />
+        </ProtectedRoute>
+      } />
+      <Route path="/solution-query" element={
+        <ProtectedRoute>
+          <SolutionQuery />
+        </ProtectedRoute>
+      } />
       <Route path="/about" element={<About />} />
       <Route path="/auth" element={
         <ProtectedRoute>

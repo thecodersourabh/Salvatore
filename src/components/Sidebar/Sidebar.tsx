@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   Bell
 } from "lucide-react";
+import { ViewModeSwitcher } from "../ui/ViewModeSwitcher";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -96,17 +97,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* Sidebar */}
       <div className={`sidebar-container bg-white dark:bg-gray-800 h-full shadow-xl flex flex-col ${isNative ? 'sidebar-safe-top' : ''}`}>
         {/* Header */}        
-        <div className="p-3 sm:p-4 border-b flex justify-between items-center hover:bg-gray-50  dark:hover:bg-gray-800 transition-colors cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <User className="sidebar-icon-mobile text-rose-600" />
-            <h2 className="text-lg sm:text-base font-semibold text-gray-900 dark:text-white">My Profile</h2>
+        <div className="p-3 sm:p-4 border-b">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <User className="sidebar-icon-mobile text-rose-600" />
+              <h2 className="text-lg sm:text-base font-semibold text-gray-900 dark:text-white">My Profile</h2>
+            </div>
+            <div className="flex items-center space-x-3">
+              {/* View Mode Switcher */}
+              <ViewModeSwitcher />
+              <button 
+                onClick={onClose}
+                className="sidebar-close-btn text-gray-500 hover:text-gray-700 transition-colors sidebar-focusable"
+              >
+                <X className="sidebar-icon-mobile" />
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="sidebar-close-btn text-gray-500 hover:text-gray-700 transition-colors sidebar-focusable"
-          >
-            <X className="sidebar-icon-mobile" />
-          </button>
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden">

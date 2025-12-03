@@ -486,8 +486,8 @@ export const ProductDetailPage: React.FC = () => {
         confirmButtonColor="red"
         icon="delete"
         requireTextConfirmation={true}
-        confirmationText="delete"
-        confirmationPlaceholder="Type 'delete' to confirm"
+        confirmationText={product?.name || ""}
+        confirmationPlaceholder="Type product name to confirm"
       />
     </div>
   );

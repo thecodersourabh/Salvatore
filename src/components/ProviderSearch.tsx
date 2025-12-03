@@ -17,7 +17,7 @@ import {
   IonNote,
   IonText
 } from '@ionic/react';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../hooks/useCart';
 import { ServiceProviderService } from '../services/serviceProviderService';
 import sectors from '../config/sectorServices.json';
 

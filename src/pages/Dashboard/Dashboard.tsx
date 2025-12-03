@@ -14,7 +14,7 @@ import { ProductCard } from "../../components/ProductCard";
 import { useDashboard } from "../../hooks/useDashboard";
 import { User } from "../../types/user";
 import { ProfileCompletionAlert } from "../../components/Dashboard/ProfileCompletionAlert";
-import { useCurrency } from '../../context/CurrencyContext';
+import { useCurrency } from '../../hooks/useCurrency';
 import { ProductService } from "../../services/cachedServices";
 import { lazyWithRetry } from "../../utils/chunkLoader";
 

@@ -4,7 +4,7 @@ import { ProductService } from '../../services/productService';
 import { usePageBackButton } from '../../hooks/useBackButton';
 import { ProductResponse } from '../../services/productService';
 import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
-import { useCurrency } from '../../context/CurrencyContext';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useAuth } from '../../store/useAuth';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 

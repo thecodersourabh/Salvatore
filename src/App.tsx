@@ -10,7 +10,7 @@ import { Browser } from '@capacitor/browser';
 
 // Redux
 import { store, persistor } from './store';
-import { ReduxAuthProvider } from './store/ReduxAuthProvider';
+import { AuthProvider, NotificationProvider, ThemeProvider } from './store/providers';
 
 // Components
 import { Navigation } from "./components/Navigation";
@@ -20,13 +20,8 @@ import { MobileSplashScreen } from "./components/MobileSplashScreen";
 import { MobileNavBar } from "./components/MobileNavBar";
 import { AppRoutes } from "./routes/AppRoutes";
 
-// Context
-import { CartProvider } from "./context/CartContext";
-import { WishlistProvider } from "./context/WishlistContext";
-import { LanguageProvider } from "./context/LanguageContext";
-import { ThemeProvider } from "./context/ThemeContext";
-import { NotificationProvider } from "./context/NotificationContext";
-import { WebSocketProvider } from "./context/WebSocketContext";
+// Context providers - all migrated to Redux
+// (no longer needed)
 
 
 // Utils and Config
@@ -226,35 +221,29 @@ function MyApp() {
       <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
         {isPending && <TransitionIndicator />}
         
-        <ReduxAuthProvider>
+        <AuthProvider>
           <NotificationProvider>
-            <WebSocketProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <LanguageProvider>
-                    <Auth0CallbackHandler />
+            <ThemeProvider>
+              <Auth0CallbackHandler />
+          
+              <div className="flex flex-col h-full">
+                <Navigation />
+                {/* Global Address Bar for mobile apps */}
+                { Capacitor.isNativePlatform() && <AddressBar /> }
+                <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+                  <AppRoutes />
+                </main>
                 
-                  <div className="flex flex-col h-full">
-                    <Navigation />
-                    {/* Global Address Bar for mobile apps */}
-                    { Capacitor.isNativePlatform() && <AddressBar /> }
-                    <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
-                      <AppRoutes />
-                    </main>
-                    
-                    {/* Mobile App Download Footer */}
-                    <MobileNavBar />
-                    
-                    {/* Floating components */}
-                    <Cart />
-                    <ChatBot />
-                  </div>
-                </LanguageProvider>
-              </WishlistProvider>
-            </CartProvider>
-            </WebSocketProvider>
+                {/* Mobile App Download Footer */}
+                <MobileNavBar />
+                
+                {/* Floating components */}
+                <Cart />
+                <ChatBot />
+              </div>
+            </ThemeProvider>
           </NotificationProvider>
-        </ReduxAuthProvider>
+        </AuthProvider>
       </div>
     </Router>
   );
@@ -278,11 +267,9 @@ export default function App() {
     <Provider store={store}>
       <PersistGate loading={<LoadingSpinner />} persistor={persistor}>
         <Auth0Provider {...auth0Config}>
-          <ThemeProvider>
-            <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
-              <MyApp />
-            </MobileSplashScreen>
-          </ThemeProvider>
+          <MobileSplashScreen duration={SPLASH_CONFIG.DURATION}>
+            <MyApp />
+          </MobileSplashScreen>
         </Auth0Provider>
       </PersistGate>
     </Provider>

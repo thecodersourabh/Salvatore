@@ -3,7 +3,7 @@ import { X, Send, MoreVertical, Users, Edit2, Wifi, WifiOff, Trash2, LogOut } fr
 import { TeamMembersModal } from './TeamMembersModal';
 import { teamService } from '../services/teamService';
 import { useAuth } from '../store/useAuth';
-import { useWebSocketContext } from '../context/WebSocketContext';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 interface ConversationDetailModalProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export const ConversationDetailModal: React.FC<ConversationDetailModalProps> = (
   onExitChat,
 }) => {
   const { user } = useAuth();
-  const { isConnected } = useWebSocketContext();
+  const { isConnected } = useWebSocket();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const [showTeamMembers, setShowTeamMembers] = useState(false);

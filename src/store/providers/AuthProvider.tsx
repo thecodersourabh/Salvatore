@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useAppDispatch, useAppSelector } from './hooks';
+import { useAppDispatch, useAppSelector } from '../hooks';
 import {
   setAuthenticated,
   setIdToken,
@@ -10,11 +10,11 @@ import {
   logout,
   resetCreatingUser,
   selectAuth,
-} from './slices/authSlice';
+} from '../slices/authSlice';
 import { getLogoutUri } from '../utils/getRedirectUri';
 
 // Redux Auth Provider that bridges Auth0 with Redux
-export const ReduxAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(selectAuth);
   const creatingUserTimeoutRef = useRef<NodeJS.Timeout | null>(null);

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Scissors, User } from "lucide-react";
 import { useAuth } from "../store/useAuth";
-import { useNotification } from "../context/NotificationContext";
+import { useNotifications } from "../hooks/useNotifications";
 import { usePlatform } from "../hooks/usePlatform";
 import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
@@ -10,9 +10,8 @@ import { NotificationPanel } from "./NotificationPanel";
 
 
 export function Navigation() {
-  //const { setIsCartOpen, items } = useCart();
   const { isAuthenticated, userContext: user, loginWithRedirect } = useAuth();
-  const { unreadCount, setIsNotificationPanelOpen } = useNotification();
+  const { unreadCount, setIsNotificationPanelOpen } = useNotifications();
   const { isAndroid, isIOS, isNative } = usePlatform();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

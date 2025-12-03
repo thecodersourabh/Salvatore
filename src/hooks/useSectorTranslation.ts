@@ -1,4 +1,4 @@
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from './useLanguage';
 import { useMemo, useCallback } from 'react';
 import englishSectors from '../config/sectorServices.json';
 import hindiSectors from '../config/sectorServices.hi.json';

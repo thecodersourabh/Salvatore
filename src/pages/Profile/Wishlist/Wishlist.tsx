@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Heart, Trash2, ShoppingBag } from 'lucide-react';
-import { useWishlist } from '../../../context/WishlistContext';
-import { useCart } from '../../../context/CartContext';
+import { useWishlist } from '../../../hooks/useWishlist';
+import { useCart } from '../../../hooks/useCart';
 
 export const Wishlist = () => {
   const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();

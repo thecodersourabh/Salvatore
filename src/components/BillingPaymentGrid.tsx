@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridReadyEvent } from 'ag-grid-community';
 import { Search, Download } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 import { transactionService } from '../services/transactionService';
 import { useAuth } from '../store/useAuth';
 import 'ag-grid-community/styles/ag-grid.css';

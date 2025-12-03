@@ -20,7 +20,7 @@ import {
 } from '../services/notificationService';
 import { orderService } from '../services/orderService';
 import ProviderSearch from '../components/ProviderSearch';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../hooks/useCart';
 
 const NotificationTestPage: React.FC = () => {
   const { idToken, userContext, apiUser } = useAuth();

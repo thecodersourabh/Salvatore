@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, TrendingUp, DollarSign } from 'lucide-react';
-import { useCurrency } from '../../context/CurrencyContext';
+import { useCurrency } from '../../hooks/useCurrency';
 
 const QuickActions = memo(() => {
   const navigate = useNavigate();

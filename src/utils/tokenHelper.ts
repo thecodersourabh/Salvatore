@@ -7,7 +7,7 @@
  * - Token storage management
  */
 
-// Token refresh callback - will be set by ReduxAuthProvider
+// Token refresh callback - will be set by AuthProvider
 let tokenRefreshCallback: (() => Promise<string | null>) | null = null;
 
 export const setTokenRefreshCallback = (callback: () => Promise<string | null>) => {

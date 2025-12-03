@@ -5,7 +5,7 @@ export interface Notification {
   type: 'order' | 'message' | 'payment' | 'review' | 'system';
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: string; // Changed from Date to string for Redux serialization
   isRead: boolean;
   priority: 'low' | 'medium' | 'high';
   data?: Record<string, any>;

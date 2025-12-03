@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Package, MessageSquare, CreditCard, Star, AlertCircle, CheckCircle, Bell, Trash2, CheckCheck } from 'lucide-react';
-import { useNotification } from '../context/NotificationContext';
+import { useNotifications } from '../hooks/useNotifications';
+import { Notification } from '../store/slices/notificationSlice';
 import { usePlatform } from '../hooks/usePlatform';
-import { Notification } from '../services/notificationService';
 import { orderService } from '../services/orderService';
 import { OrderDetails } from '../pages/Orders/OrderDetails';
 import { Order } from '../types/order';
@@ -20,9 +20,18 @@ export const NotificationPanel = () => {
     clearAllNotifications,
     addTestNotification,
     unreadCount
-  } = useNotification();
+  } = useNotifications();
   const { isNative } = usePlatform();
 
+  // Local state for opening OrderDetails modal
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+  const { userContext, idToken } = useAuth();
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [previewOrderData, setPreviewOrderData] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Move conditional return AFTER all hooks are called
   if (!isNotificationPanelOpen) return null;
 
   // Get notification icon with better styling
@@ -50,24 +59,17 @@ export const NotificationPanel = () => {
     }
   };
 
-  // Format timestamp
-  const formatTimestamp = (timestamp: Date) => {
+  // Format timestamp - now handles string timestamps from Redux
+  const formatTimestamp = (timestamp: string) => {
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const timestampDate = new Date(timestamp);
+    const diff = now.getTime() - timestampDate.getTime();
     
     if (diff < 60 * 1000) return 'Just now';
     if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))}m ago`;
     if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / (60 * 60 * 1000))}h ago`;
     return `${Math.floor(diff / (24 * 60 * 60 * 1000))}d ago`;
   };
-
-  // Local state for opening OrderDetails modal
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
-  const { userContext, idToken } = useAuth();
-  const [notificationError, setNotificationError] = useState<string | null>(null);
-  const [previewOrderData, setPreviewOrderData] = useState<any | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Ensure orderService has user context (same approach as OrderDetails/Orders pages)
   const ensureUserContext = () => {

@@ -2,7 +2,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../store/useAuth";
 import { useEffect } from "react";
-import { StepProvider } from '../../context/StepContext';
 import { ProfileCompletion } from "./ProfileCompletion";
 import { ProfileView } from "./ProfileView";
 
@@ -66,19 +65,17 @@ export const ProfileLayout = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-20 md:pb-0">
-      <StepProvider>
-        {/* Show ProfileCompletion if it's /profile/complete route OR profile is incomplete */}
-        {(isCompleteRoute || profileCompletion < 100) ? (
-          <div className="w-full">
-            <ProfileCompletion />
-          </div>
-        ) : (
-          <div className="w-full">
-            {/* Show ProfileView for current user when profile is complete */}
-            <ProfileView />
-          </div>
-        )}
-      </StepProvider>
+      {/* Show ProfileCompletion if it's /profile/complete route OR profile is incomplete */}
+      {(isCompleteRoute || profileCompletion < 100) ? (
+        <div className="w-full">
+          <ProfileCompletion />
+        </div>
+      ) : (
+        <div className="w-full">
+          {/* Show ProfileView for current user when profile is complete */}
+          <ProfileView />
+        </div>
+      )}
     </div>
   );
 };

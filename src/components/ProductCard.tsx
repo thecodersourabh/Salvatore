@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Star, Eye, Edit, Trash2, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useCurrency } from '../context/CurrencyContext';
+import { useCurrency } from '../hooks/useCurrency';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 
 interface ProductImage {

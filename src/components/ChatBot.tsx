@@ -7,7 +7,7 @@ import { NewMessageModal } from './NewMessageModal';
 import { ConversationDetailModal } from './ConversationDetailModal';
 import { User } from '../types/user';
 import { App } from '@capacitor/app';
-import { useWebSocketContext } from '../context/WebSocketContext';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { userActivityService, UserActivity } from '../services/userActivityService';
 import { useAuth } from '../store/useAuth';
 
@@ -50,7 +50,7 @@ export const ChatBot: React.FC = () => {
   const [conversationDetailModalOpen, setConversationDetailModalOpen] = useState(false);
   const [userActivities, setUserActivities] = useState<Map<string, UserActivity>>(new Map());
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const { isConnected } = useWebSocketContext();
+  const { isConnected } = useWebSocket();
   const { apiUser } = useAuth();
 
   // Mark current user as active when they interact

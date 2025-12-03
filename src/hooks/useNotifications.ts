@@ -1,239 +1,82 @@
-// React Hook for Push Notifications
-// This hook provides an easy way to integrate push notifications in React components
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import {
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  clearAllNotifications,
+  updateNotification,
+  addTestNotification,
+  setIsNotificationPanelOpen,
+  Notification,
+} from '../store/slices/notificationSlice';
+import { useMemo, useCallback } from 'react';
 
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  initNotificationService,
-  registerForWebPushNotifications,
-  testNotificationFunctionality,
-  enableNotificationsManually,
-  areNotificationsEnabled,
-  onPushToken,
-  onNotificationAction,
-  type NotificationError 
-} from '../services/notificationService';
+// Custom hook that provides notification functionality using Redux
+export const useNotifications = () => {
+  const dispatch = useAppDispatch();
+  const notifications = useAppSelector(state => state.notifications?.notifications || []);
+  const isNotificationPanelOpen = useAppSelector(state => state.notifications?.isNotificationPanelOpen || false);
+  const unreadCount = useAppSelector(state => 
+    (state.notifications?.notifications || []).filter(n => !n.isRead).length
+  );
 
-export interface NotificationHookState {
-  isInitialized: boolean;
-  isEnabled: boolean;
-  token: string | null;
-  isLoading: boolean;
-  error: NotificationError | null;
-}
+  // Note: Event listeners are handled by NotificationProvider, not here
+  
+  const markNotificationAsRead = useCallback((id: string) => {
+    dispatch(markAsRead(id));
+  }, [dispatch]);
 
-export interface NotificationHookActions {
-  initializeNotifications: () => Promise<boolean>;
-  registerForPush: (userId: string, authToken?: string) => Promise<boolean>;
-  enableManually: () => Promise<boolean>;
-  testNotifications: () => Promise<boolean>;
-  clearError: () => void;
-}
+  const markAllNotificationsAsRead = useCallback(() => {
+    dispatch(markAllAsRead());
+  }, [dispatch]);
 
-/**
- * Custom React hook for managing push notifications
- * 
- * Usage:
- * ```tsx
- * const { state, actions } = useNotifications();
- * 
- * // Initialize notifications when component mounts
- * useEffect(() => {
- *   actions.initializeNotifications();
- * }, []);
- * 
- * // Register for push notifications
- * const handleRegister = async () => {
- *   const success = await actions.registerForPush(userId, authToken);
- *   if (success) {
- *     console.log('Registered successfully!');
- *   }
- * };
- * ```
- */
-export function useNotifications(): {
-  state: NotificationHookState;
-  actions: NotificationHookActions;
-} {
-  const [state, setState] = useState<NotificationHookState>({
-    isInitialized: false,
-    isEnabled: false,
-    token: null,
-    isLoading: false,
-    error: null
-  });
+  const deleteNotificationById = useCallback((id: string) => {
+    dispatch(deleteNotification(id));
+  }, [dispatch]);
 
-  // Initialize notifications
-  const initializeNotifications = useCallback(async (): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const clearNotifications = useCallback(() => {
+    dispatch(clearAllNotifications());
+  }, [dispatch]);
 
-    try {
-      const result = await initNotificationService();
-      
-      if (result.success) {
-        const enabled = await areNotificationsEnabled();
-        setState(prev => ({
-          ...prev,
-          isInitialized: true,
-          isEnabled: enabled,
-          isLoading: false
-        }));
-        return true;
-      } else {
-        setState(prev => ({
-          ...prev,
-          isInitialized: false,
-          isLoading: false,
-          error: result.error || { message: 'Unknown initialization error', code: 'INIT_ERROR' }
-        }));
-        return false;
-      }
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isInitialized: false,
-        isLoading: false,
-        error: {
-          message: error instanceof Error ? error.message : 'Initialization failed',
-          code: 'INIT_EXCEPTION'
-        }
-      }));
-      return false;
-    }
-  }, []);
+  const updateNotificationById = useCallback((id: string, patch: Partial<Notification>) => {
+    dispatch(updateNotification({ id, patch }));
+  }, [dispatch]);
 
-  // Register for push notifications
-  const registerForPush = useCallback(async (userId: string, authToken?: string): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const addTestNotificationHandler = useCallback((type: Notification['type'], title: string, message: string) => {
+    dispatch(addTestNotification({ type, title, message }));
+  }, [dispatch]);
 
-    try {
-      // Use the appropriate registration method based on platform
-      const result = await registerForWebPushNotifications(userId, authToken);
-      
-      if (result.success) {
-        setState(prev => ({
-          ...prev,
-          token: result.token || null,
-          isLoading: false
-        }));
-        return true;
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: result.error || { message: 'Registration failed', code: 'REG_ERROR' }
-        }));
-        return false;
-      }
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: {
-          message: error instanceof Error ? error.message : 'Registration failed',
-          code: 'REG_EXCEPTION'
-        }
-      }));
-      return false;
-    }
-  }, []);
+  const setNotificationPanelOpen = useCallback((isOpen: boolean) => {
+    dispatch(setIsNotificationPanelOpen(isOpen));
+  }, [dispatch]);
 
-  // Enable notifications manually
-  const enableManually = useCallback(async (): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const getNotificationsByType = useCallback((type: Notification['type']) => {
+    return notifications.filter((n: Notification) => n.type === type);
+  }, [notifications]);
 
-    try {
-      const result = await enableNotificationsManually();
-      
-      setState(prev => ({
-        ...prev,
-        isEnabled: result.success,
-        isLoading: false,
-        error: result.success ? null : {
-          message: result.error || 'Failed to enable notifications',
-          code: 'ENABLE_ERROR'
-        }
-      }));
-
-      return result.success;
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: {
-          message: error instanceof Error ? error.message : 'Enable failed',
-          code: 'ENABLE_EXCEPTION'
-        }
-      }));
-      return false;
-    }
-  }, []);
-
-  // Test notifications
-  const testNotifications = useCallback(async (): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const result = await testNotificationFunctionality();
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: result.success ? null : {
-          message: result.error || 'Test failed',
-          code: 'TEST_ERROR'
-        }
-      }));
-
-      return result.success;
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: {
-          message: error instanceof Error ? error.message : 'Test failed',
-          code: 'TEST_EXCEPTION'
-        }
-      }));
-      return false;
-    }
-  }, []);
-
-  // Clear error
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
-  }, []);
-
-  // Set up event listeners
-  useEffect(() => {
-    // Listen for push token updates
-    const unsubscribeToken = onPushToken((token: string) => {
-      setState(prev => ({ ...prev, token }));
-    });
-
-    // Listen for notification actions
-    const unsubscribeAction = onNotificationAction((payload) => {
-      console.log('[useNotifications] Notification action received:', payload);
-      // You can emit custom events here for components to handle
-      window.dispatchEvent(new CustomEvent('notification-received', { detail: payload }));
-    });
-
-    return () => {
-      unsubscribeToken();
-      unsubscribeAction();
-    };
-  }, []);
-
-  return {
-    state,
-    actions: {
-      initializeNotifications,
-      registerForPush,
-      enableManually,
-      testNotifications,
-      clearError
-    }
-  };
-}
-
-// Export types for external use
-export type { NotificationError };
+  return useMemo(() => ({
+    notifications,
+    isNotificationPanelOpen,
+    unreadCount,
+    markAsRead: markNotificationAsRead,
+    markAllAsRead: markAllNotificationsAsRead,
+    deleteNotification: deleteNotificationById,
+    clearAllNotifications: clearNotifications,
+    updateNotification: updateNotificationById,
+    addTestNotification: addTestNotificationHandler,
+    setIsNotificationPanelOpen: setNotificationPanelOpen,
+    getNotificationsByType,
+  }), [
+    notifications,
+    isNotificationPanelOpen,
+    unreadCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotificationById,
+    clearNotifications,
+    updateNotificationById,
+    addTestNotificationHandler,
+    setNotificationPanelOpen,
+    getNotificationsByType,
+  ]);
+};

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/useAuth';
-import { useStep } from '../../context/StepContext';
+import { useStep } from '../../hooks/useStep';
 import { useLocation } from '../../hooks/useLocation';
 import { useImageGallery } from '../../hooks/useImageGallery';
 import { camera } from 'ionicons/icons';
@@ -65,7 +65,7 @@ export const ProfileCompletion = () => {
   const navigate = useNavigate();
   const auth = useAuth();
   const { user } = auth;
-  const { currentStep, nextStep: baseNextStep, previousStep: basePreviousStep, canGoNext, canGoPrevious } = useStep();
+  const { currentStep, nextStep: baseNextStep, previousStep: basePreviousStep, canGoNext, canGoPrevious, setTotalSteps } = useStep();
   const [, setLoading] = useState(true);
   const { requestPermission, getCurrentLocationWithAddress, permissionStatus, locationData } = useLocation();
 
@@ -155,6 +155,16 @@ export const ProfileCompletion = () => {
     autoSwitchInterval: 3000
   });
 
+  // Initialize step management
+  useEffect(() => {
+    console.log('Initializing step management with 6 total steps');
+    setTotalSteps(6); // Profile completion has 6 steps (0-5)
+  }, [setTotalSteps]);
+
+  // Debug step state changes
+  useEffect(() => {
+    console.log('ProfileCompletion rendered:', { currentStep, userEmail: user?.email, canGoNext, canGoPrevious });
+  }, [currentStep, user?.email, canGoNext, canGoPrevious]);
 
   useEffect(() => {
     if (currentImage) {

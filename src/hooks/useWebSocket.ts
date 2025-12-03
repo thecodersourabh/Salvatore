@@ -1,178 +1,108 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { websocketService, WebSocketMessage, MessageData } from '../services/websocketService';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import {
+  connectWebSocket,
+  disconnectWebSocket,
+  sendWebSocketMessage,
+  receiveMessage,
+  markMessagesAsRead,
+  clearMessages,
+  removeConversation,
+  setError,
+  updateConnectionState,
+  selectWebSocketState,
+  selectIsWebSocketConnected,
+  selectWebSocketConnectionStatus,
+  selectWebSocketMessages,
+  selectWebSocketActiveConversations,
+  selectWebSocketError,
+  WebSocketMessage,
+} from '../store/slices/webSocketSlice';
+import { MessageData } from '../services/websocketService';
+import { useMemo, useCallback } from 'react';
 
-interface UseWebSocketOptions {
-  userId: string | null;
-  token: string | null;
-  enabled?: boolean;
-  onMessage?: (message: MessageData) => void;
-  onNotification?: (notification: any) => void;
-  onStatusChange?: (status: any) => void;
-  onError?: (error: any) => void;
-}
+// Custom hook that provides WebSocket functionality using Redux
+export const useWebSocket = () => {
+  const dispatch = useAppDispatch();
+  const webSocketState = useAppSelector(selectWebSocketState);
+  const isConnected = useAppSelector(selectIsWebSocketConnected);
+  const connectionStatus = useAppSelector(selectWebSocketConnectionStatus);
+  const messages = useAppSelector(selectWebSocketMessages);
+  const activeConversations = useAppSelector(selectWebSocketActiveConversations);
+  const error = useAppSelector(selectWebSocketError);
 
-interface UseWebSocketReturn {
-  isConnected: boolean;
-  send: (message: WebSocketMessage) => void;
-  disconnect: () => void;
-  reconnect: () => void;
-  updateStatus: (status: 'online' | 'offline' | 'away') => void;
-}
+  const connect = useCallback((userId: string) => {
+    dispatch(connectWebSocket(userId));
+  }, [dispatch]);
 
-/**
- * React hook for managing WebSocket connections
- * 
- * Automatically handles:
- * - Connection lifecycle (connect/disconnect)
- * - Event subscriptions
- * - Cleanup on unmount
- * - Reconnection on token/user changes
- * 
- * @example
- * ```tsx
- * const { isConnected, send } = useWebSocket({
- *   userId: user.id,
- *   token: idToken,
- *   enabled: isAuthenticated,
- *   onMessage: (msg) => console.log('New message:', msg)
- * });
- * ```
- */
-export function useWebSocket({
-  userId,
-  token,
-  enabled = true,
-  onMessage,
-  onNotification,
-  onStatusChange,
-  onError,
-}: UseWebSocketOptions): UseWebSocketReturn {
-  const [isConnected, setIsConnected] = useState(false);
-  const unsubscribersRef = useRef<(() => void)[]>([]);
-  const isConnectingRef = useRef(false);
-
-  // Connect to WebSocket
-  const connect = useCallback(async () => {
-    if (!enabled || !userId || !token) {
-      return;
-    }
-
-    if (isConnectingRef.current || websocketService.isConnected) {
-      return;
-    }
-
-    try {
-      isConnectingRef.current = true;
-      await websocketService.connect(userId, token);
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Failed to connect to WebSocket:', error);
-      setIsConnected(false);
-      onError?.(error);
-    } finally {
-      isConnectingRef.current = false;
-    }
-  }, [enabled, userId, token, onError]);
-
-  // Disconnect from WebSocket
   const disconnect = useCallback(() => {
-    websocketService.disconnect(userId || undefined);
-    setIsConnected(false);
-  }, [userId]);
+    dispatch(disconnectWebSocket());
+  }, [dispatch]);
 
-  // Reconnect to WebSocket
-  const reconnect = useCallback(() => {
-    disconnect();
-    setTimeout(() => connect(), 1000);
-  }, [disconnect, connect]);
+  const sendMessage = useCallback((message: Omit<WebSocketMessage, 'id' | 'timestamp'>) => {
+    dispatch(sendWebSocketMessage(message));
+  }, [dispatch]);
 
-  // Send message through WebSocket
-  const send = useCallback((message: WebSocketMessage) => {
-    websocketService.send(message);
-  }, []);
+  const handleReceiveMessage = useCallback((messageData: MessageData) => {
+    dispatch(receiveMessage(messageData));
+  }, [dispatch]);
 
-  // Update user status
-  const updateStatus = useCallback((status: 'online' | 'offline' | 'away') => {
-    if (userId) {
-      websocketService.updateStatus(userId, status);
-    }
-  }, [userId]);
+  const markAsRead = useCallback((messageIds: string[]) => {
+    dispatch(markMessagesAsRead(messageIds));
+  }, [dispatch]);
 
-  // Setup event listeners
-  useEffect(() => {
-    if (!enabled || !userId || !token) {
-      return;
-    }
+  const clearAllMessages = useCallback(() => {
+    dispatch(clearMessages());
+  }, [dispatch]);
 
-    // Subscribe to events
-    const unsubscribers: (() => void)[] = [];
+  const removeConversationMessages = useCallback((conversationId: string) => {
+    dispatch(removeConversation(conversationId));
+  }, [dispatch]);
 
-    // Message event
-    if (onMessage) {
-      const unsubMessage = websocketService.on('message', onMessage);
-      unsubscribers.push(unsubMessage);
-    }
+  const setConnectionError = useCallback((errorMessage: string | null) => {
+    dispatch(setError(errorMessage));
+  }, [dispatch]);
 
-    // Notification event
-    if (onNotification) {
-      const unsubNotification = websocketService.on('notification', onNotification);
-      unsubscribers.push(unsubNotification);
-    }
+  const updateConnection = useCallback((isConnected: boolean, status: typeof connectionStatus) => {
+    dispatch(updateConnectionState({ isConnected, status }));
+  }, [dispatch]);
 
-    // Status event
-    if (onStatusChange) {
-      const unsubStatus = websocketService.on('status', onStatusChange);
-      unsubscribers.push(unsubStatus);
-    }
+  const getConversationMessages = useCallback((conversationId: string) => {
+    return messages.filter((msg: WebSocketMessage) => msg.conversationId === conversationId);
+  }, [messages]);
 
-    // Error event
-    if (onError) {
-      const unsubError = websocketService.on('error', onError);
-      unsubscribers.push(unsubError);
-    }
-
-    // Connection state events
-    const unsubConnected = websocketService.on('connected', () => {
-      setIsConnected(true);
-    });
-    unsubscribers.push(unsubConnected);
-
-    const unsubDisconnected = websocketService.on('disconnected', () => {
-      setIsConnected(false);
-    });
-    unsubscribers.push(unsubDisconnected);
-
-    // Store unsubscribers
-    unsubscribersRef.current = unsubscribers;
-
-    // Cleanup function
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-      unsubscribersRef.current = [];
-    };
-  }, [enabled, userId, token, onMessage, onNotification, onStatusChange, onError]);
-
-  // Auto-connect when enabled
-  useEffect(() => {
-    if (enabled && userId && token && !websocketService.isConnected) {
-      connect();
-    } else if (!enabled && websocketService.isConnected) {
-      disconnect();
-    }
-
-    // Cleanup on unmount or when disabled
-    return () => {
-      if (!enabled) {
-        disconnect();
-      }
-    };
-  }, [enabled, userId, token, connect, disconnect]);
-
-  return {
+  return useMemo(() => ({
+    ...webSocketState,
     isConnected,
-    send,
+    connectionStatus,
+    messages,
+    activeConversations,
+    error,
+    connect,
     disconnect,
-    reconnect,
-    updateStatus,
-  };
-}
+    sendMessage,
+    receiveMessage: handleReceiveMessage,
+    markMessagesAsRead: markAsRead,
+    clearMessages: clearAllMessages,
+    removeConversation: removeConversationMessages,
+    setError: setConnectionError,
+    updateConnectionState: updateConnection,
+    getMessagesByConversation: getConversationMessages,
+  }), [
+    webSocketState,
+    isConnected,
+    connectionStatus,
+    messages,
+    activeConversations,
+    error,
+    connect,
+    disconnect,
+    sendMessage,
+    handleReceiveMessage,
+    markAsRead,
+    clearAllMessages,
+    removeConversationMessages,
+    setConnectionError,
+    updateConnection,
+    getConversationMessages,
+  ]);
+};

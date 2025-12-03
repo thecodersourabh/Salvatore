@@ -13,13 +13,13 @@ export const authMiddleware: Middleware = (store) => {
       }
 
       try {
-        // Use the enhanced refresh callback set by ReduxAuthProvider
+        // Use the enhanced refresh callback set by AuthProvider
         const enhancedCallback = (window as any).__reduxAuthRefreshCallback;
         
         if (enhancedCallback && typeof enhancedCallback === 'function') {
           return await enhancedCallback();
         } else {
-          // Fallback: dispatch refresh event for ReduxAuthProvider to handle
+          // Fallback: dispatch refresh event for AuthProvider to handle
           window.dispatchEvent(new CustomEvent('auth-token-refresh-needed'));
           
           // Wait a bit for the refresh to complete

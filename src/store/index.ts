@@ -2,19 +2,49 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
+import cartReducer from './slices/cartSlice';
+import notificationReducer from './slices/notificationSlice';
+import currencyReducer from './slices/currencySlice';
+import wishlistReducer from './slices/wishlistSlice';
+import webSocketReducer from './slices/webSocketSlice';
+import themeReducer from './slices/themeSlice';
+import languageReducer from './slices/languageSlice';
+import stepReducer from './slices/stepSlice';
 import { userApi } from './api/userApi';
 import { authMiddleware } from './middleware/authMiddleware';
 
-// Persist configuration for auth slice only
+// Persist configuration for auth slice
 const authPersistConfig = {
   key: 'auth',
   version: 1,
   storage,
 };
 
-// Root reducer
+// Persist configuration for theme slice
+const themePersistConfig = {
+  key: 'theme',
+  version: 1,
+  storage,
+};
+
+// Persist configuration for language slice
+const languagePersistConfig = {
+  key: 'language',
+  version: 1,
+  storage,
+};
+
+// Root reducer with all slices
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
+  cart: cartReducer, // Already has persist config in the slice
+  notifications: notificationReducer,
+  currency: currencyReducer, // Already has persist config in the slice
+  wishlist: wishlistReducer, // Already has persist config in the slice
+  websocket: webSocketReducer,
+  theme: persistReducer(themePersistConfig, themeReducer),
+  language: persistReducer(languagePersistConfig, languageReducer),
+  step: stepReducer,
   [userApi.reducerPath]: userApi.reducer,
 };
 
@@ -25,6 +55,9 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        // Ignore date serialization warnings since we're converting to ISO strings
+        ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredPaths: ['auth.user.lastLogin', 'notifications.notifications.timestamp', 'websocket.messages.timestamp', 'wishlist.items.createdAt'],
       },
     })
       .concat(userApi.middleware)

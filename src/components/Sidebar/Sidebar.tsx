@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../store/useAuth";
-import { useCart } from "../../context/CartContext";
+import { useCart } from "../../hooks/useCart";
 import { usePlatform } from "../../hooks/usePlatform";
 import { 
   User, 

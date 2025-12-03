@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useLanguage } from '../../context/LanguageContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../hooks/useLanguage';
+import { useTheme } from '../../hooks/useTheme';
 import { translations } from '../../utils/translations';
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonToggle } from '@ionic/react';
-import { useCurrency } from '../../context/CurrencyContext';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useAuth } from '../../store/useAuth';
 import { UserService } from '../../services';
 

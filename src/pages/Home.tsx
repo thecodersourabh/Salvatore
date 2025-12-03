@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../store/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import bannerImage from "../assets/banner.png";
 
 export const Home = () => {

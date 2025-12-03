@@ -1,6 +1,6 @@
 import React, { useState, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../store/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import {
   TrendingUp,
   DollarSign,

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useAuth } from '../../store/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import * as config from '../../auth_config.json';

@@ -3,7 +3,7 @@ import { X, UserPlus, UserMinus, Users, Search } from 'lucide-react';
 import { teamService, TeamMember } from '../services/teamService';
 import { UserService } from '../services/userService';
 import { User } from '../types/user';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { useBackButton } from '../hooks/useBackButton';
 
 interface TeamMembersModalProps {

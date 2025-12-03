@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useAuth } from '../../store/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { IonSegment, IonSegmentButton, IonLabel } from '@ionic/react';
 import { Card } from '../../components/ui/card';

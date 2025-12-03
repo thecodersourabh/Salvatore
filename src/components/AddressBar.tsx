@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Address } from '../types/user';
 import { AddressService } from '../services/addressService';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 export const AddressBar = () => {
   const { user } = useAuth();

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, Users } from 'lucide-react';
 import { UserService } from '../services/userService';
 import { User } from '../types/user';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 interface NewMessageModalProps {
   isOpen: boolean;

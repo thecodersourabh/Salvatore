@@ -1,6 +1,6 @@
 
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../store/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { useEffect } from "react";
 import { ProfileCompletion } from "./ProfileCompletion";
 import { ProfileView } from "./ProfileView";

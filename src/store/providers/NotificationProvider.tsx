@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useAppDispatch } from '../hooks';
 import { addNotificationFromPayload } from '../slices/notificationSlice';
 import { connectWebSocket } from '../slices/webSocketSlice';
-import { useAuth } from '../useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 // This component initializes Redux-based notification and WebSocket listeners
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

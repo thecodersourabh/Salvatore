@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Scissors, User } from "lucide-react";
-import { useAuth } from "../store/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { useNotifications } from "../hooks/useNotifications";
 import { usePlatform } from "../hooks/usePlatform";
 import { useState, useEffect } from "react";

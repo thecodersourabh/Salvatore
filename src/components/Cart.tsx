@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { usePlatform } from '../hooks/usePlatform';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { AddressService } from '../services/addressService';
 import { orderService } from '../services/orderService';
 

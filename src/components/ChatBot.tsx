@@ -9,7 +9,7 @@ import { User } from '../types/user';
 import { App } from '@capacitor/app';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { userActivityService, UserActivity } from '../services/userActivityService';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 type ConversationItem = {
   id: string;

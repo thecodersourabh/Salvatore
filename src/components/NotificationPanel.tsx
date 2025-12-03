@@ -7,7 +7,7 @@ import { usePlatform } from '../hooks/usePlatform';
 import { orderService } from '../services/orderService';
 import { OrderDetails } from '../pages/Orders/OrderDetails';
 import { Order } from '../types/order';
-import { useAuth } from '../store/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 export const NotificationPanel = () => {
   const {

@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useAppSelector, useAppDispatch } from './hooks';
-import { selectAuth, logout as reduxLogout } from './slices/authSlice';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { selectAuth, logout as reduxLogout } from '../store/slices/authSlice';
 import { getLogoutUri } from '../utils/getRedirectUri';
 import { useMemo, useCallback } from 'react';
 

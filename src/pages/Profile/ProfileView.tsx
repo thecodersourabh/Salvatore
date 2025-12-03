@@ -32,7 +32,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { QRCodeSVG } from "qrcode.react";
 import { cameraOutline } from "ionicons/icons";
 import type { Profile } from "../../types/profile";
-import { useAuth } from "../../store/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
 

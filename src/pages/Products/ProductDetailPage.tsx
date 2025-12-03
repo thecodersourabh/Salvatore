@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ProductService } from '../../services/productService';
 import { usePageBackButton } from '../../hooks/useBackButton';
 import { ProductResponse } from '../../services/productService';
-import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, X, Home, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../store/useAuth';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
@@ -29,8 +29,8 @@ export const ProductDetailPage: React.FC = () => {
       index
     })),
     // Add video if exists
-    ...(product.videoKey || product.videoUrl ? [{
-      url: product.videoUrl || '',
+    ...(product.videoKey || (product as any).videoUrl ? [{
+      url: (product as any).videoUrl || '',
       type: 'video' as const,
       isPrimary: false,
       index: (product.images || []).length
@@ -70,9 +70,7 @@ export const ProductDetailPage: React.FC = () => {
     navigate(-1);
   };
 
-  const handleClose = () => {
-    navigate('/');
-  };
+
 
   const handleDelete = () => {
     setShowDeleteConfirm(true);
@@ -153,7 +151,7 @@ export const ProductDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">

@@ -14,6 +14,8 @@ export type ServiceSector =
   | "agency"
   | "other";
 
+export type UserRole = 'customer' | 'seller';
+
 export type DocumentType = 'aadhaar' | 'pan' | 'professional';
 
 export interface Document {
@@ -42,7 +44,7 @@ export interface User {
   userName: string;
   avatar?: string;
   email?: string;
-  role?: string;
+  role?: UserRole;
   displayName?: string;
   description?: string;
   sector?: ServiceSector;
@@ -158,6 +160,7 @@ export interface CreateUserRequest {
   auth0Id?: string;
   password?: string;
   isServiceProvider?: boolean;
+  role?: UserRole;
   version?: number;
 }
 

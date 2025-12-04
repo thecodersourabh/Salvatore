@@ -276,8 +276,8 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto max-sm:max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-200px)]">
-            <div className="px-4 py-3 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="flex-1 overflow-y-auto max-sm:max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-200px)]">
+            <div className="px-4 py-3 sm:p-6 space-y-4 sm:space-y-6 max-sm:pb-20">
               
               {/* Error Message */}
               {error && (

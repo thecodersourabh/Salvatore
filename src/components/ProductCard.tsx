@@ -191,7 +191,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <span className="text-lg font-bold text-gray-900 dark:text-white">
-              {formatCurrency(product.price)}
+              {(() => {
+                // Check if product has package specifications with Basic tier
+                const basicPackage = product.specifications?.Basic;
+                if (basicPackage && basicPackage.price) {
+                  return formatCurrency(basicPackage.price);
+                }
+                // Fallback to regular product price
+                return formatCurrency(product.price);
+              })()}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
@@ -199,6 +207,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </span>
             )}
           </div>
+          {(() => {
+            // Show "Basic Package" indicator if using package pricing
+            const basicPackage = product.specifications?.Basic;
+            if (basicPackage && basicPackage.price) {
+              return (
+                <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                  Basic
+                </span>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* Action Buttons */}

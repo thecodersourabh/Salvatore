@@ -22,10 +22,12 @@ import AddProductPage from "../pages/Services/AddProduct";
 import { ProductDetailPage } from "../pages/Products/ProductDetailPage";
 
 export const AppRoutes = () => {
-  const { user } = useAuth();
+  const { currentRole } = useAuth();
   
-  // Determine if user is a client (not a service provider)
-  const isClient = user && !user.serviceProviderProfile;
+  // Determine if user is a client based on role
+  const isClient = currentRole === 'customer';
+  
+  console.log('AppRoutes: currentRole =', currentRole, 'isClient =', isClient);
   
   return (
     <Routes>

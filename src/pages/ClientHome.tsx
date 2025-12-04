@@ -68,7 +68,7 @@ export const ClientHome: React.FC = () => {
   const [selectedSector, setSelectedSector] = useState('All');
   const [selectedLocation, setSelectedLocation] = useState('All');
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number, address: string} | null>(null);
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState([0, 200000]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -102,7 +102,7 @@ export const ClientHome: React.FC = () => {
   const fetchProducts = async (filters: ProductFilters = {}) => {
     try {
       setError(null);
-      const response = await ClientProductService.getProducts({
+      const requestFilters = {
         ...filters,
         location: userLocation ? {
           latitude: userLocation.latitude,
@@ -116,8 +116,9 @@ export const ClientHome: React.FC = () => {
           max: priceRange[1]
         },
         limit: 20
-      });
+      };
       
+      const response = await ClientProductService.getProducts(requestFilters);
       setProducts(response.products);
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -175,6 +176,23 @@ export const ClientHome: React.FC = () => {
   // Filter providers based on search and filters
   const filteredProviders = useMemo(() => {
     return products.filter(product => {
+      // Exclude user's own products when browsing as customer
+      const currentUserId = localStorage.getItem('x-user-id');
+      const userEmail = user?.email;
+      const userSub = (user as any)?.sub;
+      
+      const isOwnProduct = product.createdBy && (
+        product.createdBy === currentUserId ||
+        product.createdBy === userEmail ||
+        product.createdBy === userSub ||
+        product.createdByName === userEmail
+      );
+      
+      // Skip own products in customer view
+      if (isOwnProduct) {
+        return false;
+      }
+      
       const matchesSearch = searchQuery === '' || 
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -185,7 +203,7 @@ export const ClientHome: React.FC = () => {
       
       return matchesSearch && matchesSector && matchesPrice;
     });
-  }, [products, searchQuery, selectedSector, priceRange]);
+  }, [products, searchQuery, selectedSector, priceRange, user]);
 
   const getSectorIcon = (sector: string) => {
     const icons: Record<string, React.ReactNode> = {
@@ -224,23 +242,39 @@ export const ClientHome: React.FC = () => {
     }
   };
 
-  // Auto-scroll functions for hover
+  // Auto-scroll functions for hover with proper circular infinite scroll
   const startAutoScrollLeft = () => {
     if (scrollIntervalRef.current) return;
     scrollIntervalRef.current = setInterval(() => {
       if (categoryScrollRef.current) {
-        categoryScrollRef.current.scrollBy({ left: -3, behavior: 'auto' });
+        const container = categoryScrollRef.current;
+        container.scrollLeft -= 2;
+        
+        // Seamless infinite scroll: when we reach the beginning of the first set,
+        // jump to the equivalent position in the middle set
+        const totalWidth = container.scrollWidth / 3;
+        if (container.scrollLeft <= 0) {
+          container.scrollLeft = totalWidth;
+        }
       }
-    }, 16); // ~60fps
+    }, 16);
   };
 
   const startAutoScrollRight = () => {
     if (scrollIntervalRef.current) return;
     scrollIntervalRef.current = setInterval(() => {
       if (categoryScrollRef.current) {
-        categoryScrollRef.current.scrollBy({ left: 3, behavior: 'auto' });
+        const container = categoryScrollRef.current;
+        container.scrollLeft += 2;
+        
+        // Seamless infinite scroll: when we reach the end of the second set,
+        // jump back to the equivalent position in the middle set
+        const totalWidth = container.scrollWidth / 3;
+        if (container.scrollLeft >= totalWidth * 2) {
+          container.scrollLeft = totalWidth;
+        }
       }
-    }, 16); // ~60fps
+    }, 16);
   };
 
   const stopAutoScroll = () => {
@@ -262,6 +296,31 @@ export const ClientHome: React.FC = () => {
     };
   }, []);
 
+  // Initialize scroll positions to middle set for seamless infinite scroll
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (categoryScrollRef.current && sectors.length > 0) {
+        const container = categoryScrollRef.current;
+        const totalWidth = container.scrollWidth / 3;
+        container.scrollLeft = totalWidth;
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [sectors]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (recentServicesScrollRef.current && recentProducts.length > 0) {
+        const container = recentServicesScrollRef.current;
+        const totalWidth = container.scrollWidth / 3;
+        container.scrollLeft = totalWidth;
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [recentProducts]);
+
   // Recent services scroll functions
   const scrollRecentLeft = () => {
     if (recentServicesScrollRef.current) {
@@ -275,12 +334,20 @@ export const ClientHome: React.FC = () => {
     }
   };
 
-  // Auto-scroll functions for recent services
+  // Auto-scroll functions for recent services with proper circular infinite scroll
   const startAutoScrollRecentLeft = () => {
     if (recentScrollIntervalRef.current) return;
     recentScrollIntervalRef.current = setInterval(() => {
-      if (recentServicesScrollRef.current) {
-        recentServicesScrollRef.current.scrollBy({ left: -3, behavior: 'auto' });
+      if (recentServicesScrollRef.current && recentProducts.length > 0) {
+        const container = recentServicesScrollRef.current;
+        container.scrollLeft -= 2;
+        
+        // Seamless infinite scroll: when we reach the beginning of the first set,
+        // jump to the equivalent position in the middle set
+        const totalWidth = container.scrollWidth / 3;
+        if (container.scrollLeft <= 0) {
+          container.scrollLeft = totalWidth;
+        }
       }
     }, 16);
   };
@@ -288,8 +355,16 @@ export const ClientHome: React.FC = () => {
   const startAutoScrollRecentRight = () => {
     if (recentScrollIntervalRef.current) return;
     recentScrollIntervalRef.current = setInterval(() => {
-      if (recentServicesScrollRef.current) {
-        recentServicesScrollRef.current.scrollBy({ left: 3, behavior: 'auto' });
+      if (recentServicesScrollRef.current && recentProducts.length > 0) {
+        const container = recentServicesScrollRef.current;
+        container.scrollLeft += 2;
+        
+        // Seamless infinite scroll: when we reach the end of the second set,
+        // jump back to the equivalent position in the middle set
+        const totalWidth = container.scrollWidth / 3;
+        if (container.scrollLeft >= totalWidth * 2) {
+          container.scrollLeft = totalWidth;
+        }
       }
     }, 16);
   };
@@ -308,60 +383,54 @@ export const ClientHome: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Categories - Horizontal Ribbon */}
           <div className="relative">
-            {/* Left Arrow */}
-            <button 
-              onClick={scrollLeft}
+            {/* Hidden Left Hover Zone */}
+            <div
               onMouseEnter={startAutoScrollLeft}
               onMouseLeave={stopAutoScroll}
-              className="absolute -left-6 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/40 border border-white/30 hover:border-white/60 text-white hover:text-gray-800 p-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-110"
-            >
-              <ChevronRight className="h-5 w-5 rotate-180" />
-            </button>
+              className="absolute left-0 top-0 bottom-0 w-16 z-10 cursor-pointer"
+            />
+            
+            {/* Hidden Right Hover Zone */}
+            <div
+              onMouseEnter={startAutoScrollRight}
+              onMouseLeave={stopAutoScroll}
+              className="absolute right-0 top-0 bottom-0 w-16 z-10 cursor-pointer"
+            />
             
             {/* Categories Scroll Container */}
             <div 
               ref={categoryScrollRef}
-              className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-16"
+              className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-4"
+              style={{ scrollBehavior: 'auto' }}
             >
-              {sectors.map((sector) => (
-                <button
-                  key={sector}
-                  onClick={() => {
-                    setSelectedSector(sector);
-                    document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="flex-shrink-0 group"
-                >
-                  {/* Card Shape Container */}
-                  <div className="w-32 h-40 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all group-active:scale-95 relative">
-                    {/* Full Cover Background Image */}
-                    <img 
-                      src={getCategoryImage(sector)} 
-                      alt={translateSector(sector)}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Dark Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all"></div>
-                    {/* Category Name */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <p className="text-sm font-semibold text-white text-center leading-tight drop-shadow-lg">
-                        {translateSector(sector)}
-                      </p>
+              {/* Create triple set for seamless infinite scroll: [All items] + [All items] + [All items] */}
+              {[...Array(3)].map((_, setIndex) => 
+                sectors.map((sector, index) => (
+                  <button
+                    key={`set${setIndex}-${sector}-${index}`}
+                    onClick={() => {
+                      setSelectedSector(sector);
+                      document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex-shrink-0 group"
+                  >
+                    <div className="w-32 h-40 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all group-active:scale-95 relative">
+                      <img 
+                        src={getCategoryImage(sector)} 
+                        alt={translateSector(sector)}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all"></div>
+                      <div className="absolute bottom-0 left-0 right-0 p-2">
+                        <p className="text-sm font-semibold text-white text-center leading-tight drop-shadow-lg">
+                          {translateSector(sector)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))
+              )}
             </div>
-            
-            {/* Right Arrow */}
-            <button 
-              onClick={scrollRight}
-              onMouseEnter={startAutoScrollRight}
-              onMouseLeave={stopAutoScroll}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/40 border border-white/30 hover:border-white/60 text-white hover:text-gray-800 p-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-110"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </div>
@@ -408,95 +477,72 @@ export const ClientHome: React.FC = () => {
             
             {/* Desktop Ribbon Layout */}
             <div className="hidden md:block relative">
-              {/* Left Arrow */}
-              <button 
-                onClick={scrollRecentLeft}
+              {/* Hidden Left Hover Zone */}
+              <div
                 onMouseEnter={startAutoScrollRecentLeft}
                 onMouseLeave={stopAutoScrollRecent}
-                className="absolute -left-6 top-1/2 -translate-y-1/2 z-10 bg-gray-900/20 hover:bg-gray-900/40 border border-gray-900/30 hover:border-gray-900/60 text-gray-700 hover:text-gray-900 p-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-110"
-              >
-                <ChevronRight className="h-5 w-5 rotate-180" />
-              </button>
+                className="absolute left-0 top-0 bottom-0 w-20 z-10 cursor-pointer"
+              />
+              
+              {/* Hidden Right Hover Zone */}
+              <div
+                onMouseEnter={startAutoScrollRecentRight}
+                onMouseLeave={stopAutoScrollRecent}
+                className="absolute right-0 top-0 bottom-0 w-20 z-10 cursor-pointer"
+              />
 
               <div 
                 ref={recentServicesScrollRef}
-                className="flex items-center justify-center space-x-8 py-8 overflow-x-auto scrollbar-hide px-16"
+                className="flex items-center justify-center space-x-8 py-8 overflow-x-auto scrollbar-hide px-6"
+                style={{ scrollBehavior: 'auto' }}
               >
-                {recentProducts.slice(0, 6).map((product, index) => (
-                  <div
-                    key={product.id}
-                    className="relative group cursor-pointer"
-                    onClick={() => navigate(`/products/${product.id}`)}
-                  >
-                    {/* Service Circle */}
-                    <div className="relative">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-0.5 shadow-lg group-hover:shadow-xl transition-all group-hover:scale-110">
-                        <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex flex-col items-center justify-center group-hover:bg-gray-50 dark:group-hover:bg-gray-700 transition-colors overflow-hidden">
-                          {product.images && product.images.length > 0 ? (
-                            <img 
-                              src={product.images[0]} 
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <>
-                              <div className="text-blue-600 dark:text-blue-400 mb-1">
-                                {getSectorIcon(product.category || 'service')}
+                {recentProducts.length > 0 && (
+                  <>
+                    {/* Create triple set for seamless infinite scroll: [All items] + [All items] + [All items] */}
+                    {[...Array(3)].map((_, setIndex) => 
+                      recentProducts.slice(0, 6).map((product, index) => (
+                        <div
+                          key={`set${setIndex}-${product.id}-${index}`}
+                          className="relative group cursor-pointer flex-shrink-0"
+                          onClick={() => navigate(`/products/${product.id}`)}
+                        >
+                          <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-0.5 shadow-lg group-hover:shadow-xl transition-all group-hover:scale-110">
+                              <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex flex-col items-center justify-center group-hover:bg-gray-50 dark:group-hover:bg-gray-700 transition-colors overflow-hidden">
+                                {product.images && product.images.length > 0 ? (
+                                  <img 
+                                    src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <>
+                                    <div className="text-blue-600 dark:text-blue-400 mb-1">
+                                      {getSectorIcon(product.category || 'service')}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                                      <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                                        {product.providerInfo?.rating?.toFixed(1) || '5.0'}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                                  {product.providerInfo?.rating?.toFixed(1) || '5.0'}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Service Info Card */}
-                      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 w-40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:-translate-y-2 pointer-events-none">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3">
-                          <div className="text-center">
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate">{product.name}</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-2 truncate">{product.providerInfo?.name || product.createdBy}</p>
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-lg text-xs font-medium">
-                                {translateSector(product.category || 'service')}
-                              </span>
-                            </div>
-                            <div className="text-xs font-semibold text-green-600 dark:text-green-400">
-                              ₹{product.price.toLocaleString()}
                             </div>
                           </div>
-                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 rotate-45"></div>
                         </div>
-                      </div>
-                    </div>
-                    
-                    {/* Connecting Ribbon Line */}
-                    {index < recentProducts.slice(0, 6).length - 1 && (
-                      <div className="absolute top-12 -right-4 w-8 h-0.5 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 opacity-40"></div>
+                      ))
                     )}
-                  </div>
-                ))}
+                  </>
+                )}
               </div>
-
-              {/* Right Arrow */}
-              <button 
-                onClick={scrollRecentRight}
-                onMouseEnter={startAutoScrollRecentRight}
-                onMouseLeave={stopAutoScrollRecent}
-                className="absolute -right-6 top-1/2 -translate-y-1/2 z-10 bg-gray-900/20 hover:bg-gray-900/40 border border-gray-900/30 hover:border-gray-900/60 text-gray-700 hover:text-gray-900 p-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-110"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
             </div>
 
             {/* Mobile Horizontal Ribbon */}
             <div className="md:hidden">
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                {recentProducts.slice(0, 8).map((product, index) => (
+                {recentProducts.slice(0, 8).map((product) => (
                   <div
                     key={product.id}
                     className="flex-shrink-0 group cursor-pointer"
@@ -506,7 +552,7 @@ export const ClientHome: React.FC = () => {
                       <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex flex-col items-center justify-center overflow-hidden">
                         {product.images && product.images.length > 0 ? (
                           <img 
-                            src={product.images[0]} 
+                            src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url} 
                             alt={product.name}
                             className="w-full h-full object-cover rounded-full"
                           />
@@ -639,8 +685,8 @@ export const ClientHome: React.FC = () => {
                     <input
                       type="range"
                       min="0"
-                      max="10000"
-                      step="100"
+                      max="200000"
+                      step="1000"
                       value={priceRange[0]}
                       onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
                       className="flex-1 accent-rose-600"
@@ -648,8 +694,8 @@ export const ClientHome: React.FC = () => {
                     <input
                       type="range"
                       min="0"
-                      max="10000"
-                      step="100"
+                      max="200000"
+                      step="1000"
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                       className="flex-1 accent-rose-600"
@@ -712,27 +758,8 @@ export const ClientHome: React.FC = () => {
                   onEdit={() => {}} // Clients can't edit products
                   onDelete={() => {}} // Clients can't delete products
                   onToggleActive={() => {}} // Clients can't toggle active state
+                  onView={() => navigate(`/products/${product.id}`)}
                   showActions={false} // Hide edit/delete actions for clients
-                  onClick={() => navigate(`/products/${product.id}`)}
-                  className={viewMode === 'list' ? 'flex-row' : ''}
-                  customActions={(
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate('/quick-service', { 
-                          state: { 
-                            selectedService: product.category,
-                            selectedProvider: product.providerInfo?.name || product.createdBy,
-                            productId: product.id
-                          }
-                        });
-                      }}
-                      className="w-full bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      Book Now
-                    </button>
-                  )}
                 />
               ))}
             </div>
@@ -751,7 +778,7 @@ export const ClientHome: React.FC = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedSector('All');
-                  setPriceRange([0, 10000]);
+                  setPriceRange([0, 200000]);
                 }}
                 className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >

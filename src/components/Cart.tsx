@@ -108,13 +108,19 @@ async function submitOrder(
   if (!items || items.length === 0) return { success: false, error: 'Your cart is empty' };
 
   const providerIds = Array.from(new Set(items.map(i => i.providerId).filter(Boolean)));
+
   if (providerIds.length > 1) {
     return { success: false, error: 'Orders can only contain items from one service provider at a time.' };
   }
 
-  const providerId = localStorage.getItem('x-user-id');
+  const serviceProviderId = providerIds[0] || items[0]?.providerId;
+  
+  if (!serviceProviderId) {
+    return { success: false, error: 'Service provider information is missing for cart items.' };
+  }
+
   const payload = {
-    serviceProviderId: providerId || '',
+    serviceProviderId: serviceProviderId,
     customer,
     status: 'pending' as const,
     items: items.map(i => ({
@@ -126,7 +132,6 @@ async function submitOrder(
   };
 
   try {
-    // If multiple providers are present, create separate orders per provider
     const grouped = items.reduce((acc: Record<string, any[]>, it) => {
       const pid = it.providerId || '';
       if (!acc[pid]) acc[pid] = [];
@@ -146,7 +151,7 @@ async function submitOrder(
         const raw = res.raw || {};
         const orderId = res.orderId || raw.data?.id || raw.data?.orderId || raw.id || raw.orderId;
         const orderNumber = raw.data?.orderNumber || raw.orderNumber || undefined;
-        try { orderService.showOrderNotification(orderId || orderNumber, 'pending', customer?.contactInfo?.name || 'Customer'); } catch (nerr) { console.warn('Failed to trigger local order notification', nerr); }
+        // Note: Server should handle sending push notifications to the service provider
         clearCart();
         setIsCartOpen(false);
         return { success: true, orderId, orderNumber };
@@ -157,8 +162,9 @@ async function submitOrder(
     // Multiple providers: create an order per provider
     for (const pid of providerIdsKeys) {
       const providerItems = grouped[pid];
+      
       const payloadPerProvider = {
-        serviceProviderId: providerId || '', //will change to pid later only for testing later map with pid
+        serviceProviderId: pid, // Use the actual provider ID from the item
         customer,
         status: 'pending' as const,
         items: providerItems.map(i => ({ name: i.name, description: i.description || i.name, quantity: i.quantity, unitPrice: i.price }))
@@ -171,7 +177,8 @@ async function submitOrder(
           const raw = res.raw || {};
           const orderId = res.orderId || raw.data?.id || raw.data?.orderId || raw.id || raw.orderId;
           const orderNumber = raw.data?.orderNumber || raw.orderNumber || undefined;
-          try { orderService.showOrderNotification(orderId || orderNumber, 'pending', customer?.contactInfo?.name || 'Customer'); } catch (nerr) { console.warn('Failed to trigger local order notification', nerr); }
+          
+          // Note: Server should handle sending push notifications to the service provider
           orderResults.push({ success: true, providerId: pid, orderId, orderNumber });
         } else {
           orderResults.push({ success: false, providerId: pid, error: (r as any).error || 'Order failed' });
@@ -190,7 +197,6 @@ async function submitOrder(
 
     return { success: orderResults.every(r => r.success), results: orderResults };
   } catch (err) {
-    console.error('submitOrder error:', err);
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
@@ -250,6 +256,7 @@ function CheckoutFlow() {
   const handleCancel = () => setIsCheckingOut(false);
 
   const handlePlace = async () => {
+    
     // build customer from selectedAddress
     const selected = selectedAddress;
     const customer = {
@@ -262,13 +269,12 @@ function CheckoutFlow() {
         country: selected?.country || ''
       }
     };
-    // Use the hooks that were called at component level
     const result = await submitOrder(customer, items, clearCart, setIsCartOpen, idToken);
     if (result.success) {
-      // Order placed successfully — consider replacing this with a toast/notification UI
-      console.log('Order placed', { orderId: result.orderId, orderNumber: result.orderNumber });
+      // Order placed successfully
+      // TODO: Show success toast/notification to user
     } else {
-      console.error('Place order failed:', result.error);
+      // TODO: Show error message to user
     }
     setIsCheckingOut(false);
   };

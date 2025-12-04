@@ -63,11 +63,17 @@ export class ClientProductService {
       
       // Apply client-side filtering for now (can be moved to backend later)
       let filteredProducts = allProducts.filter(product => {
-        // Only show active products
-        if (!product.isActive) return false;
+        // Only show active products (default to true if undefined)
+        if (product.isActive === false) return false;
         
-        // Category filter
-        if (filters.category && product.category !== filters.category) return false;
+        // Category filter - be more flexible with category matching
+        if (filters.category && filters.category !== 'all') {
+          const productCategory = (product.category || '').toLowerCase();
+          const filterCategory = filters.category.toLowerCase();
+          if (productCategory !== filterCategory) {
+            return false;
+          }
+        }
         
         // Search query filter
         if (filters.searchQuery) {

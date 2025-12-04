@@ -3,21 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ProductService } from '../../services/productService';
 import { usePageBackButton } from '../../hooks/useBackButton';
 import { ProductResponse } from '../../services/productService';
-import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Star, Tag, Package, Share2, Clock, CheckCircle, Edit, ChevronLeft, ChevronRight, Trash2, ShoppingCart } from 'lucide-react';
 import { useCurrency } from '../../hooks/useCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 
 export const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
-  const { user } = useAuth();
+  const { user, currentRole } = useAuth();
+  const { addItem } = useCart();
   const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<{name: string, data: any} | null>(null);
 
   // Transform product images and video for the unified gallery
   const mediaItems = product ? [
@@ -50,6 +53,16 @@ export const ProductDetailPage: React.FC = () => {
         setError(null);
         const productData = await ProductService.getProductById(productId);
         setProduct(productData);
+        
+        // Set default package if specifications exist
+        if (productData.specifications && typeof productData.specifications === 'object') {
+          const packages = Object.entries(productData.specifications)
+            .filter(([_, value]) => value && typeof value === 'object');
+          if (packages.length > 0) {
+            const defaultPackage = packages.find(([name]) => name.toLowerCase() === 'basic') || packages[0];
+            setSelectedPackage({ name: defaultPackage[0], data: defaultPackage[1] });
+          }
+        }
       } catch (err: any) {
         console.error('Error loading product:', err);
         setError(err.message || 'Failed to load product details');
@@ -99,6 +112,28 @@ export const ProductDetailPage: React.FC = () => {
         alert('Product link copied to clipboard!');
       });
     }
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    const primaryImage = product.images?.find(img => img.isPrimary)?.url || 
+                        product.images?.[0]?.url;
+    
+    // Use selected package price if available, otherwise fallback to product price
+    const finalPrice = selectedPackage?.data?.price || product.price;
+    const packageInfo = selectedPackage ? ` (${selectedPackage.name} Package)` : '';
+    
+    const cartItem = {
+      id: `${product.id || productId!}${selectedPackage ? `-${selectedPackage.name.toLowerCase()}` : ''}`,
+      name: `${product.name}${packageInfo}`,
+      price: finalPrice,
+      image: primaryImage,
+      providerId: product.createdBy,
+      description: selectedPackage?.data?.features?.join(', ') || product.description
+    };
+    
+    addItem(cartItem);
   };
 
   const isOwner = user && product && (
@@ -355,14 +390,103 @@ export const ProductDetailPage: React.FC = () => {
               {/* Price */}
               <div className="flex items-center flex-wrap gap-3 mb-6">
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(product.price)}
+                  {formatCurrency(selectedPackage?.data?.price || product.price)}
                 </span>
-                {(product as any).originalPrice && (product as any).originalPrice > product.price && (
+                {(product as any).originalPrice && ((selectedPackage?.data?.price || product.price) < (product as any).originalPrice) && (
                   <span className="text-2xl text-gray-500 dark:text-gray-400 line-through">
                     {formatCurrency((product as any).originalPrice)}
                   </span>
                 )}
+                {selectedPackage && (
+                  <span className="text-lg text-gray-600 dark:text-gray-400">
+                    ({selectedPackage.name} Package)
+                  </span>
+                )}
               </div>
+
+              {/* Package Selection - Only for Clients */}
+              {currentRole === 'customer' && product.specifications && typeof product.specifications === 'object' && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Package</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(product.specifications)
+                      .filter(([_, value]) => value && typeof value === 'object')
+                      .map(([tierName, tierData]: [string, any]) => (
+                        <button
+                          key={tierName}
+                          onClick={() => setSelectedPackage({ name: tierName, data: tierData })}
+                          className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 font-medium ${
+                            selectedPackage?.name === tierName
+                              ? 'border-rose-500 bg-rose-500 text-white'
+                              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                          }`}
+                        >
+                          {tierName}
+                          {tierData.price && (
+                            <span className="ml-2 text-sm">
+                              {formatCurrency(tierData.price)}
+                            </span>
+                          )}
+                        </button>
+                      ))
+                    }
+                  </div>
+                  {selectedPackage && (
+                    <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900 dark:text-white">{selectedPackage.name} Package</span>
+                        <span className="font-bold text-rose-600">{formatCurrency(selectedPackage.data.price)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        {selectedPackage.data.deliveryTime && (
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {selectedPackage.data.deliveryTime}
+                          </div>
+                        )}
+                        {selectedPackage.data.revisions && (
+                          <div className="flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            {selectedPackage.data.revisions} revisions
+                          </div>
+                        )}
+                      </div>
+                      {Array.isArray(selectedPackage.data.features) && selectedPackage.data.features.length > 0 && (
+                        <div className="mt-2">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Includes:</div>
+                          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            {selectedPackage.data.features.map((feature: string, index: number) => (
+                              <li key={index} className="flex items-start">
+                                <CheckCircle className="h-3 w-3 mr-2 text-green-500 mt-1 flex-shrink-0" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Add to Cart Button - Only for Clients */}
+              {currentRole === 'customer' && product.isActive !== false && (selectedPackage || !product.specifications) && (
+                <div className="mb-6">
+                  <button
+                    onClick={handleAddToCart}
+                    className="w-full bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    Add to Cart - {formatCurrency(selectedPackage?.data?.price || product.price)}
+                  </button>
+                  {selectedPackage && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                      {selectedPackage.name} Package selected
+                      {selectedPackage.data.deliveryTime && ` • ${selectedPackage.data.deliveryTime} delivery`}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Description */}
               <div className="mb-6">

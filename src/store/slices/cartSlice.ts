@@ -28,6 +28,7 @@ const cartSlice = createSlice({
   reducers: {
     addItem: (state, action: PayloadAction<Omit<CartItem, 'quantity'>>) => {
       const newItem = action.payload;
+      
       const existingItem = state.items.find(item => item.id === newItem.id);
       
       if (existingItem) {
@@ -35,6 +36,7 @@ const cartSlice = createSlice({
       } else {
         state.items.push({ ...newItem, quantity: 1 });
       }
+      
       state.isCartOpen = true;
     },
     

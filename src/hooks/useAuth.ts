@@ -1,8 +1,14 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { selectAuth, logout as reduxLogout } from '../store/slices/authSlice';
+import { 
+  selectAuth, 
+  logout as reduxLogout, 
+  switchRole,
+  selectUserRole
+} from '../store/slices/authSlice';
 import { getLogoutUri } from '../utils/getRedirectUri';
 import { useMemo, useCallback } from 'react';
+import type { UserRole } from '../store/slices/authSlice';
 
 // Global flag to prevent multiple logout calls
 let isLoggingOut = false;
@@ -11,6 +17,7 @@ let isLoggingOut = false;
 export const useAuth = () => {
   const { loginWithRedirect, logout: auth0Logout } = useAuth0();
   const auth = useAppSelector(selectAuth);
+  const currentRole = useAppSelector(selectUserRole);
   const dispatch = useAppDispatch();
 
   const loginWithRedirectEnhanced = useCallback((role?: 'seller' | 'customer') => {
@@ -51,9 +58,33 @@ export const useAuth = () => {
     }
   }, [auth0Logout, dispatch, auth.isAuthenticated]);
 
+  // Role management function
+  const switchUserRole = useCallback(async (newRole: UserRole) => {
+    if (!auth.user?.email) {
+      throw new Error('User email not available');
+    }
+
+    try {
+      await dispatch(switchRole({ 
+        newRole, 
+        userEmail: auth.user.email 
+      })).unwrap();
+      return true;
+    } catch (error) {
+      console.error('Failed to switch role:', error);
+      throw error;
+    }
+  }, [dispatch, auth.user?.email]);
+
+  // Basic role checking
+  const canAccessSellerFeatures = useMemo(() => {
+    return currentRole === 'seller';
+  }, [currentRole]);
+
   return useMemo(() => ({
+    // Auth properties
     isAuthenticated: auth.isAuthenticated,
-    loading: auth.loading || auth.creatingUser, // Include creatingUser as loading state
+    loading: auth.loading || auth.creatingUser,
     logout: logoutEnhanced,
     loginWithRedirect: loginWithRedirectEnhanced,
     userCreated: auth.userCreated,
@@ -63,6 +94,13 @@ export const useAuth = () => {
     apiUser: auth.apiUser,
     idToken: auth.idToken,
     error: auth.error,
+    
+    // Role properties
+    currentRole,
+    canAccessSellerFeatures,
+    
+    // Role functions
+    switchRole: switchUserRole,
   }), [
     auth.isAuthenticated,
     auth.loading,
@@ -72,6 +110,9 @@ export const useAuth = () => {
     auth.apiUser,
     auth.idToken,
     auth.error,
+    currentRole,
+    canAccessSellerFeatures,
+    switchUserRole,
     logoutEnhanced,
     loginWithRedirectEnhanced,
     dispatch

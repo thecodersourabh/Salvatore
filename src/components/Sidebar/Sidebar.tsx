@@ -23,7 +23,10 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const { userContext: user, logout } = useAuth();
+  const { 
+    userContext: user, 
+    logout
+  } = useAuth();
   const { setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 

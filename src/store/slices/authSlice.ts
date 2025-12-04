@@ -4,6 +4,8 @@ import { User } from '../../types/user';
 import { storeToken, clearToken } from '../../utils/tokenHelper';
 
 // Types
+export type UserRole = 'customer' | 'seller'; // Simplified to customer/provider (seller)
+
 export interface UserContext {
   email: string;
   sub?: string;
@@ -15,7 +17,7 @@ export interface UserContext {
   email_verified?: boolean;
   isVerified?: boolean;
   avatar?: string;
-  role?: string;
+  role?: UserRole;
 }
 
 interface AuthState {
@@ -100,6 +102,36 @@ export const createOrUpdateUser = createAsyncThunk(
   }
 );
 
+export const switchRole = createAsyncThunk(
+  'auth/switchRole',
+  async (params: {
+    newRole: UserRole;
+    userEmail: string;
+  }, { rejectWithValue, getState }) => {
+    const { newRole, userEmail } = params;
+    
+    try {
+      // Ensure we have a token before making API calls
+      const state = getState() as any;
+      if (!state.auth.idToken) {
+        throw new Error('No authentication token available');
+      }
+      
+      // Update user role in backend
+      const updatedUser = await UserService.updateUser(userEmail, { role: newRole });
+      
+      if (updatedUser) {
+        return { updatedUser, newRole };
+      }
+      
+      throw new Error('Failed to update user role');
+    } catch (error) {
+      console.error('switchRole: Failed with error:', error);
+      return rejectWithValue(error instanceof Error ? error.message : 'Role switch failed');
+    }
+  }
+);
+
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
   async (params: {
@@ -168,6 +200,14 @@ export const authSlice = createSlice({
       state.creatingUser = false;
       state.error = null;
     },
+    setUserRole: (state, action: PayloadAction<UserRole>) => {
+      if (state.user) {
+        state.user.role = action.payload;
+      }
+      if (state.apiUser) {
+        state.apiUser.role = action.payload;
+      }
+    },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
@@ -223,13 +263,29 @@ export const authSlice = createSlice({
             email_verified: auth0User.email_verified,
             isVerified: auth0User.email_verified,
             avatar: apiUser?.avatar || auth0User.picture,
-            role: apiUser?.role || 'customer'
+            role: (apiUser?.role as UserRole) || 'customer'
           };
         }
       })
       .addCase(createOrUpdateUser.rejected, (state, action) => {
         state.creatingUser = false;
         state.error = action.error.message || 'Failed to create/update user';
+      })
+      // switchRole
+      .addCase(switchRole.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(switchRole.fulfilled, (state, action) => {
+        state.loading = false;
+        state.apiUser = action.payload.updatedUser;
+        if (state.user) {
+          state.user.role = action.payload.newRole;
+        }
+      })
+      .addCase(switchRole.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to switch role';
       })
       // refreshToken
       .addCase(refreshToken.pending, (state) => {
@@ -260,6 +316,7 @@ export const {
   setError,
   clearError,
   resetCreatingUser,
+  setUserRole,
   logout,
 } = authSlice.actions;
 
@@ -271,5 +328,6 @@ export const selectIdToken = (state: any) => state.auth.idToken;
 export const selectAuthLoading = (state: any) => state.auth.loading || state.auth.creatingUser;
 export const selectUserCreated = (state: any) => state.auth.userCreated;
 export const selectAuthError = (state: any) => state.auth.error;
+export const selectUserRole = (state: any) => state.auth.user?.role || 'customer';
 
 export default authSlice.reducer;

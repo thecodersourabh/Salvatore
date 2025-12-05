@@ -1,1 +1,0 @@
-import{W as n}from"./index-LmTTynhQ.js";import"./ui-DNDdiJKy.js";import"./vendor-B_deTkiR.js";import"./router-BaOvApis.js";import"./dashboard-CNJmpfot.js";class d extends n{async show(e){}async hide(e){}}export{d as SplashScreenWeb};

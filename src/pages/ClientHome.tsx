@@ -43,8 +43,6 @@ export const ClientHome: React.FC = () => {
   // Legacy state for backward compatibility
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedSector, setSelectedSector] = useState('All');
-  const [selectedLocation, setSelectedLocation] = useState('All');
-  const [userLocation] = useState<{latitude: number, longitude: number, address: string} | null>(null);
   const [priceRange, setPriceRange] = useState([0, 200000]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showEnhancedFilters, setShowEnhancedFilters] = useState(false);
@@ -81,11 +79,6 @@ export const ClientHome: React.FC = () => {
       setError(null);
       const requestFilters = customFilters || {
         ...filters,
-        location: userLocation ? {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          radius: filters.location?.radius || 10
-        } : undefined,
         searchQuery: searchQuery || undefined,
         limit: 20
       };
@@ -147,7 +140,7 @@ export const ClientHome: React.FC = () => {
     if (!loading) {
       fetchProducts();
     }
-  }, [selectedSector, searchQuery, priceRange, userLocation]);
+  }, [selectedSector, searchQuery, priceRange]);
 
   // Refresh function
   const handleRefresh = async () => {

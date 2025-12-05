@@ -1,21 +1,50 @@
-import { api } from './api';
+
 import { ProductResponse, ProductService } from './productService';
 
 export interface ProductFilters {
   category?: string;
+  subcategory?: string[];
   location?: {
     latitude: number;
     longitude: number;
     radius?: number; // in kilometers
+    popularAreas?: string[];
   };
   priceRange?: {
     min?: number;
     max?: number;
+    preset?: 'budget' | 'standard' | 'premium' | 'luxury';
   };
-  rating?: number;
-  serviceType?: string;
-  availability?: 'available' | 'busy' | 'all';
-  sortBy?: 'price-low' | 'price-high' | 'rating' | 'distance' | 'latest';
+  rating?: {
+    min?: number;
+    includeUnrated?: boolean;
+  };
+  serviceType?: ('emergency' | 'scheduled' | 'consultation' | 'maintenance')[];
+  availability?: 'available' | 'busy' | 'all' | 'available-now' | 'available-today';
+  verificationStatus?: {
+    verified?: boolean;
+    backgroundChecked?: boolean;
+    insured?: boolean;
+    certified?: boolean;
+  };
+  responseTime?: {
+    max?: number; // in minutes
+    priority?: 'instant' | 'fast' | 'standard';
+  };
+  experienceLevel?: {
+    min?: number; // years
+    levels?: ('beginner' | 'intermediate' | 'expert' | 'master')[];
+  };
+  specialFeatures?: {
+    available24x7?: boolean;
+    emergencyService?: boolean;
+    onlineConsultation?: boolean;
+    homeVisit?: boolean;
+    multiLanguage?: boolean;
+    weekendService?: boolean;
+  };
+  languages?: string[];
+  sortBy?: 'price-low' | 'price-high' | 'rating' | 'distance' | 'latest' | 'response-time' | 'experience';
   limit?: number;
   offset?: number;
   searchQuery?: string;
@@ -29,6 +58,26 @@ export interface ClientProductResponse extends ProductResponse {
     reviewCount: number;
     responseTime: string;
     verified: boolean;
+    experienceYears?: number;
+    completedJobs?: number;
+    availability?: 'available' | 'busy' | 'offline';
+    languages?: string[];
+    specializations?: string[];
+    certifications?: string[];
+    verificationStatus?: {
+      backgroundChecked: boolean;
+      insured: boolean;
+      certified: boolean;
+    };
+    features?: {
+      available24x7: boolean;
+      emergencyService: boolean;
+      onlineConsultation: boolean;
+      homeVisit: boolean;
+      weekendService: boolean;
+    };
+    lastActiveAt?: string;
+    averageResponseTime?: number; // in minutes
   };
 }
 
@@ -75,6 +124,14 @@ export class ClientProductService {
           }
         }
         
+        // Subcategory filter
+        if (filters.subcategory && filters.subcategory.length > 0) {
+          const productSubcategory = ((product as any).subcategory || '').toLowerCase();
+          if (!filters.subcategory.some(sub => productSubcategory.includes(sub.toLowerCase()))) {
+            return false;
+          }
+        }
+        
         // Search query filter
         if (filters.searchQuery) {
           const query = filters.searchQuery.toLowerCase();
@@ -89,6 +146,99 @@ export class ClientProductService {
         if (filters.priceRange) {
           if (filters.priceRange.min && product.price < filters.priceRange.min) return false;
           if (filters.priceRange.max && product.price > filters.priceRange.max) return false;
+        }
+        
+        // Rating filter
+        if (filters.rating) {
+          const productRating = (product as any).rating || 0;
+          if (filters.rating.min && productRating < filters.rating.min) {
+            if (!filters.rating.includeUnrated || productRating > 0) {
+              return false;
+            }
+          }
+        }
+        
+        // Service type filter
+        if (filters.serviceType && filters.serviceType.length > 0) {
+          const productServiceType = (product as any).serviceType || 'scheduled';
+          if (!filters.serviceType.includes(productServiceType)) {
+            return false;
+          }
+        }
+        
+        // Availability filter
+        if (filters.availability && filters.availability !== 'all') {
+          const productAvailability = (product as any).availability || 'available';
+          if (filters.availability === 'available-now') {
+            if (productAvailability !== 'available') return false;
+          } else if (filters.availability === 'available-today') {
+            if (productAvailability === 'busy') return false;
+          } else if (productAvailability !== filters.availability) {
+            return false;
+          }
+        }
+        
+        // Verification status filter
+        if (filters.verificationStatus) {
+          const productVerification = (product as any).verificationStatus || {};
+          if (filters.verificationStatus.verified && !productVerification.verified) return false;
+          if (filters.verificationStatus.backgroundChecked && !productVerification.backgroundChecked) return false;
+          if (filters.verificationStatus.insured && !productVerification.insured) return false;
+          if (filters.verificationStatus.certified && !productVerification.certified) return false;
+        }
+        
+        // Response time filter
+        if (filters.responseTime) {
+          const productResponseTime = (product as any).averageResponseTime || 60; // Default 1 hour
+          if (filters.responseTime.max && productResponseTime > filters.responseTime.max) {
+            return false;
+          }
+        }
+        
+        // Experience level filter
+        if (filters.experienceLevel) {
+          const productExperience = (product as any).experienceYears || 0;
+          if (filters.experienceLevel.min && productExperience < filters.experienceLevel.min) {
+            return false;
+          }
+          if (filters.experienceLevel.levels && filters.experienceLevel.levels.length > 0) {
+            let experienceCategory = 'beginner';
+            if (productExperience >= 10) experienceCategory = 'master';
+            else if (productExperience >= 5) experienceCategory = 'expert';
+            else if (productExperience >= 2) experienceCategory = 'intermediate';
+            
+            if (!filters.experienceLevel.levels.includes(experienceCategory as any)) {
+              return false;
+            }
+          }
+        }
+        
+        // Special features filter
+        if (filters.specialFeatures) {
+          const productFeatures = (product as any).features || {};
+          if (filters.specialFeatures.available24x7 && !productFeatures.available24x7) return false;
+          if (filters.specialFeatures.emergencyService && !productFeatures.emergencyService) return false;
+          if (filters.specialFeatures.onlineConsultation && !productFeatures.onlineConsultation) return false;
+          if (filters.specialFeatures.homeVisit && !productFeatures.homeVisit) return false;
+          if (filters.specialFeatures.weekendService && !productFeatures.weekendService) return false;
+        }
+        
+        // Location filter (popular areas)
+        if (filters.location?.popularAreas && filters.location.popularAreas.length > 0) {
+          const productLocation = (product as any).location || '';
+          if (!filters.location.popularAreas.some(area => 
+            productLocation.toLowerCase().includes(area.toLowerCase())
+          )) {
+            return false;
+          }
+        }
+        
+        // Languages filter
+        if (filters.languages && filters.languages.length > 0) {
+          const productLanguages = (product as any).languages || ['English'];
+          if (!filters.languages.some(lang => productLanguages.includes(lang))) {
+            return false;
+          }
         }
         
         return true;
@@ -110,8 +260,23 @@ export class ClientProductService {
             break;
           case 'rating':
             filteredProducts.sort((a, b) => 
-              (b as any).rating - (a as any).rating || 4.5 - 4.0
+              ((b as any).rating || 4.0) - ((a as any).rating || 4.0)
             );
+            break;
+          case 'response-time':
+            filteredProducts.sort((a, b) => 
+              ((a as any).averageResponseTime || 60) - ((b as any).averageResponseTime || 60)
+            );
+            break;
+          case 'experience':
+            filteredProducts.sort((a, b) => 
+              ((b as any).experienceYears || 0) - ((a as any).experienceYears || 0)
+            );
+            break;
+          case 'distance':
+            // Distance sorting would require actual location calculation
+            // For now, sort by random to simulate distance
+            filteredProducts.sort(() => Math.random() - 0.5);
             break;
         }
       }
@@ -136,12 +301,13 @@ export class ClientProductService {
           };
 
           // Calculate distance if location provided
-          if (filters.location && product.location) {
+          if (filters.location && (product as any).location) {
+            const productLocation = (product as any).location;
             clientProduct.distance = this.calculateDistance(
               filters.location.latitude,
               filters.location.longitude,
-              product.location.latitude || 0,
-              product.location.longitude || 0
+              productLocation.latitude || 0,
+              productLocation.longitude || 0
             );
           }
 
@@ -231,12 +397,7 @@ export class ClientProductService {
     this.cache.clear();
   }
 
-  /**
-   * Get API URL
-   */
-  private static getApiUrl(): string {
-    return import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
-  }
+
 
   /**
    * Calculate distance between two points using Haversine formula
@@ -284,6 +445,13 @@ export class ClientProductService {
         price: 2500,
         currency: 'INR',
         category: 'home-services',
+        brand: 'CleanPro',
+        specifications: {},
+        availability: {
+          inStock: true,
+          quantity: 10
+        },
+        tags: ['cleaning', 'home-service'],
         isActive: true,
         createdBy: 'CleanPro Services',
         createdAt: new Date().toISOString(),
@@ -305,6 +473,13 @@ export class ClientProductService {
         price: 1500,
         currency: 'INR',
         category: 'home-services',
+        brand: 'FixIt',
+        specifications: {},
+        availability: {
+          inStock: true,
+          quantity: 5
+        },
+        tags: ['plumbing', 'repair'],
         isActive: true,
         createdBy: 'FixIt Plumbers',
         createdAt: new Date().toISOString(),

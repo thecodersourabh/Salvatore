@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
-  MapPin,
-  Clock,
   Zap,
   MessageCircle,
   Star,
@@ -12,65 +10,44 @@ import {
   List,
   ChevronRight,
   Heart,
-  ShoppingCart,
-  Users,
-  TrendingUp,
   Award,
   Sparkles,
   Loader,
-  RefreshCw,
-  Shield
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLocation } from '../hooks/useLocation';
 import { useSectorTranslation } from '../hooks/useSectorTranslation';
-import { LocationSearchInput } from '../components/LocationSearchInput';
+import { useFilterPersistence } from '../hooks/useFilterPersistence';
 import { ProductCard } from '../components/ProductCard';
+import { EnhancedFilters } from '../components/EnhancedFilters';
 import { ClientProductService, ProductFilters, ClientProductResponse } from '../services/clientProductService';
 import sectorServices from '../config/sectorServices.json';
-
-interface ServiceProvider {
-  id: string;
-  name: string;
-  avatar?: string;
-  rating: number;
-  reviewCount: number;
-  skills: string[];
-  sector: string;
-  service: string;
-  location: string;
-  price: number;
-  currency: string;
-  responseTime: string;
-  isVerified: boolean;
-  distance?: number;
-}
-
-interface RecentService {
-  id: string;
-  serviceName: string;
-  providerName: string;
-  sector: string;
-  completedDate: string;
-  rating: number;
-  image?: string;
-}
 
 export const ClientHome: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { location } = useLocation();
   const { translateSector } = useSectorTranslation();
   
-  // State management
+  // Enhanced filters with persistence
+  const {
+    filters,
+    updateFilters,
+    clearFilters: clearPersistedFilters,
+    getActiveFilterCount
+  } = useFilterPersistence({
+    searchQuery: searchParams.get('search') || undefined,
+    priceRange: { min: 0, max: 200000 }
+  });
+  
+  // Legacy state for backward compatibility
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedSector, setSelectedSector] = useState('All');
   const [selectedLocation, setSelectedLocation] = useState('All');
-  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number, address: string} | null>(null);
+  const [userLocation] = useState<{latitude: number, longitude: number, address: string} | null>(null);
   const [priceRange, setPriceRange] = useState([0, 200000]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showEnhancedFilters, setShowEnhancedFilters] = useState(false);
   
   // Product data state
   const [products, setProducts] = useState<ClientProductResponse[]>([]);
@@ -98,23 +75,18 @@ export const ClientHome: React.FC = () => {
   // Extract sectors from config
   const sectors = Object.keys(sectorServices);
 
-  // Fetch products with filters
-  const fetchProducts = async (filters: ProductFilters = {}) => {
+  // Fetch products with enhanced filters
+  const fetchProducts = async (customFilters?: ProductFilters) => {
     try {
       setError(null);
-      const requestFilters = {
+      const requestFilters = customFilters || {
         ...filters,
         location: userLocation ? {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
-          radius: 10
+          radius: filters.location?.radius || 10
         } : undefined,
-        category: selectedSector !== 'All' ? selectedSector.toLowerCase() : undefined,
         searchQuery: searchQuery || undefined,
-        priceRange: {
-          min: priceRange[0],
-          max: priceRange[1]
-        },
         limit: 20
       };
       
@@ -133,6 +105,23 @@ export const ClientHome: React.FC = () => {
       setRecentProducts(response.products);
     } catch (err) {
       console.error('Failed to fetch recent products:', err);
+    }
+  };
+
+  // Handle enhanced filters change
+  const handleFiltersChange = (newFilters: ProductFilters) => {
+    updateFilters(newFilters);
+    fetchProducts(newFilters);
+    
+    // Update legacy state for backward compatibility
+    if (newFilters.category) {
+      setSelectedSector(newFilters.category);
+    }
+    if (newFilters.searchQuery) {
+      setSearchQuery(newFilters.searchQuery);
+    }
+    if (newFilters.priceRange) {
+      setPriceRange([newFilters.priceRange.min || 0, newFilters.priceRange.max || 200000]);
     }
   };
 
@@ -229,19 +218,6 @@ export const ClientHome: React.FC = () => {
     return images[sector] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center';
   };
 
-  // Scroll functions for category ribbon
-  const scrollLeft = () => {
-    if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
-  };
-
   // Auto-scroll functions for hover with proper circular infinite scroll
   const startAutoScrollLeft = () => {
     if (scrollIntervalRef.current) return;
@@ -320,19 +296,6 @@ export const ClientHome: React.FC = () => {
     
     return () => clearTimeout(timer);
   }, [recentProducts]);
-
-  // Recent services scroll functions
-  const scrollRecentLeft = () => {
-    if (recentServicesScrollRef.current) {
-      recentServicesScrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRecentRight = () => {
-    if (recentServicesScrollRef.current) {
-      recentServicesScrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-    }
-  };
 
   // Auto-scroll functions for recent services with proper circular infinite scroll
   const startAutoScrollRecentLeft = () => {
@@ -612,16 +575,18 @@ export const ClientHome: React.FC = () => {
             </h2>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  showFilters
-                    ? 'bg-rose-600 text-white border-rose-600'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'
-                }`}
+                onClick={() => setShowEnhancedFilters(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-rose-300 dark:hover:border-rose-600 transition-colors"
               >
                 <Filter className="h-4 w-4" />
                 Filters
+                {getActiveFilterCount() > 0 && (
+                  <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-full text-xs font-medium">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
               </button>
+
               <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -638,73 +603,6 @@ export const ClientHome: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={selectedSector}
-                    onChange={(e) => setSelectedSector(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500"
-                  >
-                    <option value="All">All Categories</option>
-                    {sectors.map((sector) => (
-                      <option key={sector} value={sector}>
-                        {translateSector(sector)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location
-                  </label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500"
-                  >
-                    <option value="All">All Locations</option>
-                    <option value="Gurgaon">Gurgaon</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Noida">Noida</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Price Range (₹{priceRange[0]} - ₹{priceRange[1]})
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0"
-                      max="200000"
-                      step="1000"
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-                      className="flex-1 accent-rose-600"
-                    />
-                    <input
-                      type="range"
-                      min="0"
-                      max="200000"
-                      step="1000"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                      className="flex-1 accent-rose-600"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Service Providers Grid/List */}
           {loading ? (
@@ -779,6 +677,8 @@ export const ClientHome: React.FC = () => {
                   setSearchQuery('');
                   setSelectedSector('All');
                   setPriceRange([0, 200000]);
+                  clearPersistedFilters();
+                  fetchProducts({});
                 }}
                 className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
@@ -788,6 +688,15 @@ export const ClientHome: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Enhanced Filters Modal */}
+      <EnhancedFilters
+        isOpen={showEnhancedFilters}
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onClose={() => setShowEnhancedFilters(false)}
+        sectors={sectors}
+      />
     </div>
   );
 };

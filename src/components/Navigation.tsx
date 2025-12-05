@@ -11,7 +11,7 @@ import { NotificationPanel } from "./NotificationPanel";
 
 
 export function Navigation() {
-  const { isAuthenticated, userContext: user, loginWithRedirect } = useAuth();
+  const { isAuthenticated, userContext: user, loginWithRedirect, currentRole } = useAuth();
   const { unreadCount, setIsNotificationPanelOpen } = useNotifications();
   const { isAndroid, isIOS, isNative } = usePlatform();
   const { city, requestLocationWithAddress, loading: locationLoading, error: locationError } = useLocationRedux();
@@ -61,8 +61,8 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Search Bar - Flexible width */}
-        {isAuthenticated && (
+        {/* Search Bar - Only visible for authenticated customers */}
+        {isAuthenticated && currentRole === 'customer' && (
           <div className="flex-1 max-w-xl sm:max-w-2xl lg:max-w-4xl mx-2 sm:mx-4">
             <div className="relative">
               <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5" />

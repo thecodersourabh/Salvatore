@@ -4,6 +4,7 @@ import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
 import cartReducer from './slices/cartSlice';
 import notificationReducer from './slices/notificationSlice';
+import orderReducer from './slices/orderSlice';
 import currencyReducer from './slices/currencySlice';
 import wishlistReducer from './slices/wishlistSlice';
 import webSocketReducer from './slices/webSocketSlice';
@@ -44,11 +45,19 @@ const locationPersistConfig = {
   whitelist: ['locationData', 'currentLocation', 'lastUpdated', 'permissionGranted']
 };
 
+// Persist configuration for orders slice
+const orderPersistConfig = {
+  key: 'orders',
+  version: 1,
+  storage,
+};
+
 // Root reducer with all slices
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
   cart: cartReducer, // Already has persist config in the slice
   notifications: notificationReducer,
+  orders: persistReducer(orderPersistConfig, orderReducer),
   currency: currencyReducer, // Already has persist config in the slice
   wishlist: wishlistReducer, // Already has persist config in the slice
   websocket: webSocketReducer,
@@ -68,7 +77,7 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
         // Ignore date serialization warnings since we're converting to ISO strings
         ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
-        ignoredPaths: ['auth.user.lastLogin', 'notifications.notifications.timestamp', 'websocket.messages.timestamp', 'wishlist.items.createdAt', 'location.lastUpdated'],
+        ignoredPaths: ['auth.user.lastLogin', 'notifications.notifications.timestamp', 'orders.orders.asCustomer.timestamp', 'orders.orders.asServiceProvider.timestamp', 'websocket.messages.timestamp', 'wishlist.items.createdAt', 'location.lastUpdated'],
       },
     })
       .concat(userApi.middleware)

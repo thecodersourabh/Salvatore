@@ -186,6 +186,20 @@ function TransitionIndicator() {
 function MyApp() {
   const [isPending] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
+  // WebSocket connection status logging
+  try {
+    // Dynamically import to avoid breaking SSR or test environments
+    // If you want to move this to a top-level import, that's fine too
+    // But this avoids issues if the hook is not available in all environments
+    // @ts-ignore
+    const { useWebSocket } = require('./hooks/useWebSocket');
+    const { isConnected, connectionStatus, error } = useWebSocket();
+    useEffect(() => {
+      console.log('[WebSocket] Connected:', isConnected, 'Status:', connectionStatus, 'Error:', error);
+    }, [isConnected, connectionStatus, error]);
+  } catch (e) {
+    // Ignore if hook is not available
+  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;

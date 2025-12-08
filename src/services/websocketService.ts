@@ -11,11 +11,10 @@
  * - Better battery life on mobile devices
  * - Scalable to thousands of concurrent users
  * 
- * Connected to: wss://9of5ccgznj.execute-api.us-east-1.amazonaws.com/dev
  */
 
 export interface WebSocketMessage {
-  type: 'message' | 'notification' | 'status' | 'error' | 'ping' | 'pong';
+  type: 'message' | 'notification' | 'status' | 'error' | 'ping' | 'pong' | 'order-notification';
   data?: any;
   timestamp?: string;
 }
@@ -40,6 +39,18 @@ export interface StatusData {
 export interface ErrorData {
   code: string;
   message: string;
+}
+
+export interface OrderNotificationData {
+  orderId: string;
+  orderNumber?: string;
+  orderStatus: string;
+  customerName?: string;
+  customerEmail?: string;
+  serviceProviderId: string;
+  serviceProviderName?: string;
+  message?: string;
+  timestamp: string;
 }
 
 type WebSocketEventCallback = (data: any) => void;
@@ -89,6 +100,7 @@ export class WebSocketService {
         
         // Get WebSocket URL from environment or construct it
         const wsUrl = this.getWebSocketUrl(userId, token);
+        console.log('WebSocket connecting to:', wsUrl.split('?')[0] + '?userId=' + userId.substring(0, 8) + '...');
         
         this.ws = new WebSocket(wsUrl);
 
@@ -100,6 +112,7 @@ export class WebSocketService {
           // Test if server supports status messages by sending a simple ping first
           this.send({ type: 'ping' });
           
+          console.log('WebSocket connected successfully for userId:', userId);
           this.emit('connected', { userId });
           this.connectionPromise = null;
           resolve();
@@ -115,10 +128,12 @@ export class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
+          console.error('WebSocket connection error:', error);
           this.emit('error', error);
         };
 
         this.ws.onclose = (event) => {
+          console.warn('WebSocket disconnected - Code:', event.code, 'Reason:', event.reason);
           this.stopPingInterval();
           this.emit('disconnected', { code: event.code, reason: event.reason });
           this.connectionPromise = null;
@@ -248,6 +263,13 @@ export class WebSocketService {
    * Handle incoming WebSocket messages
    */
   private handleMessage(message: WebSocketMessage): void {
+    // Check if this is an EventBridge event (from SQS/Lambda) - use type assertion
+    const messageAny = message as any;
+    if (messageAny['detail-type']?.startsWith('order.')) {
+      this.handleEventBridgeEvent(messageAny);
+      return;
+    }
+    
     switch (message.type) {
       case 'message':
         this.emit('message', message.data);
@@ -255,6 +277,11 @@ export class WebSocketService {
       
       case 'notification':
         this.emit('notification', message.data);
+        break;
+      
+      case 'order-notification':
+        // Handle order-specific notifications
+        this.handleOrderNotification(message.data);
         break;
       
       case 'status':
@@ -309,19 +336,11 @@ export class WebSocketService {
    * Get WebSocket URL with authentication
    */
   private getWebSocketUrl(userId: string, token: string): string {
-    const chatApiUrl = import.meta.env.VITE_CHAT_API_URL || '';
     const wsUrl = import.meta.env.VITE_WS_URL;
-
-    // If explicit WebSocket URL is provided
-    if (wsUrl) {
-      return `${wsUrl}?userId=${userId}&token=${encodeURIComponent(token)}`;
+    if (!wsUrl) {
+      throw new Error('VITE_WS_URL environment variable is not set.');
     }
-
-    // Convert HTTP(S) URL to WS(S)
-    const wsProtocol = chatApiUrl.startsWith('https') ? 'wss' : 'ws';
-    const urlWithoutProtocol = chatApiUrl.replace(/^https?:\/\//, '');
-    
-    return `${wsProtocol}://${urlWithoutProtocol}/ws?userId=${userId}&token=${encodeURIComponent(token)}`;
+    return `${wsUrl}?userId=${userId}&token=${encodeURIComponent(token)}`;
   }
 
   /**
@@ -378,6 +397,109 @@ export class WebSocketService {
    */
   get state(): number {
     return this.ws?.readyState ?? WebSocket.CLOSED;
+  }
+
+  /**
+   * Handle order-specific notifications
+   */
+  private handleOrderNotification(data: OrderNotificationData): void {
+    console.log('WebSocketService: Processing order notification:', data);
+    
+    // Transform order data for the notification system
+    const notificationPayload = {
+      id: `order-${data.orderId}-${Date.now()}`,
+      title: this.getOrderNotificationTitle(data.orderStatus),
+      body: this.getOrderNotificationBody(data),
+      data: {
+        type: 'order',
+        subtype: 'order_notification',
+        orderId: data.orderId,
+        orderNumber: data.orderNumber,
+        orderStatus: data.orderStatus,
+        customerName: data.customerName,
+        serviceProviderId: data.serviceProviderId,
+        timestamp: data.timestamp
+      },
+      targetUserId: data.serviceProviderId // Route to service provider
+    };
+
+    console.log('WebSocketService: Transformed notification payload:', notificationPayload);
+
+    // Emit to notification system
+    this.emit('order-notification', notificationPayload);
+    this.emit('notification', notificationPayload);
+    
+    // Dispatch custom event for Redux integration
+    console.log('WebSocketService: Dispatching local-notification event');
+    window.dispatchEvent(new CustomEvent('local-notification', { 
+      detail: notificationPayload 
+    }));
+  }
+
+  /**
+   * Handle EventBridge events from backend (order.created, order.updated, etc.)
+   */
+  private handleEventBridgeEvent(event: any): void {
+    console.log('WebSocketService: Processing EventBridge event:', event);
+    
+    const detailType = event['detail-type'];
+    const detail = event.detail;
+    
+    if (!detail) {
+      console.warn('EventBridge event missing detail:', event);
+      return;
+    }
+    
+    // Handle order events
+    if (detailType?.startsWith('order.')) {
+      const orderNotification: OrderNotificationData = {
+        orderId: detail.orderId,
+        orderNumber: detail.orderNumber,
+        orderStatus: detail.status || 'pending',
+        customerName: detail.customerId,
+        serviceProviderId: detail.serviceProviderId,
+        timestamp: detail.createdAt || new Date().toISOString()
+      };
+      
+      console.log('Transformed EventBridge to order notification:', orderNotification);
+      this.handleOrderNotification(orderNotification);
+    }
+  }
+
+  /**
+   * Get notification title based on order status
+   */
+  private getOrderNotificationTitle(status: string): string {
+    switch (status) {
+      case 'pending': return 'New Order Received!';
+      case 'confirmed': return 'Order Accepted';
+      case 'rejected': return 'Order Rejected';
+      case 'cancelled': return 'Order Cancelled';
+      case 'processing':
+      case 'in-progress': return 'Order in Progress';
+      case 'ready': return 'Order Ready';
+      case 'completed': return 'Order Completed';
+      default: return 'Order Update';
+    }
+  }
+
+  /**
+   * Get notification body text
+   */
+  private getOrderNotificationBody(data: OrderNotificationData): string {
+    const orderRef = data.orderNumber || data.orderId;
+    const customerName = data.customerName || 'Customer';
+    
+    switch (data.orderStatus) {
+      case 'pending': 
+        return `Order #${orderRef} from ${customerName}`;
+      case 'confirmed':
+        return `Order #${orderRef} has been accepted`;
+      case 'rejected':
+        return `Order #${orderRef} has been rejected`;
+      default:
+        return data.message || `Order #${orderRef} status: ${data.orderStatus}`;
+    }
   }
 }
 

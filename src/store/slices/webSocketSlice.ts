@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { MessageData } from '../../services/websocketService';
+import { OrderNotificationService } from '../../services/orderNotificationService';
 
 export interface WebSocketMessage {
   id: string;
@@ -37,8 +38,61 @@ export const connectWebSocket = createAsyncThunk(
   'websocket/connect',
   async (userId: string, { rejectWithValue }) => {
     try {
-      // This would be handled by the WebSocket service
-      // Return the user ID for connection
+      // Try to get the internal user ID first (stored by auth flow)
+      let internalUserId = localStorage.getItem(`auth0_${userId}`);
+      if (!internalUserId) {
+        internalUserId = userId; // Fallback to Auth0 ID
+      }
+      
+      // Get the auth token from localStorage (Auth0 stores it there)
+      let token = null;
+      
+      // Try to find the Auth0 ID token - look for the actual token in Auth0's storage format
+      const keys = Object.keys(localStorage);
+      
+      for (const key of keys) {
+        const value = localStorage.getItem(key);
+        // Auth0 tokens start with 'eyJ' (base64 encoded JWT header)
+        if (value && value.startsWith('eyJ') && value.length > 100) {
+          token = value;
+          break;
+        }
+      }
+      
+      // If not found in localStorage, try Auth0's specific format
+      if (!token) {
+        try {
+          const auth0Cache = localStorage.getItem('auth0.a.XXXXXXXXXXXXXXXXXXX');
+          if (auth0Cache) {
+            const cacheData = JSON.parse(auth0Cache);
+            token = cacheData.id_token || cacheData.access_token;
+          }
+        } catch (e) {
+          // Silent fail, try next method
+        }
+      }
+      
+      // Fallback: try getting from sessionStorage
+      if (!token) {
+        const sessionKeys = Object.keys(sessionStorage);
+        for (const key of sessionKeys) {
+          const value = sessionStorage.getItem(key);
+          if (value && value.startsWith('eyJ') && value.length > 100) {
+            token = value;
+            break;
+          }
+        }
+      }
+      
+      if (!token) {
+        return rejectWithValue('No authentication token available');
+      }
+      
+      // Connect to the Order Notification WebSocket service (for EventBridge notifications)
+      // Use internal user ID if available, otherwise use Auth0 ID
+      const orderNotificationService = OrderNotificationService.getInstance();
+      await orderNotificationService.connect(internalUserId, token);
+      
       return userId;
     } catch (error: any) {
       return rejectWithValue(error.message);
@@ -51,7 +105,8 @@ export const disconnectWebSocket = createAsyncThunk(
   'websocket/disconnect',
   async (_, { rejectWithValue }) => {
     try {
-      // This would be handled by the WebSocket service
+      const orderNotificationService = OrderNotificationService.getInstance();
+      orderNotificationService.disconnect();
       return true;
     } catch (error: any) {
       return rejectWithValue(error.message);

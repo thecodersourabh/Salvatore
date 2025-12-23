@@ -12,6 +12,7 @@ import themeReducer from './slices/themeSlice';
 import languageReducer from './slices/languageSlice';
 import stepReducer from './slices/stepSlice';
 import locationReducer from './slices/locationSlice';
+import progressiveProfilingReducer from './slices/progressiveProfilingSlice';
 import { userApi } from './api/userApi';
 import { authMiddleware } from './middleware/authMiddleware';
 
@@ -52,6 +53,15 @@ const orderPersistConfig = {
   storage,
 };
 
+// Persist configuration for progressive profiling slice
+const profilingPersistConfig = {
+  key: 'profiling',
+  version: 1,
+  storage,
+  // Only persist completed steps and user selections
+  whitelist: ['currentStep', 'completedSteps', 'phoneNumber', 'username', 'selectedSectors', 'selectedServices', 'profilingComplete']
+};
+
 // Root reducer with all slices
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
@@ -65,6 +75,7 @@ const rootReducer = {
   language: persistReducer(languagePersistConfig, languageReducer),
   location: persistReducer(locationPersistConfig, locationReducer),
   step: stepReducer,
+  profiling: persistReducer(profilingPersistConfig, progressiveProfilingReducer),
   [userApi.reducerPath]: userApi.reducer,
 };
 

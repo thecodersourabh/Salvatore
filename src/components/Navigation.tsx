@@ -101,7 +101,6 @@ export function Navigation() {
               <img
                 src={(user as any)?.picture}
                 className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 border-rose-200 dark:border-rose-700"
-                alt="avatar"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300 hidden xl:inline">{(user as any)?.name}</span>
             </button>

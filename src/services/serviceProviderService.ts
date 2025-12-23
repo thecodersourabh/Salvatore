@@ -34,18 +34,18 @@ interface ServiceRequest {
 export class ServiceProviderService {
 
   static async updateProfile(email: string, profile: Partial<User>): Promise<User | null> {
-    return api.put(`/api/users/email/${encodeURIComponent(email)}`, profile);
+    return api.put(`/api/v2/users/email/${encodeURIComponent(email)}`, profile);
   }
 
   static async updateAvailability(
     email: string,
     availability: User['availability']
   ): Promise<User> {
-    return api.put(`/api/users/${encodeURIComponent(email)}/availability`, availability);
+    return api.put(`/api/v2/users/${encodeURIComponent(email)}/availability`, availability);
   }
 
   static async addPortfolioItem(email: string, item: Omit<PortfolioItem, 'id'>): Promise<PortfolioItem> {
-    return api.post(`/api/users/${encodeURIComponent(email)}/portfolio`, item);
+    return api.post(`/api/v2/users/${encodeURIComponent(email)}/portfolio`, item);
   }
 
   static async updatePortfolioItem(
@@ -53,11 +53,11 @@ export class ServiceProviderService {
     itemId: string,
     updates: Partial<PortfolioItem>
   ): Promise<PortfolioItem> {
-    return api.put(`/api/users/${encodeURIComponent(email)}/portfolio/${itemId}`, updates);
+    return api.put(`/api/v2/users/${encodeURIComponent(email)}/portfolio/${itemId}`, updates);
   }
 
   static async deletePortfolioItem(email: string, itemId: string): Promise<void> {
-    await api.delete(`/api/users/${encodeURIComponent(email)}/portfolio/${itemId}`);
+    await api.delete(`/api/v2/users/${encodeURIComponent(email)}/portfolio/${itemId}`);
   }
 
   static async submitVerification(
@@ -68,7 +68,7 @@ export class ServiceProviderService {
     const formData = new FormData();
     formData.append('document', file);
     return api.post(
-      `/api/users/${encodeURIComponent(email)}/verification/${documentType}`,
+      `/api/v2/users/${encodeURIComponent(email)}/verification/${documentType}`,
       formData,
       {
         headers: {
@@ -82,14 +82,14 @@ export class ServiceProviderService {
     email: string,
     areas: User['serviceAreas']
   ): Promise<User> {
-    return api.put(`/api/users/${encodeURIComponent(email)}/service-areas`, areas);
+    return api.put(`/api/v2/users/${encodeURIComponent(email)}/service-areas`, areas);
   }
 
   static async updatePricing(
     email: string,
     pricing: User['pricing']
   ): Promise<User['pricing']> {
-    return api.put(`/api/users/${encodeURIComponent(email)}/pricing`, pricing);
+    return api.put(`/api/v2/users/${encodeURIComponent(email)}/pricing`, pricing);
   }
 
   static async search(searchParams: {
@@ -101,7 +101,7 @@ export class ServiceProviderService {
     maxDistance?: number;
     serviceTypes?: string[];
   }): Promise<User[]> {
-    return api.get('/api/users/search', { params: searchParams });
+    return api.get('/api/v2/users/search', { params: searchParams });
   }
 
   /**
@@ -186,7 +186,7 @@ export class ServiceProviderService {
     email: string,
     status?: ServiceRequest['status']
   ): Promise<ServiceRequest[]> {
-    return api.get(`/api/users/${encodeURIComponent(email)}/requests`, status ? { params: { status } } : {});
+    return api.get(`/api/v2/users/${encodeURIComponent(email)}/requests`, status ? { params: { status } } : {});
   }
 
   static async respondToRequest(
@@ -199,7 +199,7 @@ export class ServiceProviderService {
       notes?: string;
     }
   ): Promise<ServiceRequest> {
-    return api.post(`/api/users/${encodeURIComponent(email)}/requests/${requestId}/${action}`, details);
+    return api.post(`/api/v2/users/${encodeURIComponent(email)}/requests/${requestId}/${action}`, details);
   }
 
   static async updateServiceStatus(

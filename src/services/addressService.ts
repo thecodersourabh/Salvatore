@@ -3,7 +3,7 @@ import { Address, CreateAddressRequest, UpdateAddressRequest } from '../types/us
 
 export class AddressService {
   static async getUserAddresses(userId: string): Promise<Address[]> {
-    return api.get<Address[]>(`/api/users/${userId}/addresses`);
+    return api.get<Address[]>(`/api/v2/users/${userId}/addresses`);
   }
 
   static async createAddress(addressData: CreateAddressRequest): Promise<Address> {
@@ -20,6 +20,6 @@ export class AddressService {
   }
 
   static async setDefaultAddress(userId: string, addressId: string): Promise<void> {
-    return api.post<void>(`/api/users/${userId}/addresses/${addressId}/default`, {});
+    return api.post<void>(`/api/v2/users/${userId}/addresses/${addressId}/default`, {});
   }
 }

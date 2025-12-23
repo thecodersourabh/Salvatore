@@ -130,7 +130,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               {user?.avatar && (
                 <img 
                   src={user.avatar} 
-                  alt={user.name || "Profile"} 
                   className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200 dark:border-gray-700 "
                 />
               )}

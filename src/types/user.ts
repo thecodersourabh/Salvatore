@@ -151,6 +151,15 @@ export interface User {
   };
   tags?: Array<string>;
   languages?: Array<string>;
+  
+  // Progressive Profiling Fields
+  phoneVerified?: boolean;
+  phoneVerifiedAt?: string;
+  profilingComplete?: boolean;
+  profilingCompletedAt?: string;
+  profilingStep?: 'phone' | 'otp' | 'username' | 'complete';
+ // sectors?: string[];
+ // services?: { [sector: string]: string[] };
 }
 
 export interface CreateUserRequest {

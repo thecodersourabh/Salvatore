@@ -1,13 +1,24 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useProgressiveProfiling } from '../hooks/useProgressiveProfiling';
+import { ProgressiveProfilingFlash } from './ProgressiveProfilingFlash';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading, userCreated } = useAuth();
+  const { isAuthenticated, loading, userCreated, currentRole } = useAuth();
   const location = useLocation();
+  const { isProfilingRequired, profilingComplete, checkProfilingRequired, reset } = useProgressiveProfiling();
+
+  // Check if profiling is required for this user
+  useEffect(() => {
+    if (isAuthenticated && currentRole === 'seller') {
+      checkProfilingRequired(true);
+    }
+  }, [isAuthenticated, currentRole, checkProfilingRequired]);
 
   if (loading) {
     // Show loading state while authentication is being verified or user is being created
@@ -23,6 +34,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/home" replace />;
+  }
+
+  // Show profiling flash if required and not completed
+  if (isProfilingRequired && !profilingComplete) {
+    return (
+      <ProgressiveProfilingFlash
+        onComplete={() => {
+          // Profiling complete, continue to the page
+          // Flash will unmount automatically
+        }}
+        onSkip={() => {
+          // Skip profiling (can be done later)
+          reset();
+        }}
+      />
+    );
   }
 
   // If user is authenticated and user creation is complete,

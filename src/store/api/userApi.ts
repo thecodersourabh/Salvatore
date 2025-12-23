@@ -3,7 +3,7 @@ import { User } from '../../types/user';
 
 // Base query with authentication
 const baseQuery = fetchBaseQuery({
-  baseUrl: '/api/users',
+  baseUrl: '/api/v2/users',
   prepareHeaders: (headers, { getState }) => {
     const state = getState() as any;
     const token = state?.auth?.idToken;

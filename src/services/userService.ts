@@ -14,7 +14,7 @@ export class UserService {
 
   static async getUser(userId: string): Promise<User> {
     try {
-      const result = await api.get<User>(`/api/users/${userId}`);
+      const result = await api.get<User>(`/api/v2/users/${userId}`);
       return result;
     } catch (error) {
       console.error("UserService.getUser failed:", error);
@@ -84,7 +84,7 @@ export class UserService {
         if (params.q) qsParts.push(`q=${encodeURIComponent(params.q)}`);
         if (fields && fields.length) qsParts.push(`fields=${encodeURIComponent(fields.join(','))}`);
         const qs = qsParts.length ? `?${qsParts.join('&')}` : '';
-        const result = await api.get<any>(`/api/users/search${qs}`);
+        const result = await api.get<any>(`/api/v2/users/search${qs}`);
         // Handle both direct array and paginated response formats
         if (result?.items) {
           return result.items || [];
@@ -102,7 +102,7 @@ export class UserService {
       qsParts.push(`limit=${limit}`);
       if (fields && fields.length) qsParts.push(`fields=${encodeURIComponent(fields.join(','))}`);
       const qs = qsParts.length ? `?${qsParts.join('&')}` : '';
-      const result = await api.get<any>(`/api/users${qs}`);
+      const result = await api.get<any>(`/api/v2/users${qs}`);
       // Handle both direct array and paginated response formats
       if (result?.items) {
         return result.items || [];
@@ -206,6 +206,14 @@ export class UserService {
               others: profile.documents.others
             }
           : undefined,
+        // Progressive Profiling Fields
+        phoneVerified: profile.phoneVerified,
+        phoneVerifiedAt: profile.phoneVerifiedAt,
+        profilingComplete: profile.profilingComplete,
+        profilingCompletedAt: profile.profilingCompletedAt,
+        profilingStep: profile.profilingStep,
+       // sectors: profile.sectors,
+       // services: profile.services,
       };
       // Pass the object, not a string
       const result = await api.put<User>(
@@ -216,6 +224,80 @@ export class UserService {
     } catch (error) {
       console.error("UserService.updateUserByEmail failed:", error);
       throw error;
+    }
+  }
+
+  // Progressive Profiling Methods
+  static async verifyPhoneNumber(userId: string, phoneNumber: string): Promise<User | null> {
+    try {
+      const result = await api.put<User>(
+        `/api/v2/users/${userId}/verify-phone`,
+        {
+          phone: phoneNumber,
+          phoneVerified: true,
+          phoneVerifiedAt: new Date().toISOString(),
+        }
+      );
+      return result;
+    } catch (error) {
+      console.error("UserService.verifyPhoneNumber failed:", error);
+      throw error;
+    }
+  }
+
+  static async saveSectorSelection(
+    userId: string,
+    sectors: string[],
+    services: { [sector: string]: string[] }
+  ): Promise<User | null> {
+    try {
+      const result = await api.put<User>(
+        `/api/v2/users/${userId}/sectors`,
+        {
+          sectors,
+          services,
+          profilingComplete: true,
+          profilingCompletedAt: new Date().toISOString(),
+          profilingStep: 'complete',
+        }
+      );
+      return result;
+    } catch (error) {
+      console.error("UserService.saveSectorSelection failed:", error);
+      throw error;
+    }
+  }
+
+  static async updateProfilingStep(
+    userId: string,
+    step: 'phone' | 'otp' | 'username' | 'sectors' | 'complete'
+  ): Promise<User | null> {
+    try {
+      const result = await api.put<User>(
+        `/api/v2/users/${userId}/profiling-step`,
+        { profilingStep: step }
+      );
+      return result;
+    } catch (error) {
+      console.error("UserService.updateProfilingStep failed:", error);
+      throw error;
+    }
+  }
+
+  static async getUserProfilingStatus(userId: string): Promise<{
+    profilingComplete: boolean;
+    profilingStep: string;
+    phoneVerified: boolean;
+    sectors: string[];
+  } | null> {
+    try {
+      const result = await api.get<any>(
+        `/api/v2/users/${userId}/profiling-status`
+      );
+      return result;
+    } catch (error) {
+      console.error("UserService.getUserProfilingStatus failed:", error);
+      return null;
     }
   }
 }

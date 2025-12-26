@@ -323,7 +323,7 @@ export const Addresses = () => {
         }
       } else {
         // Create new address
-        savedAddress = await AddressService.createAddress(addressData);
+        savedAddress = await AddressService.createAddress(actualUserId, addressData);
         
         // Parse phone for display
         let phoneCode = formData.phoneCode || '+91';
@@ -375,9 +375,15 @@ export const Addresses = () => {
   const handleDelete = async (id: string) => {
     if (!id) return;
 
+    // Get the actual user ID from our mapping
+    const actualUserId = localStorage.getItem(`auth0_${user?.sub}`);
+    if (!actualUserId) {
+      setError('User not found. Please try signing out and back in.');
+      return;
+    }
+
     try {
-      await AddressService.deleteAddress(id);
-      
+      await AddressService.deleteAddress(actualUserId, id);
       setAddresses(prev => prev.filter(addr => addr.id !== id));
     } catch {
       setError('Failed to delete address. Please try again.');

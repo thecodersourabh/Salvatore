@@ -3,23 +3,23 @@ import { Address, CreateAddressRequest, UpdateAddressRequest } from '../types/us
 
 export class AddressService {
   static async getUserAddresses(userId: string): Promise<Address[]> {
-    return api.get<Address[]>(`/api/v2/users/${userId}/addresses`);
+    return api.get<Address[]>(`/api/users/${userId}/addresses`);
   }
 
-  static async createAddress(addressData: CreateAddressRequest): Promise<Address> {
-    return api.post<Address>('/api/addresses', addressData);
+  static async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> {
+    return api.post<Address>(`/api/users/${userId}/addresses`, addressData);
   }
 
   static async updateAddress(addressData: UpdateAddressRequest): Promise<Address> {
-    const { id, ...updateData } = addressData;
-    return api.put<Address>(`/api/addresses/${id}`, updateData);
+    const { id, userId, ...updateData } = addressData as UpdateAddressRequest & { userId: string };
+    return api.put<Address>(`/api/users/${userId}/addresses/${id}`, updateData);
   }
 
-  static async deleteAddress(addressId: string): Promise<void> {
-    return api.delete<void>(`/api/addresses/${addressId}`);
+  static async deleteAddress(userId: string, addressId: string): Promise<void> {
+    return api.delete<void>(`/api/users/${userId}/addresses/${addressId}`);
   }
 
   static async setDefaultAddress(userId: string, addressId: string): Promise<void> {
-    return api.post<void>(`/api/v2/users/${userId}/addresses/${addressId}/default`, {});
+    return api.post<void>(`/api/users/${userId}/addresses/${addressId}/default`, {});
   }
 }

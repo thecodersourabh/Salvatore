@@ -18,7 +18,8 @@ class BackgroundUploader {
   private API_BASE_URL: string;
 
   constructor() {
-    this.API_BASE_URL = '';
+    // Initialize API base from env (fallback to empty string)
+    this.API_BASE_URL = (import.meta.env.VITE_CDN_API_URL as string) || '';
     // Listen for messages from main thread
     self.onmessage = this.handleMessage.bind(this);
   }
@@ -47,10 +48,10 @@ class BackgroundUploader {
         throw new Error(`File too large. Maximum size is 20 MB, but file is ${Math.round(task.file.size / (1024 * 1024))} MB`);
       }
 
-      // Set API base URL from environment or task
-      this.API_BASE_URL = task.key.includes('execute-api') 
-        ? task.key.split('/upload')[0] 
-        : 'https://spg85rhps6.execute-api.us-east-1.amazonaws.com/prod';
+      // Set API base URL from task key (if provided) otherwise use env
+      this.API_BASE_URL = task.key.includes('execute-api')
+        ? task.key.split('/upload')[0]
+        : ((import.meta.env.VITE_CDN_API_URL as string) || '');
 
       this.postMessage({
         type: 'UPLOAD_PROGRESS',

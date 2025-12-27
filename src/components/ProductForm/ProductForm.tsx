@@ -10,11 +10,13 @@ import { ProductService as BaseProductService } from "../../services/productServ
 import { ImageService } from "../../services/imageService";
 import { UserService } from "../../services/userService";
 import { MobileSelect } from "../ui/MobileSelect";
-import { validateVideoUpload, generateProductVideoKey as createProductVideoKey } from "../../utils/videoUtils";
-import { backgroundUploadService } from "../../services/backgroundUploadService";
-import { UPLOAD_LIMITS } from "../../constants";
 
-type ServiceDef = any;
+
+// Slices and hooks
+import { useProductFormPermissions } from './useProductFormPermissions';
+import { useProductMedia } from './useProductMedia';
+import { useProductFormState } from './useProductFormState';
+import { MediaUploadSection } from './ProductFormSections';
 
 // NOTE: features are now driven by template questions; no helper fallback is required
 
@@ -23,40 +25,70 @@ interface ProductFormProps {
   editProductId?: string | null; // product ID to edit, if in edit mode
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editProductId = null }) => {
+export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = null, editProductId = null }) => {
 
   const sectors = useMemo(() => Object.keys(sectorServices), []);
 
-  const [category, setCategory] = useState<string | null>(null); // renamed from sector
-  const [serviceList, setServiceList] = useState<ServiceDef[]>([]);
-  const [selectedService, setSelectedService] = useState<ServiceDef | null>(null);
-  const [selectedServiceNames, setSelectedServiceNames] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]); // renamed from selectedSkills
-  const [tier, setTier] = useState("Basic");
-  const [prices, setPrices] = useState<Record<string, number | "">>({ Basic: "", Standard: "", Premium: "" });
-  const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number | "">>({ Basic: "", Standard: "", Premium: "" });
-  // Features UI removed: all feature fields are provided via template-driven questions now
-  const [editingTier, setEditingTier] = useState<string | null>(null);
-  const [fullFormAnswersPerTier, setFullFormAnswersPerTier] = useState<Record<string, Record<string, string>>>({ Basic: {}, Standard: {}, Premium: {} });
-  // media uploads
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [existingImages, setExistingImages] = useState<Array<{url: string, isPrimary: boolean, order: number}>>([]);
-  const [videos, setVideos] = useState<File[]>([]);
-  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
-  const [existingVideos, setExistingVideos] = useState<Array<{url: string}>>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [imageUploadProgress, setImageUploadProgress] = useState<number | null>(null);
-  const [videoUploadProgress, setVideoUploadProgress] = useState<number | null>(null);
-  
+  // Hooks: permissions, media and form state
+  const { authUser, canEdit, hasPermission } = useProductFormPermissions({ useAuth });
+  const media = useProductMedia();
+  const form = useProductFormState({ editProductId, onSetExistingImages: media.setExistingImages, onSetExistingVideos: media.setExistingVideos });
+
+  // Unpack commonly used form & media values for backward compatibility with existing JSX
+  const {
+    category, setCategory,
+    serviceList,
+    selectedService, setSelectedService,
+    selectedServiceNames, setSelectedServiceNames,
+    tags, setTags,
+    tier, setTier,
+    prices, setPrices,
+    deliveryTimes, setDeliveryTimes,
+    editingTier, setEditingTier,
+    fullFormAnswersPerTier, setFullFormAnswersPerTier,
+    interp,
+    loading: formLoading,
+  } = form;
+
+  // Fallback mapping from top-level sector to packageTierTemplates category key
+  const sectorToCategoryMap: Record<string, string> = {
+    Technology: 'DIGITAL_REMOTE',
+    Electrician: 'PHYSICAL_ONSITE',
+    Plumber: 'PHYSICAL_ONSITE',
+    Carpenter: 'PHYSICAL_ONSITE',
+    Mechanic: 'PHYSICAL_ONSITE',
+    Tailor: 'PHYSICAL_ONSITE',
+    Beautician: 'PHYSICAL_ONSITE',
+    Cleaner: 'PHYSICAL_ONSITE',
+    Painter: 'PHYSICAL_ONSITE',
+    Gardener: 'PHYSICAL_ONSITE',
+    Tutor: 'EDUCATION',
+    Chef: 'CULINARY',
+    Agency: 'CONSULTATION',
+    Courier: 'LOGISTICS',
+    Healthcare: 'HEALTHCARE',
+    Astrologer: 'CONSULTATION',
+    Other: 'PHYSICAL_ONSITE'
+  };
+
+  const {
+    images, setImages,
+    imagePreviews, setImagePreviews,
+    existingImages,
+    videos,
+    videoPreviews,
+    existingVideos,
+    isDragging,
+    handleImageAdd, handleRemoveImage,
+    handleDragEnter, handleDragLeave, handleDragOver, handleDrop,
+    handleVideoAdd, handleRemoveVideo,
+    imageUploadProgress, videoUploadProgress,
+    uploadImages, uploadSmallVideos, startBackgroundVideoUploads
+  } = media;
+
   // Toast state for validation feedback
   const [validationError, setValidationError] = useState('');
   const [validationField, setValidationField] = useState('');
-
-  const { user: authUser } = useAuth();
-  const currentUserId = authUser?.userId || null;
-  const canEdit = !ownerId || ownerId === currentUserId;
-  const hasPermission = authUser?.role === 'seller' || authUser?.role === 'admin';
 
   // Early permission check - show permission message if user doesn't have access
   if (authUser && !hasPermission) {
@@ -135,72 +167,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     );
   }
 
-  // helper to replace template tokens in labels/placeholders using selectedService context
-  const interp = (s?: string) => {
-    if (!s) return s || '';
-    const timeUnit = selectedService?.timeUnit || 'days';
-    const serviceName = selectedService?.name || 'service';
-    return String(s).replace(/\{timeUnit\}/g, timeUnit).replace(/\{serviceName\}/g, serviceName);
-  };
 
-  // fallback mapping from top-level sector to packageTierTemplates category key
-  const sectorToCategoryMap: Record<string, string> = {
-    Technology: 'DIGITAL_REMOTE',
-    Electrician: 'PHYSICAL_ONSITE',
-    Plumber: 'PHYSICAL_ONSITE',
-    Carpenter: 'PHYSICAL_ONSITE',
-    Mechanic: 'PHYSICAL_ONSITE',
-    Tailor: 'PHYSICAL_ONSITE',
-    Beautician: 'PHYSICAL_ONSITE',
-    Cleaner: 'PHYSICAL_ONSITE',
-    Painter: 'PHYSICAL_ONSITE',
-    Gardener: 'PHYSICAL_ONSITE',
-    Tutor: 'EDUCATION',
-    Chef: 'CULINARY',
-    Agency: 'CONSULTATION',
-    Courier: 'LOGISTICS',
-    Healthcare: 'HEALTHCARE',
-    Astrologer: 'CONSULTATION',
-    Other: 'PHYSICAL_ONSITE'
-  };
-
-  useEffect(() => {
-    if (!selectedService) return;
-    // Features are provided via template-driven questions now; no local per-tier defaults required
-
-  // initialize full form answers from selected service: gather common + category + per-tier ServiceQuestions + legacy requiredMap keys
-  // Use labels/keys from packageTierTemplates.commonQuestions for the common question set (show across all services)
-  const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
-    const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
-    const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
-    const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
-    const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
-
-    const keysFromServiceQuestions = Object.values(serviceQsPerTier || {}).reduce<string[]>((acc, obj) => acc.concat(Object.keys(obj || {})), []);
-    const allQs = Array.from(new Set([...commonQs, ...catQs, ...keysFromServiceQuestions, ...Object.keys(reqMap || {})]));
-
-    const answersInitPerTier: Record<string, Record<string, string>> = { Basic: {}, Standard: {}, Premium: {} };
-    ['Basic','Standard','Premium'].forEach((tt) => {
-      allQs.forEach((q) => {
-        const svcDefault = serviceQsPerTier[tt] && serviceQsPerTier[tt][q] ? String(serviceQsPerTier[tt][q]) : "";
-        answersInitPerTier[tt][q] = fullFormAnswersPerTier[tt]?.[q] || svcDefault || "";
-      });
-    });
-    setFullFormAnswersPerTier(answersInitPerTier);
-    // We don't initialize prices/delivery from the service manifest here.
-    // Prices and delivery times are provided by the provider via the packageTier templates.
-    // Keep existing state (usually empty) so the UI shows blank inputs for the provider to fill.
-    setPrices(prev => ({ ...prev }));
-    setDeliveryTimes(prev => ({ ...prev }));
-  }, [selectedService]);
-
-  // cleanup object URLs on unmount
-  useEffect(() => {
-    return () => {
-      imagePreviews.forEach(u => URL.revokeObjectURL(u));
-      videoPreviews.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [imagePreviews, videoPreviews]);
 
   // Prevent default drag behavior on the document
   useEffect(() => {
@@ -247,174 +214,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
     }, 3000);
   };
 
-  
-  const handleImageAdd = (files: FileList | null) => {
-    if (!files) return;
-    const maxImages = 6;
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
-    
-    // Calculate current total images (existing + new)
-    const currentTotalImages = existingImages.length + images.length;
-    const availableSlots = maxImages - currentTotalImages;
-    
-    const incoming = Array.from(files).slice(0, availableSlots);
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    
-    const validFiles = incoming.filter(f => {
-      if (!allowedTypes.includes(f.type.toLowerCase())) {
-        showValidationError(`File ${f.name} is not a valid image format. Please use JPEG, PNG, GIF, or WebP.`, 'images');
-        return false;
-      }
-      if (f.size > maxFileSize) {
-        showValidationError(`File ${f.name} is too large. Maximum size is 10MB.`, 'images');
-        return false;
-      }
-      return true;
-    });
-    
-    if (validFiles.length > 0) {
-      const newPreviews = validFiles.map(f => URL.createObjectURL(f));
-      setImages(prev => [...prev, ...validFiles]);
-      setImagePreviews(prev => [...prev, ...newPreviews]);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    const existingImagesCount = existingImages.length;
-
-    if (index < existingImagesCount) {
-      // Removing an existing image: update only `existingImages`.
-      // `imagePreviews` is reserved for newly selected File previews (blob: URLs),
-      // so we should not touch it here.
-      setExistingImages(prev => prev.filter((_, i) => i !== index));
-    } else {
-      // Removing a new image (File object)
-      const newImageIndex = index - existingImagesCount;
-      
-      setImages(prev => prev.filter((_, i) => i !== newImageIndex));
-      setImagePreviews(prev => {
-        const removed = prev[newImageIndex];
-        if (removed && removed.startsWith && removed.startsWith('blob:')) {
-          try { URL.revokeObjectURL(removed); } catch (err) { /* noop */ }
-        }
-        return prev.filter((_, i) => i !== newImageIndex);
-      });
-    }
-  };
-
-  // Drag and drop handlers for images
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Only set isDragging to false if we're leaving the drop zone entirely
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDragging(false);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      // Separate video and image files
-      const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
-      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-      
-      // Handle video files (respect configured limit)
-      if (videoFiles.length > 0) {
-        const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
-        const remainingSlots = maxVideos - (videos.length + existingVideos.length);
-        if (remainingSlots > 0) {
-          const videosToAdd = videoFiles.slice(0, remainingSlots);
-          videosToAdd.forEach(file => handleVideoAdd(file));
-        } else {
-          showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
-        }
-      }
-      
-      // Handle image files
-      if (imageFiles.length > 0) {
-        const fileList = new DataTransfer();
-        imageFiles.forEach(file => fileList.items.add(file));
-        handleImageAdd(fileList.files);
-      }
-    }
-  };
-
-  const handleVideoAdd = (file: File | null) => {
-    if (!file) return;
-    
-    // Check if we've reached the configured limit
-    const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
-    if (videos.length + existingVideos.length >= maxVideos) {
-      showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
-      return;
-    }
-    
-    // Use validation utility
-    const validation = validateVideoUpload(file);
-    if (!validation.isValid) {
-      showValidationError(validation.error!, 'video');
-      return;
-    }
-    
-    const preview = URL.createObjectURL(file);
-    setVideos(prev => [...prev, file]);
-    setVideoPreviews(prev => [...prev, preview]);
-  };
-
-  const handleRemoveVideo = (index: number) => {
-    const isExisting = index < existingVideos.length;
-    
-    if (isExisting) {
-      // Remove from existing videos
-      setExistingVideos(prev => prev.filter((_, i) => i !== index));
-    } else {
-      // Remove from new videos
-      const newVideoIndex = index - existingVideos.length;
-      if (videoPreviews[newVideoIndex]) {
-        URL.revokeObjectURL(videoPreviews[newVideoIndex]);
-      }
-      setVideos(prev => prev.filter((_, i) => i !== newVideoIndex));
-      setVideoPreviews(prev => prev.filter((_, i) => i !== newVideoIndex));
-    }
-  };
+  // Media handlers are provided by the `useProductMedia` hook (unified slice above)
 
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Update service list when category changes
+  // Update service list when category changes (moved to form state)
   useEffect(() => {
-    if (!category) return setServiceList([]);
-    const list = (sectorServices as any)[category]?.services || [];
-    setServiceList(list);
-    // Only clear selectedService if we're not in edit mode or if we're not loading
-    if (!editProductId && !loading) {
-      setSelectedService(null);
+    if (!form.category) return form.setServiceList([]);
+    const list = (sectorServices as any)[form.category]?.services || [];
+    form.setServiceList(list);
+    if (!editProductId && !form.loading) {
+      form.setSelectedService(null);
     }
-  }, [category, editProductId, loading]);
+  }, [form.category, editProductId, form.loading]);
 
   // Load existing product data if in edit mode
   useEffect(() => {
     const loadProductForEditing = async () => {
       if (!editProductId) return;
       
-      setLoading(true);
+      form.setLoading(true);
       try {
         const product = await ProductService.getProduct(editProductId);
         
@@ -426,73 +246,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         const formData = BaseProductService.transformProductResponseToFormData(product);
         
         // Populate form fields
-        setCategory(formData.category);
-        setSelectedServiceNames(formData.serviceNames);
-        setTags(formData.tags);
-        setTier(formData.tier);
-        setPrices(formData.prices);
-        setDeliveryTimes(formData.deliveryTimes);
-        setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
+        form.setCategory(formData.category);
+        form.setSelectedServiceNames(formData.serviceNames);
+        form.setTags(formData.tags);
+        form.setTier(formData.tier);
+        form.setPrices(formData.prices);
+        form.setDeliveryTimes(formData.deliveryTimes);
+        form.setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
         
-        // Load existing images from product
+        // Load existing images from product into media slice
         if (product.images && product.images.length > 0) {
-          // Store existing images separately; do NOT put them into `imagePreviews`.
-          // `imagePreviews` is intended only for newly selected File previews (blob: URLs).
-          setExistingImages(product.images);
+          media.setExistingImages(product.images);
 
           // Clear any new images since we're loading existing ones
-          setImages([]);
-          // Ensure previews for new images are empty initially
-          setImagePreviews([]);
+          media.setImages([]);
+          media.setImagePreviews([]);
         }
         
         // Load existing video from product
         if (product.videoKey) {
           const videoUrl = ImageService.getImageUrl(product.videoKey);
-          setExistingVideos([{ url: videoUrl }]);
-          // Clear any new videos since we're loading existing one
-          setVideos([]);
-          setVideoPreviews([]);
+          media.setExistingVideos([{ url: videoUrl }]);
+          media.setVideos([]);
+          media.setVideoPreviews([]);
         }
         
       } catch (error) {
         console.error('Failed to load product for editing:', error);
       } finally {
-        setLoading(false);
+        form.setLoading(false);
       }
     };
 
     loadProductForEditing();
   }, [editProductId]);
 
-  // Separate effect to handle service selection after category is set (fallback)
-  useEffect(() => {
-    const loadServiceFromCategory = async () => {
-      if (!editProductId || !category) return;
-      
-      try {
-        const product = await ProductService.getProduct(editProductId);
-        if (!product) return;
-        
-        const formData = BaseProductService.transformProductResponseToFormData(product);
-        
-        // Find and set the selected service based on the loaded data
-        if (category && formData.name) {
-          const categoryServices = (sectorServices as any)[category]?.services || [];
-          const matchingService = categoryServices.find((service: any) => service.name === formData.name);
-          if (matchingService) {
-            setSelectedService(matchingService);
-          } else {
-            console.warn('No matching service found for:', formData.name, 'in category:', category);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to set selected service:', error);
-      }
-    };
 
-    loadServiceFromCategory();
-  }, [editProductId, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -579,38 +368,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         
         // If user added new images, upload them and add to the array
         if (images.length > 0) {
-          
           try {
-            const username = localStorage.getItem('username') || localStorage.getItem('x-user-id') || 'anonymous';
-            
-            // Upload new images with progress
-            const newImageKeys: string[] = [];
-            let uploadedImages = 0;
-            for (let i = 0; i < images.length; i++) {
-              const imageKey = await ImageService.uploadImage({
-                username,
-                file: images[i],
-                folder: 'products'
-              }, (percent) => {
-                // compute cumulative percent across files
-                const perFileWeight = 1 / images.length;
-                const completed = uploadedImages;
-                const overall = Math.round(((completed + (percent/100)) * perFileWeight) * 100);
-                setImageUploadProgress(overall);
-              });
-              newImageKeys.push(imageKey);
-              uploadedImages += 1;
-            }
-            
-            // Add new images to the array
+            const newImageKeys = await uploadImages(images);
             const newImageObjects = newImageKeys.map((key, index) => ({
               url: ImageService.getImageUrl(key),
-              isPrimary: allImages.length === 0 && index === 0, // Only primary if no existing images
+              isPrimary: allImages.length === 0 && index === 0,
               order: allImages.length + index + 1
             }));
-            
             allImages = [...allImages, ...newImageObjects];
-            
           } catch (imageError) {
             console.error('Failed to upload new images:', imageError);
             throw new Error('Failed to upload new images');
@@ -632,59 +397,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           // Upload small videos synchronously
           if (smallVideos.length > 0) {
             try {
-              const videoUploadPromises = smallVideos.map(video => 
-                ImageService.uploadImage({
-                  username,
-                  file: video,
-                  folder: 'products/videos'
-                }, (percent) => setVideoUploadProgress(percent))
-              );
-              
-              const videoKeys = await Promise.all(videoUploadPromises);
-              // For now, just use the first video for compatibility
+              const videoKeys = await uploadSmallVideos(smallVideos);
               if (videoKeys.length > 0) {
-                const videoUrl = ImageService.getImageUrl(videoKeys[0]);
                 (apiProductData as any).videoKey = videoKeys[0];
-                (apiProductData as any).videoUrl = videoUrl;
+                (apiProductData as any).videoUrl = ImageService.getImageUrl(videoKeys[0]);
               }
             } catch (videoError) {
               console.error('Failed to upload videos:', videoError);
               throw new Error('Failed to upload videos');
             }
           }
-          
+
           // Start background uploads for large videos
           if (largeVideos.length > 0) {
             const productIdForUpdate = editProductId;
-            
             largeVideos.forEach(video => {
-              const videoKeyCustom = createProductVideoKey(username, video.name);
-              
-              backgroundUploadService.startUpload({
-                id: `video_${Date.now()}_${video.name}`,
-                file: video,
-                key: videoKeyCustom,
-                fileName: video.name,
-                onProgress: (progress) => {
-                  setVideoUploadProgress(progress.progress);
-                },
-                onComplete: async (key) => {
-                  setVideoUploadProgress(null);
-                  if (productIdForUpdate) {
-                    try {
-                      await ProductService.updateProduct(productIdForUpdate, {
-                        videoKey: key,
-                        videoUrl: ImageService.getImageUrl(key)
-                      });
-                    } catch (error) {
-                      console.error('Failed to update product with video after upload:', error);
-                    }
+              startBackgroundVideoUploads([video], username, async (key) => {
+                if (productIdForUpdate) {
+                  try {
+                    await ProductService.updateProduct(productIdForUpdate, {
+                      videoKey: key,
+                      videoUrl: ImageService.getImageUrl(key)
+                    });
+                  } catch (err) {
+                    console.error('Failed to update product with video after upload:', err);
                   }
-                },
-                onError: (error) => {
-                  setVideoUploadProgress(null);
-                  console.error('Background video upload failed:', error);
                 }
+              }, (err) => {
+                console.error('Background video upload failed:', err);
               });
             });
           }
@@ -717,32 +457,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
             
             const productId = newProduct.productId || newProduct.id;
             if (productId) {
-              // Start background upload for each large video
               largeVideos.forEach(video => {
-                const videoKeyCustom = createProductVideoKey(username, video.name);
-                
-                backgroundUploadService.startUpload({
-                  id: `video_${Date.now()}_${video.name}`,
-                  file: video,
-                  key: videoKeyCustom,
-                  fileName: video.name,
-                  onProgress: (progress) => {
-                    setVideoUploadProgress(progress.progress);
-                  },
-                  onComplete: async (key) => {
-                    try {
-                      await ProductService.updateProduct(productId, {
-                        videoKey: key,
-                        videoUrl: ImageService.getImageUrl(key)
-                      });
-                    } catch (error) {
-                      console.error('Failed to update new product with video after upload:', error);
-                    }
-                  },
-                  onError: (error) => {
-                    setVideoUploadProgress(null);
-                    showValidationError(`Failed to upload video: ${error}`, 'general');
+                startBackgroundVideoUploads([video], username, async (key) => {
+                  try {
+                    await ProductService.updateProduct(productId, {
+                      videoKey: key,
+                      videoUrl: ImageService.getImageUrl(key)
+                    });
+                  } catch (err) {
+                    console.error('Failed to update new product with video after upload:', err);
                   }
+                }, (err) => {
+                  showValidationError(`Failed to upload video: ${err}`, 'general');
                 });
               });
             }
@@ -782,42 +508,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
 
   // Comprehensive validation function to check if form is complete
   const isFormValid = useMemo(() => {
-    // Check permissions first
     if (!hasPermission) return false;
-    
-    // Basic required fields
     if (!category || !selectedService) return false;
-    
-    // Image validation - different for create vs edit
+
     if (!editProductId) {
-      // For new products, must have at least one image
       if (!images || images.length === 0) return false;
     } else {
-      // For updates, must have at least one image total (existing + new)
       const totalImages = (existingImages?.length || 0) + (images?.length || 0);
       if (totalImages === 0) return false;
     }
-    
-    // Pricing validation - at least Basic tier must have valid price
+
     const basicPrice = prices.Basic;
     if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) return false;
-    
-    // Delivery time validation - at least Basic tier must have valid delivery time
+
     const basicDeliveryTime = deliveryTimes.Basic;
     if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) return false;
-    
-    // Check required form questions for the selected tier
+
     if (selectedService) {
+      const sectorToCategoryMap: Record<string, string> = {
+        Technology: 'DIGITAL_REMOTE', Electrician: 'PHYSICAL_ONSITE', Plumber: 'PHYSICAL_ONSITE', Carpenter: 'PHYSICAL_ONSITE', Mechanic: 'PHYSICAL_ONSITE', Tailor: 'PHYSICAL_ONSITE', Beautician: 'PHYSICAL_ONSITE', Cleaner: 'PHYSICAL_ONSITE', Painter: 'PHYSICAL_ONSITE', Gardener: 'PHYSICAL_ONSITE', Tutor: 'EDUCATION', Chef: 'CULINARY', Agency: 'CONSULTATION', Courier: 'LOGISTICS', Healthcare: 'HEALTHCARE', Astrologer: 'CONSULTATION', Other: 'PHYSICAL_ONSITE'
+      };
+
       const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
       const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
       const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
       const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
       const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
-      
+
       const keysFromServiceQuestions = Object.values(serviceQsPerTier || {}).reduce<string[]>((acc, obj) => acc.concat(Object.keys(obj || {})), []);
       const allQs = Array.from(new Set([...commonQs, ...catQs, ...keysFromServiceQuestions, ...Object.keys(reqMap || {})]));
-      
-      // Check required questions for the selected tier
+
       for (const qKey of allQs) {
         const isRequired = !!(reqMap && reqMap[qKey]);
         if (isRequired) {
@@ -826,9 +546,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
         }
       }
     }
-    
+
     return true;
-  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, sectorToCategoryMap]);
+  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates]);
 
   // categoryForSelected removed (not needed when features are template-driven)
 
@@ -897,7 +617,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
         {/* Loading State */}
-        {loading && (
+        {formLoading && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
             <div className="flex items-center justify-center space-x-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600"></div>
@@ -906,7 +626,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           </div>
         )}
 
-        {!loading && (
+        {!formLoading && (
         <form id="product-form" onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden relative">{/* Submit button */}
           {/* Loading Overlay */}
           {submitting && (
@@ -1107,201 +827,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId = null, editPr
           })()}
         </div>        
         {/* Media uploads: images + video */}
-        <div className="space-y-6 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Service Media</h3>
-          </div>
-
-          <div className="space-y-4">
-            {/* Media Upload - Images and Video */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Service Media
-                </label>
-                <div className="flex space-x-4 text-xs text-gray-500">
-                  <span>{`Up to ${UPLOAD_LIMITS.IMAGES.MAX_COUNT} images`}</span>
-                  <span>•</span>
-                  <span>{`Up to ${UPLOAD_LIMITS.VIDEOS.MAX_COUNT} videos (${UPLOAD_LIMITS.VIDEOS.MAX_SIZE_MB}MB max)`}</span>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files && files.length > 0) {
-                      // Separate video and image files
-                      const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
-                      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-                      
-      // Handle video files (respect configured limit)
-      if (videoFiles.length > 0) {
-        const maxVideos = UPLOAD_LIMITS.VIDEOS.MAX_COUNT;
-        const remainingSlots = maxVideos - (videos.length + existingVideos.length);
-        if (remainingSlots > 0) {
-          const videosToAdd = videoFiles.slice(0, remainingSlots);
-          videosToAdd.forEach(file => handleVideoAdd(file));
-        } else {
-          showValidationError(`Maximum ${maxVideos} videos allowed. Remove existing videos to add new ones.`, 'video');
-        }
-      }
-
-      // Handle image files
-      if (imageFiles.length > 0) {
-        const fileList = new DataTransfer();
-        imageFiles.forEach(file => fileList.items.add(file));
-        handleImageAdd(fileList.files);
-      }
-                    }
-                  }}
-                  className="hidden"
-                  id="image-upload"
-                  disabled={submitting}
-                />
-                <div
-                  onDragEnter={handleDragEnter}
-                  onDragLeave={handleDragLeave}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
-                    isDragging 
-                      ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20 scale-105' 
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  <label
-                    htmlFor="image-upload"
-                    className={`flex flex-col items-center justify-center w-full h-full ${submitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className={`w-8 h-8 mb-2 transition-colors ${isDragging ? 'text-rose-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <p className={`text-sm transition-colors ${isDragging ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {isDragging ? (
-                          <span className="font-semibold">Drop images and videos here</span>
-                        ) : (
-                          <>
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </>
-                        )}
-                      </p>
-                      <p className={`text-xs transition-colors ${isDragging ? 'text-rose-500 dark:text-rose-400' : 'text-gray-400'}`}>
-                        PNG, JPG, GIF up to 10MB • MP4, MOV, AVI up to 20MB
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              {(imagePreviews.length > 0 || videoPreviews.length > 0 || existingImages.length > 0 || existingVideos.length > 0) && (
-                <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2">
-                  {/* Existing images */}
-                  {existingImages.map((image, i) => (
-                    <div key={`existing-${i}`} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-                        <img src={image.url} className="w-full h-full object-cover" alt={`Existing service image ${i + 1}`} />
-                      </div>
-                      {/* removed Primary badge for cleaner thumbnail UI */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(i)}
-                        disabled={submitting}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {/* New images */}
-                  {imagePreviews.map((src, i) => (
-                    <div key={src} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-                        <img src={src} className="w-full h-full object-cover" alt={`Service image ${i + 1}`} />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(existingImages.length + i)}
-                        disabled={submitting}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {/* Existing videos */}
-                  {existingVideos.map((video, i) => (
-                    <div key={`existing-video-${i}`} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-900">
-                        <video 
-                          src={video.url} 
-                          className="w-full h-full object-cover" 
-                          muted
-                        />
-                        {/* Video play icon overlay */}
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                          <div className="w-6 h-6 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                            <svg className="w-3 h-3 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      {/* removed Video badge for cleaner thumbnail UI */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVideo(i)}
-                        disabled={submitting}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {/* New videos */}
-                  {videoPreviews.map((src, i) => (
-                    <div key={src} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-900">
-                        <video 
-                          src={src} 
-                          className="w-full h-full object-cover" 
-                          muted
-                        />
-                        {/* Video play icon overlay */}
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                          <div className="w-6 h-6 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                            <svg className="w-3 h-3 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      {/* removed Video badge for cleaner thumbnail UI */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVideo(existingVideos.length + i)}
-                        disabled={submitting}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <MediaUploadSection
+          images={images}
+          imagePreviews={imagePreviews}
+          existingImages={existingImages}
+          videos={videos}
+          videoPreviews={videoPreviews}
+          existingVideos={existingVideos}
+          handleImageAdd={handleImageAdd}
+          handleRemoveImage={handleRemoveImage}
+          handleVideoAdd={handleVideoAdd}
+          handleRemoveVideo={handleRemoveVideo}
+          handleDragEnter={handleDragEnter}
+          handleDragLeave={handleDragLeave}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
+          isDragging={isDragging}
+          submitting={submitting}
+          imageUploadProgress={imageUploadProgress}
+          videoUploadProgress={videoUploadProgress}
+          showValidationError={showValidationError}
+        />
 
         {/* Service Tiers */}
         <div className="space-y-6">

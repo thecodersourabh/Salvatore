@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth0 } from '@auth0/auth0-react';
-import { IonInput, IonSelect, IonSelectOption } from '@ionic/react';
+import { IonSelect, IonSelectOption } from '@ionic/react';
 import { 
   MapPin, 
   Plus, 

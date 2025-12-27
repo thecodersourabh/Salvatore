@@ -3,7 +3,10 @@ import { api } from './api';
 export class ProfileImageService {
   static async getProfileImageUrl(userId: string, idToken?: string): Promise<string | null> {
     if (!userId) return null;
-    const endpoint = 'https://spg85rhps6.execute-api.us-east-1.amazonaws.com/prod/upload/list';
+    const base = (import.meta.env.VITE_CDN_API_URL as string) || '';
+    if (!base) return null;
+    const baseUrl = base.replace(/\/$/, '');
+    const endpoint = `${baseUrl}/upload/list`;
     const prefix = `${userId}/profile/`;
     try {
       const result = await api.get<any>(endpoint, {

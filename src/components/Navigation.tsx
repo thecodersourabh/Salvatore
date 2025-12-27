@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { Scissors, User, Search, MapPin } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useAppSelector } from '../store/hooks';
-import { selectProfileImageUrl } from '../store/slices/authSlice';
 import { useNotifications } from "../hooks/useNotifications";
 import { usePlatform } from "../hooks/usePlatform";
 import { useLocationRedux } from "../hooks/useLocationRedux";

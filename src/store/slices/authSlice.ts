@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { UserService } from '../../services';
 import { User } from '../../types/user';
 import { storeToken, clearToken } from '../../utils/tokenHelper';
+import { fetchUserProfileImage } from './userImageThunks';
 
 // Types
 export type UserRole = 'customer' | 'seller'; // Simplified to customer/provider (seller)
@@ -29,6 +30,7 @@ interface AuthState {
   apiUser: User | null;
   idToken: string | null;
   error: string | null;
+  profileImageUrl: string | null;
 }
 
 // Initial state
@@ -41,6 +43,7 @@ const initialState: AuthState = {
   apiUser: null,
   idToken: null,
   error: null,
+  profileImageUrl: null,
 };
 
 // Async thunks
@@ -237,7 +240,9 @@ export const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // createOrUpdateUser
+      .addCase(fetchUserProfileImage.fulfilled, (state, action) => {
+        state.profileImageUrl = action.payload || null;
+      })
       .addCase(createOrUpdateUser.pending, (state) => {
         state.creatingUser = true;
         state.error = null;
@@ -246,12 +251,12 @@ export const authSlice = createSlice({
         state.creatingUser = false;
         state.userCreated = true;
         state.apiUser = action.payload.apiUser;
-        
         // Create user context from Auth0 user and API user
         if (action.payload.auth0User) {
           const { auth0User } = action.payload;
           const { apiUser } = action.payload;
-          
+          // Prefer profileImageUrl from state, else apiUser.avatar, else Google image
+          let avatar = state.profileImageUrl || apiUser?.avatar || auth0User.picture || null;
           state.user = {
             email: auth0User.email,
             sub: auth0User.sub,
@@ -262,7 +267,7 @@ export const authSlice = createSlice({
             phoneNumber: apiUser?.phone || auth0User.phone_number,
             email_verified: auth0User.email_verified,
             isVerified: auth0User.email_verified,
-            avatar: apiUser?.avatar || auth0User.picture,
+            avatar,
             role: (apiUser?.role as UserRole) || 'customer'
           };
         }
@@ -271,7 +276,6 @@ export const authSlice = createSlice({
         state.creatingUser = false;
         state.error = action.error.message || 'Failed to create/update user';
       })
-      // switchRole
       .addCase(switchRole.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -287,7 +291,6 @@ export const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string || 'Failed to switch role';
       })
-      // refreshToken
       .addCase(refreshToken.pending, (state) => {
         state.error = null;
       })
@@ -321,6 +324,7 @@ export const {
 } = authSlice.actions;
 
 export const selectAuth = (state: any) => state.auth;
+export const selectProfileImageUrl = (state: any) => state.auth.profileImageUrl;
 export const selectIsAuthenticated = (state: any) => state.auth.isAuthenticated;
 export const selectUser = (state: any) => state.auth.user;
 export const selectApiUser = (state: any) => state.auth.apiUser;

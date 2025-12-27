@@ -1,17 +1,26 @@
 import { Link } from "react-router-dom";
 import { Scissors, User, Search, MapPin } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from '../store/hooks';
+import { selectProfileImageUrl } from '../store/slices/authSlice';
 import { useNotifications } from "../hooks/useNotifications";
 import { usePlatform } from "../hooks/usePlatform";
 import { useLocationRedux } from "../hooks/useLocationRedux";
 import { useState, useEffect } from "react";
+
 import { Sidebar } from "./Sidebar/Sidebar";
 import { NotificationBell } from "./ui/NotificationBell";
 import { NotificationPanel } from "./NotificationPanel";
 
-
 export function Navigation() {
   const { isAuthenticated, userContext: user, loginWithRedirect, currentRole } = useAuth();
+  // Use avatar from user context
+  const avatarUrl = user?.avatar;
+  const [imgError, setImgError] = useState(false);
+  // Reset imgError if avatarUrl changes
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
   const { unreadCount, setIsNotificationPanelOpen } = useNotifications();
   const { isAndroid, isIOS, isNative } = usePlatform();
   const { city, requestLocationWithAddress, loading: locationLoading, error: locationError } = useLocationRedux();
@@ -98,11 +107,18 @@ export function Navigation() {
               onClick={() => setIsSidebarOpen(true)}
               className="flex items-center space-x-2 hover:opacity-75 transition-opacity"
             >
-              <img
-                src={(user as any)?.picture}
-                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 border-rose-200 dark:border-rose-700"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300 hidden xl:inline">{(user as any)?.name}</span>
+              {avatarUrl && !imgError ? (
+                <img
+                  src={avatarUrl}
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 border-rose-200 dark:border-rose-700"
+                  alt="Profile"
+                  onError={() => setImgError(true)}
+                />
+              ) : null}
+              {(!avatarUrl || imgError) && (
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 dark:text-rose-400" />
+              )}
+              <span className="text-sm text-gray-700 dark:text-gray-300 hidden xl:inline">{user?.name}</span>
             </button>
           ) : (
             <button

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useState, useEffect } from 'react';
 import { useCart } from "../../hooks/useCart";
 import { usePlatform } from "../../hooks/usePlatform";
 import { 
@@ -27,6 +28,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     userContext: user, 
     logout
   } = useAuth();
+  // Use avatar from user context
+  const avatarUrl = user?.avatar;
+  const [imgError, setImgError] = useState(false);
+  // Reset imgError if avatarUrl changes
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
   const { setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
 
@@ -127,11 +135,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             className="sidebar-profile block p-3 sm:p-4 border-b bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors sidebar-focusable"
           >
             <div className="flex items-center">
-              {user?.avatar && (
+              {avatarUrl && !imgError ? (
                 <img 
-                  src={user.avatar} 
+                  src={avatarUrl} 
                   className="w-10 h-10 sm:w-9 sm:h-9 rounded-full border-2 border-rose-200 dark:border-gray-700 "
+                  alt="Profile"
+                  onError={() => setImgError(true)}
                 />
+              ) : null}
+              {(!avatarUrl || imgError) && (
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600 dark:text-rose-400" />
               )}
               <div className="ml-3">
                 <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight">{user?.name}</h3>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { usePlatform } from '../hooks/usePlatform';
@@ -202,6 +203,7 @@ async function submitOrder(
 }
 
 function CheckoutFlow() {
+  const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { apiUser } = useAuth();
   
@@ -294,7 +296,18 @@ function CheckoutFlow() {
     <div className="space-y-2">
       <div className="space-y-2">
         {addresses.length === 0 ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">No saved addresses. Please add one in your profile.</div>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="text-sm text-gray-500 dark:text-gray-400">No saved addresses. Please add one to place your order.</div>
+            <button
+              onClick={() => {
+                setIsCartOpen(false);
+                navigate('/addresses');
+              }}
+              className="mt-2 px-4 py-2 bg-rose-600 dark:bg-rose-700 text-white rounded-lg hover:bg-rose-700 dark:hover:bg-rose-800 transition-colors duration-200 font-medium shadow-sm"
+            >
+              Add Address
+            </button>
+          </div>
         ) : (
           <div className="space-y-2">
             {addresses.map((addr: any) => (

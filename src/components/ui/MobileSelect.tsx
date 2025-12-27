@@ -98,7 +98,7 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
           {required && <span className="text-rose-500 ml-1">*</span>}
         </label>
       )}
-      
+
       <div ref={containerRef} className={`relative ${className}`}>
         {/* Select Trigger */}
         <button
@@ -128,8 +128,6 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
             }`} 
           />
         </button>
-
-        {/* Dropdown */}
         {isOpen && (
           <>
             {/* Full screen backdrop */}
@@ -137,10 +135,9 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
               className="fixed inset-0 z-[9998] bg-black bg-opacity-50" 
               onClick={() => setIsOpen(false)}
             />
-            
-            {/* Full screen modal on mobile, dropdown on desktop */}
-            <div className="md:hidden fixed inset-0 z-[9999] flex items-end">
-              <div className="w-full bg-white dark:bg-gray-800 rounded-t-3xl max-h-[90vh] flex flex-col">
+            {/* Mobile: Full-screen modal with top padding after status bar */}
+            <div className="md:hidden fixed inset-0 z-[9999] flex flex-col pt-8 sm:pt-10" style={{paddingTop: 'env(safe-area-inset-top, 2.5rem)'}}>
+              <div className="flex-1 w-full bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-3">
@@ -162,7 +159,6 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                     </svg>
                   </button>
                 </div>
-
                 {/* Search input */}
                 {options.length > 5 && (
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -181,8 +177,7 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                     </div>
                   </div>
                 )}
-
-                {/* Options List - Full height scrollable */}
+                {/* Options List */}
                 <div className="flex-1 overflow-y-auto">
                   {filteredOptions.length === 0 ? (
                     <div className="flex items-center justify-center h-32">
@@ -222,14 +217,14 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                     </div>
                   )}
                 </div>
-
-                {/* Bottom padding for safe area */}
-                <div className="h-4 bg-white dark:bg-gray-800"></div>
               </div>
             </div>
-
-            {/* Desktop dropdown */}
-            <div className="hidden md:block absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-96 overflow-hidden">
+            {/* Desktop: Absolute dropdown below trigger */}
+            <div
+              ref={dropdownRef}
+              className="hidden md:block absolute left-0 right-0 z-[9999] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-96 overflow-hidden"
+              style={{ top: '100%' }}
+            >
               {/* Search input for many options */}
               {options.length > 5 && (
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
@@ -247,8 +242,7 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                   </div>
                 </div>
               )}
-
-              {/* Desktop Options List */}
+              {/* Options List */}
               <div className="overflow-y-auto max-h-80">
                 {filteredOptions.length === 0 ? (
                   <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">

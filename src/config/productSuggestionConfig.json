@@ -1,0 +1,12 @@
+{
+  "version": "1.0.1",
+  "tokenPriority": ["dvr", "nvr", "wire", "cable", "charger", "adapter", "battery", "filter", "faucet", "light", "switch"],
+  "itemRegex": "(dvr|nvr|wire|cable|charger|adapter|battery|filter|faucet|light|switch)",
+  "suggestions": [
+    {
+      "token": "dvr",
+      "sector": "Technology",
+      "rawNameRegex": "cctv cable"
+    }
+  ]
+}

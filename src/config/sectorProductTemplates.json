@@ -26,7 +26,8 @@
     "rawMaterials": [
       { "name": "RAM Module", "attributes": [ { "name": "Capacity", "options": ["4GB", "8GB", "16GB"], "isVariantAttribute": true } ], "isRaw": true },
       { "name": "SSD", "attributes": [ { "name": "Capacity", "options": ["256GB", "512GB", "1TB"], "isVariantAttribute": true } ], "isRaw": true },
-      { "name": "Laptop Charger", "attributes": [ { "name": "Wattage", "options": ["45W", "65W", "90W"], "isVariantAttribute": false } ], "isRaw": true }
+      { "name": "Laptop Charger", "attributes": [ { "name": "Wattage", "options": ["45W", "65W", "90W"], "isVariantAttribute": false } ], "isRaw": true },
+      { "name": "CCTV Cable", "attributes": [ { "name": "Type", "options": ["CAT5e", "CAT6", "Coax"], "isVariantAttribute": false }, { "name": "Length (m)", "options": ["5", "10", "20", "50"], "isVariantAttribute": false } ], "isRaw": true }
     ]
   },
 

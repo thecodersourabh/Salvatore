@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import sectorServices from '../../config/sectorServices.json';
 import packageTierTemplates from '../../config/packageTierTemplates.json';
 import productAttributeTemplates from '../../config/productAttributeTemplates.json';
+import productSuggestionConfig from '../../config/productSuggestionConfig.json';
 import { ProductService } from '../../services/cachedServices';
 import { ProductService as BaseProductService } from '../../services/productService';
 import { ImageService } from '../../services/imageService';
@@ -24,9 +25,15 @@ export function useProductFormState({
   const [sku, setSku] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [productUnit, setProductUnit] = useState<string>('pcs'); // e.g., pcs, m, kg
   const [productDescription, setProductDescription] = useState('');
-  // Add type state for product/service
-  const [type, setType] = useState<'product' | 'service'>('service');
+  // Sub-category (user-visible) — maps to API `subcategory`
+  const [subCategory, setSubCategory] = useState('');
+
+  // helper slugify for SKU generation
+  const slugify = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  // Add type state for product/service (default to 'product')
+  const [type, setType] = useState<'product' | 'service'>('product');
   const [prices, setPrices] = useState<Record<string, number | ''>>({ Basic: '', Standard: '', Premium: '' });
 
   // Product attributes & variants
@@ -43,6 +50,46 @@ export function useProductFormState({
 
   const removeAttribute = (name: string) => {
     setAttributes(prev => prev.filter(a => a.name !== name));
+  };
+
+  // Extract a recent item token from product name using config (returns original casing when possible)
+  const extractItemToken = (name = '') => {
+    const cfg: any = (productSuggestionConfig as any) || {};
+    const tokenPriority: string[] = cfg.tokenPriority || [];
+    // Check priority tokens (case-insensitive) and return the matched fragment from original name to preserve casing
+    for (const p of tokenPriority) {
+      const rx = new RegExp(`\\b${p}\\b`, 'i');
+      const m = String(name || '').match(rx);
+      if (m && m[0]) return m[0].trim();
+    }
+
+    // Fallback to itemRegex if provided
+    if (cfg.itemRegex) {
+      const m = String(name || '').match(new RegExp(cfg.itemRegex, 'i'));
+      if (m && m[0]) return m[0].trim();
+    }
+
+    return '';
+  };
+
+  // Build SKU prefix using mapping: Sector (preserve case) > Service (preserve case) > item token > brand
+  // Example: "Technology-CCTV Camera-DVR-sony"
+  const buildSkuBase = () => {
+    const normalizePreserve = (s: string) => s ? String(s).trim().replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '') : '';
+    const normalizeSlug = (s: string) => s ? slugify(String(s)) : '';
+
+    const parts: string[] = [];
+    if (category) parts.push(normalizePreserve(category)); // preserve case and spacing as requested
+    if (selectedService?.name) parts.push(normalizePreserve(selectedService.name));
+
+    // include recent item token (from product name) if present
+    const itemTok = extractItemToken(productName);
+    if (itemTok) parts.push(normalizeSlug(itemTok));
+
+    // include brand if present
+    if (brand) parts.push(normalizeSlug(brand));
+
+    return parts.filter(Boolean).join('-');
   };
 
   const generateVariants = (attrs = attributes) => {
@@ -69,12 +116,26 @@ export function useProductFormState({
       }
     });
 
+
+
     const newVariants = combinations.map((combination, idx) => {
       const key = comboKey(combination);
       const prev = prevMap[key];
+
+        // Generate a sensible SKU if one does not exist
+      let generatedSku = '';
+      if (!prev?.sku) {
+        let base = buildSkuBase() || '';
+        if (!base) base = 'prod';
+        // postfix: attribute initials (first 3 chars of each value) or index fallback
+        const attrPart = attrs.map(a => String(combination[a.name] || '').trim()).filter(Boolean).map(v => slugify(v).substring(0, 3)).join('');
+        const postfix = attrPart || `v${idx+1}`;
+        generatedSku = `${base}-${postfix}`;
+      }
+
       return {
         id: prev?.id || `var-${idx+1}`,
-        sku: prev?.sku || '',
+        sku: prev?.sku || generatedSku || '',
         price: prev?.price ?? '',
         stock: prev?.stock ?? '',
         attrs: combination
@@ -184,6 +245,9 @@ export function useProductFormState({
           onSetExistingVideos([{ url: videoUrl }]);
         }
 
+        // Populate sub-category if present in form data
+        setSubCategory(fd.subCategory || (fd as any).subcategory || '');
+
         // Load attributes & variants when editing existing product
         if (fd.variants && Array.isArray(fd.variants) && fd.variants.length > 0) {
           // Build attributes list from variant keys and collect options
@@ -224,12 +288,17 @@ export function useProductFormState({
       try {
         const product = await ProductService.getProduct(editProductId);
         if (!product) return;
-        const formData = BaseProductService.transformProductResponseToFormData(product);
-        if (category && formData.name) {
+        const formData = BaseProductService.transformProductResponseToFormData(product) as any;
+        // Prefer subCategory for mapping to a service/template; fall back to name if absent
+        const lookup = (formData.subCategory || formData.subcategory || formData.name || '').toString().trim();
+        if (category && lookup) {
           const categoryServices = (sectorServices as any)[category]?.services || [];
-          const matchingService = categoryServices.find((service: any) => service.name === formData.name);
+          const matchingService = categoryServices.find((service: any) => {
+            const svcName = (service.name || '').toString().trim();
+            return svcName.toLowerCase() === lookup.toLowerCase();
+          });
           if (matchingService) setSelectedService(matchingService);
-          else console.warn('No matching service found for:', formData.name, 'in category:', category);
+          else console.warn('No matching service found for:', lookup, 'in category:', category);
         }
       } catch (error) {
         console.error('Failed to set selected service:', error);
@@ -256,6 +325,18 @@ export function useProductFormState({
     loadTemplateForCategory(category || 'default');
   }, [category, type]);
 
+  // Auto-generate SKU when category/service/name/brand change, if sku not provided
+  useEffect(() => {
+    if (type !== 'product') return;
+    if (sku && sku.trim() !== '') return; // don't clobber user-entered SKU
+
+    const base = buildSkuBase();
+    if (base) {
+      // leave trailing '-' so user knows to append item/brand/postfix
+      setSku(`${base}-`);
+    }
+  }, [category, selectedService, type, sku, productName, brand]);
+
   const isFormValid = useMemo(() => {
     // Note: permission check should be performed externally and passed in if needed
     if (!category || !selectedService) return false;
@@ -280,10 +361,12 @@ export function useProductFormState({
     setLoading,
     type, setType,
     productName, setProductName,
+    subCategory, setSubCategory,
     brand, setBrand,
     sku, setSku,
     productPrice, setProductPrice,
     stock, setStock,
+    productUnit, setProductUnit,
     productDescription, setProductDescription,
     // attributes & variants
     attributes, setAttributes,

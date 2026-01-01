@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectCurrency } from '../../store/slices/currencySlice';
 import { ArrowLeft } from 'lucide-react';
 import sectorServices from "../../config/sectorServices.json";
 import packageTierTemplates from "../../config/packageTierTemplates.json";
@@ -31,6 +33,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
 
   // Hooks: permissions, media and form state
   const { authUser, canEdit, hasPermission } = useProductFormPermissions({ useAuth });
+  // Currency selector from global store
+  const currency = useSelector(selectCurrency);
   const media = useProductMedia();
   const form = useProductFormState({ editProductId, onSetExistingImages: media.setExistingImages, onSetExistingVideos: media.setExistingVideos });
 
@@ -50,13 +54,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     loading: formLoading,
     // product-specific fields
     productName, setProductName,
+    subCategory, setSubCategory,
     brand, setBrand,
     sku, setSku,
     productPrice, setProductPrice,
     stock, setStock,
+    productUnit, setProductUnit,
     productDescription, setProductDescription,
     // attributes & variants
-    attributes, setAttributes,
+    attributes: _attributes, setAttributes,
     variants, setVariants,
     // type
     type, setType,
@@ -240,6 +246,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     }
   }, [form.category, editProductId, form.loading]);
 
+  // Auto-map selected service/template to Sub-category when in service mode
+  useEffect(() => {
+    if (selectedService) {
+      setSubCategory(selectedService.name || '');
+    }
+  }, [selectedService, type]);
+
   // Load existing product data if in edit mode
   useEffect(() => {
     const loadProductForEditing = async () => {
@@ -264,6 +277,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
         form.setPrices(formData.prices);
         form.setDeliveryTimes(formData.deliveryTimes);
         form.setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
+
+        // Populate product-specific fields when editing an existing product
+        if (formData.type === 'product') {
+          form.setType('product');
+          form.setProductName(formData.productName || formData.name || '');
+          form.setBrand(formData.brand || '');
+          form.setSku(formData.sku || '');
+          form.setProductPrice(formData.price ? String(formData.price) : '');
+          form.setStock(formData.stock !== undefined && formData.stock !== '' ? String(formData.stock) : '');
+          form.setProductUnit(formData.productUnit || formData.unit || 'pcs');
+          form.setProductDescription(formData.productDescription || formData.fullFormAnswersPerTier?.[formData.tier]?.description || '');
+        } else {
+          form.setType('service');
+        }
         
         // Load existing images from product into media slice
         if (product.images && product.images.length > 0) {
@@ -372,6 +399,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
 
     // Build product metadata using the service interface
     const productData: any = {
+      type,
       category,
       name: type === 'product' ? productName : selectedService?.name,
       serviceNames: type === 'service' ? selectedServiceNames : [],
@@ -382,39 +410,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       tags,
       // product-specific fields
       productName,
+      subCategory: subCategory,
       brand,
       sku,
       productPrice,
       stock,
+      productUnit,
       productDescription,
-    };
+      currency: currency || undefined
+    }; 
 
-    setSubmitting(true);
+    // Wrap create/update operations in a try/catch so we can show error messages
     try {
-      
+      // If editing an existing product, update flow
       if (editProductId) {
-        // Update existing product
-        
         // Combine existing images with new images for the update
+        // Start with any existing images the user didn't remove, then append newly uploaded ones
         let allImages: Array<{url: string, isPrimary: boolean, order: number}> = [];
-        
-        // Add existing images first
-        if (existingImages.length > 0) {
-          allImages = existingImages.map((img, index) => ({
-            url: img.url,
-            isPrimary: img.isPrimary || index === 0,
-            order: index + 1
-          }));
+        if (existingImages && existingImages.length > 0) {
+          // Clone to avoid mutating media state
+          allImages = existingImages.map(img => ({ url: img.url, isPrimary: !!img.isPrimary, order: img.order ?? 0 }));
         }
-        
-        // If user added new images, upload them and add to the array
+
         if (images.length > 0) {
           try {
             const newImageKeys = await uploadImages(images);
             const newImageObjects = newImageKeys.map((key, index) => ({
               url: ImageService.getImageUrl(key),
+              // If there are no existing images, make the first uploaded image primary
               isPrimary: allImages.length === 0 && index === 0,
-              order: allImages.length + index + 1
+              order: (allImages.length) + index + 1
             }));
             allImages = [...allImages, ...newImageObjects];
           } catch (imageError) {
@@ -981,7 +1006,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             </div>
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Price (₹) <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Price ({currency === 'INR' ? '₹' : currency || ''}) <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="number"
                 min="0"
@@ -995,15 +1022,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             {/* Stock */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Stock <span className="text-rose-500">*</span></label>
-              <input
-                type="number"
-                min="0"
-                value={stock || ''}
-                onChange={e => setStock(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                required
-                disabled={submitting}
-              />
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  min="0"
+                  value={stock || ''}
+                  onChange={e => setStock(e.target.value)}
+                  className="w-2/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                  required
+                  disabled={submitting}
+                />
+
+                <select value={productUnit} onChange={(e) => setProductUnit(e.target.value)} className="w-1/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
+                  <option value="pcs">pcs</option>
+                  <option value="m">m</option>
+                  <option value="meter">meter</option>
+                  <option value="kg">kg</option>
+                </select>
+              </div>
             </div>
             {/* Description */}
             <div className="md:col-span-2">
@@ -1027,7 +1063,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                         <tr className="text-left text-gray-600 dark:text-gray-300">
                           <th className="py-2">Variant</th>
                           <th className="py-2">SKU</th>
-                          <th className="py-2">Price (₹)</th>
+                          <th className="py-2">Price ({currency === 'INR' ? '₹' : currency || ''})</th>
                           <th className="py-2">Stock</th>
                         </tr>
                       </thead>

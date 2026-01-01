@@ -22,22 +22,37 @@ export interface LegacyFormData {
   sku: string;
   title: string;
   category: string | null; // renamed from sector
-  name: string; // renamed from serviceName
+  subCategory?: string; // service template or sub-category
+  name: string; // renamed from serviceName or productName
   serviceNames: string[];
   tier: string;
   prices: Record<string, number | "">;
   deliveryTimes: Record<string, number | "">;
   fullFormAnswersPerTier: Record<string, Record<string, string>>;
   tags: string[]; // renamed from selectedSkills
+  // Optional product-specific fields
+  type?: 'product' | 'service';
+  productName?: string;
+  productDescription?: string;
+  brand?: string;
+  currency?: string;
+  productUnit?: string;
+  unit?: string;
+  stock?: number | string;
+  price?: number;
+  id?: string;
 }
+
 
 // Interface matching the API structure from your PowerShell example
 export interface CreateProductRequest {
+  type?: 'product' | 'service';
   name: string;
   description: string;
   brand: string;
   price: number;
   category: string;
+  subcategory?: string;
   currency: string;
   images: Array<{
     url: string;
@@ -46,7 +61,7 @@ export interface CreateProductRequest {
   }>;
   videoKey?: string;
   videoUrl?: string;
-  specifications: TierBasedSpecifications;
+  specifications?: TierBasedSpecifications | null;
   availability: {
     inStock: boolean;
     quantity: number;
@@ -67,27 +82,29 @@ export interface CreateProductWithMediaRequest {
 export interface ProductResponse {
   id?: string;
   productId?: string;  // API returns productId instead of id
+  type?: 'product' | 'service';
   name: string;
   title?: string; // Custom business name/title separate from product name
-  description: string;
-  brand: string;
-  price: number;
-  category: string;
-  currency: string;
-  images: Array<{
+  description?: string;
+  brand?: string;
+  price?: number;
+  category?: string;
+  currency?: string;
+  unit?: string;
+  images?: Array<{
     url: string;
     isPrimary: boolean;
     order: number;
   }>;
-  specifications: TierBasedSpecifications;
-  availability: {
-    inStock: boolean;
-    quantity: number;
+  specifications?: TierBasedSpecifications | null;
+  availability?: {
+    inStock?: boolean;
+    quantity?: number;
   };
-  tags: string[];
+  tags?: string[];
   skills?: string[];  // Made optional to match API
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
   isActive?: boolean;  // Added for product status management
   // API specific fields
   createdBy?: string;
@@ -198,7 +215,16 @@ export class ProductService {
     // Create tags from various sources
     const apiTags: string[] = [];
     if (formData.category) apiTags.push(formData.category.toLowerCase());
-    if (formData.name) apiTags.push(formData.name.toLowerCase().replace(/\s+/g, '-'));
+
+    // Sub-category is a common field for both products and services. Prefer it when present for tags and payloads.
+    // If subCategory is missing, fall back to the name so the API receives a useful subcategory value.
+    const subCatRaw = (formData as any).subCategory || (formData as any).subcategory || (formData.name || undefined);
+    if (subCatRaw) {
+      apiTags.push(String(subCatRaw).toLowerCase().replace(/\s+/g, '-'));
+    } else if (formData.name) {
+      apiTags.push(formData.name.toLowerCase().replace(/\s+/g, '-'));
+    }
+
     if (formData.tags) {
       formData.tags.forEach((skill: string) => {
         apiTags.push(skill.toLowerCase().replace(/\s+/g, '-'));
@@ -206,54 +232,56 @@ export class ProductService {
     }
     apiTags.push(selectedTier.toLowerCase());
 
-    // Build tier-based specifications
+    // Build tier-based specifications (only for services)
     const tierSpecifications: TierBasedSpecifications = {};
     
-    // Process all three tiers
-    ['Basic', 'Standard', 'Premium'].forEach(tierName => {
-      const tierPrice = Number(formData.prices?.[tierName]) || 0;
-      const tierDeliveryTime = formData.deliveryTimes?.[tierName] || '3-5';
-      const tierAnswers = formData.fullFormAnswersPerTier?.[tierName] || {};
-      
-      // Build delivery time string for this tier
-      const tierDeliveryTimeStr = `${tierDeliveryTime} ${formData.name?.includes('day') ? '' : 'days'}`.trim();
-      
-      // Extract features from tier answers (excluding standard fields)
-      const features: string[] = [];
-      Object.entries(tierAnswers).forEach(([key, value]) => {
-        if (value && !['description', 'brand', 'revisions'].includes(key)) {
-          features.push(`${key}: ${value}`);
-        }
+    // Process all three tiers when this is not a product
+    if (formData.type !== 'product') {
+      ['Basic', 'Standard', 'Premium'].forEach(tierName => {
+        const tierPrice = formData.prices && formData.prices[tierName] !== undefined && formData.prices[tierName] !== '' ? Number(formData.prices?.[tierName]) : undefined;
+        const tierDeliveryTimeRaw = formData.deliveryTimes?.[tierName];
+        const tierDeliveryTime = tierDeliveryTimeRaw ? `${tierDeliveryTimeRaw} ${formData.name?.includes('day') ? '' : 'days'}`.trim() : undefined;
+        const tierAnswers = formData.fullFormAnswersPerTier?.[tierName] || {};
+        
+        // Extract features from tier answers (excluding standard fields)
+        const features: string[] = [];
+        Object.entries(tierAnswers).forEach(([key, value]) => {
+          if (value && !['description', 'brand', 'revisions'].includes(key)) {
+            features.push(`${key}: ${value}`);
+          }
+        });
+        
+        const revisions = tierAnswers.revisions || undefined;
+        const support = tierAnswers.support || (tierName === 'Premium' ? 'Priority Support' : tierName === 'Standard' ? 'Standard Support' : undefined);
+        
+        tierSpecifications[tierName as keyof TierBasedSpecifications] = {
+          deliveryTime: tierDeliveryTime,
+          revisions: revisions,
+          price: tierPrice,
+          features: features.length > 0 ? features : undefined,
+          support: support
+        };
       });
-      
-      tierSpecifications[tierName as keyof TierBasedSpecifications] = {
-        deliveryTime: tierDeliveryTimeStr,
-        revisions: tierAnswers.revisions || '3 included',
-        price: tierPrice > 0 ? tierPrice : undefined,
-        features: features.length > 0 ? features : undefined,
-        support: tierName === 'Premium' ? 'Priority Support' : 
-                 tierName === 'Standard' ? 'Standard Support' : 'Basic Support'
-      };
-    });
+    }
 
     return {
+      type: formData.type || (Object.keys(tierSpecifications).length ? 'service' : 'product'),
       name: formData.name,
-      description: formData.fullFormAnswersPerTier?.[selectedTier]?.description || 
-                   `Professional ${formData.name || 'service'} with ${selectedTier} tier features`,
-      brand: formData.fullFormAnswersPerTier?.[selectedTier]?.brand || 
-             localStorage.getItem('username') || 'Provider',
+      description: formData.type === 'product' ? (formData.productDescription || '') : (formData.fullFormAnswersPerTier?.[selectedTier]?.description || `Professional ${formData.name || 'service'} with ${selectedTier} tier features`),
+      brand: formData.brand || formData.fullFormAnswersPerTier?.[selectedTier]?.brand || localStorage.getItem('username') || 'Provider',
       price: price,
-      category: formData.category?.toLowerCase() || 'technology',
-      currency: 'USD', // Default to USD, can be made configurable
+      category: formData.category,
+      subcategory: subCatRaw ? String(subCatRaw) : undefined,
+      currency: formData.currency, // Prefer form-supplied currency when available
       images: cdnImageUrls.map((url, index) => ({
         url: url,
         isPrimary: index === 0,
         order: index + 1
       })),
-      specifications: tierSpecifications,
+      specifications: formData.type === 'product' ? null : tierSpecifications,
       availability: {
-        inStock: true,
-        quantity: 1 // Default availability
+        inStock: (Number(formData.stock) || 0) > 0,
+        quantity: Number(formData.stock) || 1
       },
       tags: apiTags,
       skills: formData.tags || []
@@ -531,33 +559,38 @@ export class ProductService {
 
     // Find the primary tier (the one with the product's price)
     let primaryTier = 'Basic';
-    tiers.forEach(tier => {
-      const tierSpec = product.specifications[tier];
-      if (tierSpec) {
-        if (tierSpec.price === product.price) {
-          primaryTier = tier;
+    if (product.specifications) {
+      tiers.forEach(tier => {
+        const tierSpec = product.specifications ? product.specifications[tier] : undefined;
+        if (tierSpec) {
+          if (tierSpec.price === product.price) {
+            primaryTier = tier;
+          }
+          prices[tier] = tierSpec.price ?? "";
+          
+          // Parse delivery time to extract numeric value
+          const deliveryTimeStr = tierSpec.deliveryTime || '';
+          const timeMatch = deliveryTimeStr ? deliveryTimeStr.match(/(\d+)(-\d+)?/) : null;
+          deliveryTimes[tier] = timeMatch ? parseInt(timeMatch[1]) : "";
+          
+          // Populate tier answers
+          fullFormAnswersPerTier[tier] = {
+            description: product.description || '',
+            brand: product.brand || '',
+            revisions: tierSpec.revisions || '',
+            support: tierSpec.support || '',
+            ...(tierSpec.features ? tierSpec.features.reduce((acc, feature) => {
+              const [key, value] = feature.split(': ');
+              if (key && value) acc[key] = value;
+              return acc;
+            }, {} as Record<string, string>) : {})
+          };
         }
-        prices[tier] = tierSpec.price || "";
-        
-        // Parse delivery time to extract numeric value
-        const deliveryTimeStr = tierSpec.deliveryTime || '3-5 days';
-        const timeMatch = deliveryTimeStr.match(/(\d+)(-\d+)?/);
-        deliveryTimes[tier] = timeMatch ? parseInt(timeMatch[1]) : "";
-        
-        // Populate tier answers
-        fullFormAnswersPerTier[tier] = {
-          description: product.description || '',
-          brand: product.brand || '',
-          revisions: tierSpec.revisions || '3 included',
-          support: tierSpec.support || '',
-          ...(tierSpec.features ? tierSpec.features.reduce((acc, feature) => {
-            const [key, value] = feature.split(': ');
-            if (key && value) acc[key] = value;
-            return acc;
-          }, {} as Record<string, string>) : {})
-        };
-      }
-    });
+      });
+    } else {
+      // No specifications - leave defaults empty
+      // prices/deliveryTimes/fullFormAnswersPerTier remain empty
+    }
 
     // Extract category from product category or derive from tags
     const category = product.category ? 
@@ -569,12 +602,25 @@ export class ProductService {
       title: product.name,
       category: category,
       name: product.name,
+      // Expose top-level price & currency for product edit flows
+      price: product.price ?? undefined,
+      currency: product.currency || undefined,
       serviceNames: [product.name],
       tier: primaryTier,
       prices,
       deliveryTimes,
       fullFormAnswersPerTier,
-      tags: product.skills || product.tags || []
+      tags: product.skills || product.tags || [],
+      // product-specific fields for edit form (prefer explicit type from API if present)
+      type: product.type || (product.specifications ? 'service' : 'product'),
+      productName: product.name,
+      productDescription: product.description || '',
+      brand: product.brand || '',
+      productUnit: (product.unit || '') as any,
+      unit: (product.unit || '') as any,
+      stock: product.availability?.quantity ?? '',
+      // propagate subcategory (API uses `subcategory` but be flexible); fallback to name if absent
+      subCategory: (product as any).subcategory || (product as any).subCategory || product.name || ''
     };
   }
 

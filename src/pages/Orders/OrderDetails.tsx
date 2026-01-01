@@ -19,6 +19,7 @@ import { Order, OrderStatus } from '../../types/order';
 import { orderService } from '../../services/orderService';
 import { useAuth } from '../../hooks/useAuth';
 import OrderTracker from '../../components/OrderTracker';
+import { useCurrency } from '../../hooks/useCurrency';
 
 interface OrderDetailsProps {
   order: Order;
@@ -29,6 +30,7 @@ interface OrderDetailsProps {
 
 export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDetailsProps) => {
   const { userContext, idToken } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -387,9 +389,7 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
                           Qty: {item.quantity}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          {order.pricing?.currency || 'INR'} {(item.totalPrice || 0).toFixed(2)}
-                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{formatCurrency(Math.round(Number(item.totalPrice) || 0))}</p>
                       </div>
                     </div>
                   ))}
@@ -405,26 +405,26 @@ export const OrderDetails = ({ order, isOpen, onClose, onOrderUpdate }: OrderDet
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Subtotal:</span>
-                    <span className="text-gray-900 dark:text-white">{order.pricing?.currency || 'USD'} {(order.pricing?.subtotal || 0).toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white">{formatCurrency(Math.round(Number(order.pricing?.subtotal) || 0))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Taxes:</span>
-                    <span className="text-gray-900 dark:text-white">{order.pricing?.currency || 'USD'} {((order.pricing as any)?.tax || order.pricing?.taxes || 0).toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white">{formatCurrency(Math.round(Number((order.pricing as any)?.tax || order.pricing?.taxes || 0) || 0))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Service Fee:</span>
-                    <span className="text-gray-900 dark:text-white">{order.pricing?.currency || 'USD'} {(order.pricing?.serviceFee || 0).toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white">{formatCurrency(Math.round(Number(order.pricing?.serviceFee) || 0))}</span>
                   </div>
                   {(order.pricing?.discount || 0) > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Discount:</span>
-                      <span>-{order.pricing?.currency || 'USD'} {(order.pricing?.discount || 0).toFixed(2)}</span>
+                      <span>-{formatCurrency(Math.round(Number(order.pricing?.discount) || 0))}</span>
                     </div>
                   )}
                   <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
                     <div className="flex justify-between font-semibold text-lg">
                       <span className="text-gray-900 dark:text-white">Total:</span>
-                      <span className="text-rose-600">{order.pricing?.currency || 'USD'} {((order.pricing as any)?.totalAmount || order.pricing?.total || 0).toFixed(2)}</span>
+                      <span className="text-rose-600">{formatCurrency(Math.round(Number((order.pricing as any)?.totalAmount || order.pricing?.total || 0) || 0))}</span>
                     </div>
                   </div>
                 </div>

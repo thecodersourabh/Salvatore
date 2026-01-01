@@ -195,7 +195,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 // Check if product has package specifications with Basic tier
                 const basicPackage = product.specifications?.Basic;
                 if (basicPackage && basicPackage.price) {
-                  return formatCurrency(basicPackage.price);
+                  return formatCurrency(Math.round(Number(basicPackage.price) || 0));
                 }
                 // Fallback to regular product price
                 return formatCurrency(product.price);

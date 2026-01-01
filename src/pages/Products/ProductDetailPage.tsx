@@ -390,11 +390,11 @@ export const ProductDetailPage: React.FC = () => {
               {/* Price */}
               <div className="flex items-center flex-wrap gap-3 mb-6">
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(selectedPackage?.data?.price || product.price)}
+                  {formatCurrency(Math.round(Number(selectedPackage?.data?.price ?? product.price) || 0))}
                 </span>
-                {(product as any).originalPrice && ((selectedPackage?.data?.price || product.price) < (product as any).originalPrice) && (
+                {(product as any).originalPrice && ((selectedPackage?.data?.price ?? product.price) < (product as any).originalPrice) && (
                   <span className="text-2xl text-gray-500 dark:text-gray-400 line-through">
-                    {formatCurrency((product as any).originalPrice)}
+                    {formatCurrency(Math.round(Number((product as any).originalPrice) || 0))}
                   </span>
                 )}
                 {selectedPackage && (
@@ -477,7 +477,11 @@ export const ProductDetailPage: React.FC = () => {
                     className="w-full bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <ShoppingCart className="h-5 w-5" />
-                    Add to Cart - {formatCurrency(selectedPackage?.data?.price || product.price)}
+                    {tierData.price && (
+                            <span className="ml-2 text-sm">
+                              {formatCurrency(Math.round(Number(tierData.price) || 0))}
+                            </span>
+                          )}
                   </button>
                   {selectedPackage && (
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">

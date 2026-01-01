@@ -19,6 +19,7 @@ import {
 } from '@ionic/react';
 import { useCart } from '../hooks/useCart';
 import { ServiceProviderService } from '../services/serviceProviderService';
+import { useCurrency } from '../hooks/useCurrency';
 import sectors from '../config/sectorServices.json';
 
 type ProviderResult = any;
@@ -26,6 +27,7 @@ type ProviderResult = any;
 export const ProviderSearch: React.FC = () => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const { formatCurrency } = useCurrency();
   const [maxDistance, setMaxDistance] = useState<number>(20);
   const [maxPrice, setMaxPrice] = useState<number>(200);
   const [results, setResults] = useState<ProviderResult[]>([]);
@@ -218,7 +220,7 @@ export const ProviderSearch: React.FC = () => {
                               <div className="text-xs text-gray-500">{s.description}</div>
                             </div>
                             <div className="flex flex-col items-end">
-                              <div className="text-sm font-semibold">${(s.price || provider.pricing?.base || Math.round(Math.random() * 150) + 20).toFixed(2)}</div>
+                              <div className="text-sm font-semibold">{formatCurrency(Math.round(Number(s.price || provider.pricing?.base || Math.round(Math.random() * 150) + 20) || 0))}</div>
                               <IonButton size="small" onClick={() => handleAddToCart(provider, s.name, s.price || provider.pricing?.base || 49)}>Add</IonButton>
                             </div>
                           </div>
@@ -231,7 +233,7 @@ export const ProviderSearch: React.FC = () => {
                       <div className="mt-2 flex items-center justify-between">
                         <div className="text-sm">Basic Service</div>
                         <div className="flex items-center space-x-2">
-                          <div className="text-sm font-semibold">${provider.pricing?.base || 49}</div>
+                          <div className="text-sm font-semibold">{formatCurrency(Math.round(Number(provider.pricing?.base) || 49))}</div>
                           <IonButton size="small" onClick={() => handleAddToCart(provider, provider.title || 'Service', provider.pricing?.base || 49)}>Add</IonButton>
                         </div>
                       </div>

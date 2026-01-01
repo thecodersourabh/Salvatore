@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { usePlatform } from '../hooks/usePlatform';
+import { useCurrency } from '../hooks/useCurrency';
 import { useAuth } from '../hooks/useAuth';
 import { AddressService } from '../services/addressService';
 import { orderService } from '../services/orderService';
@@ -10,8 +11,9 @@ import { orderService } from '../services/orderService';
 export const Cart = () => {
   const { items, removeItem, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
   const { isNative } = usePlatform();
+  const { formatCurrency } = useCurrency();
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0);
 
   if (!isCartOpen) return null;
 
@@ -57,7 +59,7 @@ export const Cart = () => {
                   />
                   <div className="flex-1">
                     <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-gray-600">${item.price.toFixed(2)}</p>
+                    <p className="text-gray-600">{formatCurrency(Math.round(Number(item.price) || 0))}</p>
                     <div className="flex items-center space-x-2 mt-2">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -86,7 +88,7 @@ export const Cart = () => {
             <div className={`border-t p-4 space-y-4 ${isNative ? 'pb-safe' : ''}`}>
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatCurrency(Math.round(Number(total) || 0))}</span>
               </div>
               <div className="space-y-2">
                 <CheckoutFlow />

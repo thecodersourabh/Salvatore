@@ -8,6 +8,7 @@ import { Order, OrderStatus, OrderListParams, OrderListResponse } from '../../ty
 import { useDebounce } from '../../hooks/useDebounce';
 import { OrderDetails } from './OrderDetails';
 import { useAuth } from '../../hooks/useAuth';
+import { useCurrency } from '../../hooks/useCurrency';
 
 interface OrdersState {
   orders: Order[];
@@ -20,6 +21,7 @@ interface OrdersState {
 export const Orders = () => {
   const { userContext, idToken, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   
   const [state, setState] = useState<OrdersState>({
     orders: [],
@@ -489,7 +491,7 @@ export const Orders = () => {
                         {/* Raw status for visibility/debugging */}
 
                         <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">${((order.pricing as any)?.totalAmount || order.pricing?.total || 0).toFixed(2)}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(Math.round(Number((order.pricing as any)?.totalAmount || order.pricing?.total || 0) || 0))}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-300">{order.items?.length || 0} {(order.items?.length || 0) === 1 ? 'item' : 'items'}</p>
                         </div>
 

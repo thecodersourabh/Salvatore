@@ -25,21 +25,17 @@ const currencySlice = createSlice({
 // Helper function to format currency (kept outside of Redux for purity)
 export const formatCurrencyValue = (amount: number, currency: CurrencyCode): string => {
   try {
+    // Round to nearest integer and format with no fractional digits
+    const sanitizedAmount = Number.isFinite(Number(amount)) ? Math.round(Number(amount)) : 0;
+    const formatOptions = { style: 'currency', currency: currency === 'INR' ? 'INR' : 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 } as Intl.NumberFormatOptions;
     if (currency === 'INR') {
-      return new Intl.NumberFormat('en-IN', { 
-        style: 'currency', 
-        currency: 'INR', 
-        maximumFractionDigits: 2 
-      }).format(amount);
+      return new Intl.NumberFormat('en-IN', formatOptions).format(sanitizedAmount);
     }
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD', 
-      maximumFractionDigits: 2 
-    }).format(amount);
+    return new Intl.NumberFormat('en-US', formatOptions).format(sanitizedAmount);
   } catch (e) {
-    // fallback simple
-    return currency === 'INR' ? `₹${amount}` : `$${amount}`;
+    // fallback simple (no decimals)
+    const fallback = (Number.isFinite(Number(amount)) ? Math.round(Number(amount)).toFixed(0) : '0');
+    return currency === 'INR' ? `₹${fallback}` : `$${fallback}`;
   }
 };
 

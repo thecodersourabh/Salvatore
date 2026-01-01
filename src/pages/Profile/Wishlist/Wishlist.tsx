@@ -5,10 +5,12 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useWishlist } from '../../../hooks/useWishlist';
 import { useCart } from '../../../hooks/useCart';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export const Wishlist = () => {
   const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();
   const { addItem } = useCart();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
   
@@ -110,7 +112,7 @@ export const Wishlist = () => {
                   </div>
                   <div className="p-4">
                     <h3 className="font-medium text-gray-900 dark:text-white truncate">{item.name}</h3>
-                    <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">₹{item.price.toFixed(2)}</p>
+                    <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{formatCurrency(Math.round(Number(item.price) || 0))}</p>
                     
                     <div className="mt-4 flex items-center gap-3">
                       <button

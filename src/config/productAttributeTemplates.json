@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-01",
+  "default": {
+    "attributes": [
+      { "name": "Color", "type": "multiselect", "options": ["Black", "White", "Red", "Blue"], "isVariantAttribute": true },
+      { "name": "Size", "type": "multiselect", "options": ["S", "M", "L", "XL"], "isVariantAttribute": true }
+    ]
+  }
+ 
+}

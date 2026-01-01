@@ -11,7 +11,6 @@ import {
   resetCreatingUser,
   selectAuth,
 } from '../slices/authSlice';
-import { getLogoutUri } from '../utils/getRedirectUri';
 
 // Redux Auth Provider that bridges Auth0 with Redux
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

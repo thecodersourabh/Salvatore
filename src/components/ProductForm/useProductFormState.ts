@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import sectorServices from '../../config/sectorServices.json';
 import packageTierTemplates from '../../config/packageTierTemplates.json';
+import productAttributeTemplates from '../../config/productAttributeTemplates.json';
 import { ProductService } from '../../services/cachedServices';
 import { ProductService as BaseProductService } from '../../services/productService';
 import { ImageService } from '../../services/imageService';
@@ -17,7 +18,71 @@ export function useProductFormState({
   const [selectedServiceNames, setSelectedServiceNames] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tier, setTier] = useState('Basic');
+  // Product-specific fields
+  const [productName, setProductName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [sku, setSku] = useState('');
+  const [productPrice, setProductPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  // Add type state for product/service
+  const [type, setType] = useState<'product' | 'service'>('service');
   const [prices, setPrices] = useState<Record<string, number | ''>>({ Basic: '', Standard: '', Premium: '' });
+
+  // Product attributes & variants
+  const [attributes, setAttributes] = useState<Array<{ name: string, options: string[] }>>([]);
+  const [variants, setVariants] = useState<Array<{ id: string, sku?: string, price?: number | '', stock?: number | '', attrs: Record<string,string> }>>([]);
+
+  const addAttribute = (name: string, options: string[] = []) => {
+    setAttributes(prev => [...prev, { name, options }]);
+  };
+
+  const updateAttributeOptions = (name: string, options: string[]) => {
+    setAttributes(prev => prev.map(a => a.name === name ? { ...a, options } : a));
+  };
+
+  const removeAttribute = (name: string) => {
+    setAttributes(prev => prev.filter(a => a.name !== name));
+  };
+
+  const generateVariants = (attrs = attributes) => {
+    if (!attrs || attrs.length === 0) {
+      setVariants([]);
+      return;
+    }
+
+    // Cartesian product based on attribute order
+    const pools = attrs.map(a => a.options.map(opt => ({ [a.name]: opt })));
+    const combinations = pools.reduce((acc, pool) => acc.flatMap(a => pool.map(b => ({ ...a, ...b }))), [{} as Record<string,string>]);
+
+    const comboKey = (comb: Record<string,string>) => {
+      return attrs.map(a => `${a.name}:${comb[a.name] || ''}`).join('|');
+    };
+
+    const prevMap: Record<string, any> = {};
+    variants.forEach(v => {
+      try {
+        const key = comboKey(v.attrs);
+        prevMap[key] = v;
+      } catch (err) {
+        // noop
+      }
+    });
+
+    const newVariants = combinations.map((combination, idx) => {
+      const key = comboKey(combination);
+      const prev = prevMap[key];
+      return {
+        id: prev?.id || `var-${idx+1}`,
+        sku: prev?.sku || '',
+        price: prev?.price ?? '',
+        stock: prev?.stock ?? '',
+        attrs: combination
+      };
+    });
+
+    setVariants(newVariants);
+  };
   const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number | ''>>({ Basic: '', Standard: '', Premium: '' });
   const [editingTier, setEditingTier] = useState<string | null>(null);
   const [fullFormAnswersPerTier, setFullFormAnswersPerTier] = useState<Record<string, Record<string, string>>>({ Basic: {}, Standard: {}, Premium: {} });
@@ -94,14 +159,21 @@ export function useProductFormState({
         const product = await ProductService.getProduct(editProductId);
         if (!product) throw new Error('Product not found');
         const formData = BaseProductService.transformProductResponseToFormData(product);
+        const fd: any = formData;
 
-        setCategory(formData.category);
-        setSelectedServiceNames(formData.serviceNames);
-        setTags(formData.tags);
-        setTier(formData.tier);
-        setPrices(formData.prices);
-        setDeliveryTimes(formData.deliveryTimes);
-        setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
+        setCategory(fd.category);
+        setSelectedServiceNames(fd.serviceNames);
+        setTags(fd.tags);
+        setTier(fd.tier);
+        setPrices(fd.prices);
+        setDeliveryTimes(fd.deliveryTimes);
+        setFullFormAnswersPerTier(fd.fullFormAnswersPerTier);
+        // Determine if existing item is a product or service
+        if (fd.variants || fd.brand || fd.sku) {
+          setType('product');
+        } else {
+          setType('service');
+        }
 
         if (product.images && product.images.length > 0) {
           onSetExistingImages(product.images);
@@ -110,6 +182,30 @@ export function useProductFormState({
         if (product.videoKey) {
           const videoUrl = ImageService.getImageUrl(product.videoKey);
           onSetExistingVideos([{ url: videoUrl }]);
+        }
+
+        // Load attributes & variants when editing existing product
+        if (fd.variants && Array.isArray(fd.variants) && fd.variants.length > 0) {
+          // Build attributes list from variant keys and collect options
+          const attrMap: Record<string, Set<string>> = {};
+          fd.variants.forEach((v: any) => {
+            const attrs = v.attrs || {};
+            Object.entries(attrs).forEach(([k, val]) => {
+              attrMap[k] = attrMap[k] || new Set<string>();
+              if (val) attrMap[k].add(String(val));
+            });
+          });
+
+          const attrs = Object.entries(attrMap).map(([name, setVals]) => ({ name, options: Array.from(setVals) }));
+          setAttributes(attrs);
+          setVariants(fd.variants.map((v: any, idx: number) => ({ id: v.id || `var-${idx+1}`, sku: v.sku || '', price: v.price ?? '', stock: v.stock ?? '', attrs: v.attrs || {} })));
+        } else if (fd.attributes) {
+          // attribute definitions present (new format)
+          const attrs = Array.isArray(fd.attributes)
+            ? fd.attributes.map((a: any) => ({ name: a.name, options: a.options || [] }))
+            : Object.entries(fd.attributes).map(([name, def]: any) => ({ name, options: def.options || [] }));
+          setAttributes(attrs);
+          generateVariants(attrs);
         }
       } catch (error) {
         console.error('Failed to load product for editing:', error);
@@ -143,6 +239,23 @@ export function useProductFormState({
     loadServiceFromCategory();
   }, [editProductId, category]);
 
+  // Auto-load product attribute template when category changes (only for products)
+  useEffect(() => {
+    if (type !== 'product') return;
+    const loadTemplateForCategory = (cat?: string) => {
+      const catKey = cat || 'default';
+      const tpl = (productAttributeTemplates as any)[catKey] || (productAttributeTemplates as any)['default'];
+      if (!tpl || !tpl.attributes) return;
+      const attrs = Array.isArray(tpl.attributes)
+        ? tpl.attributes.map((a: any) => ({ name: a.name, options: a.options || [] }))
+        : Object.entries(tpl.attributes).map(([name, def]: any) => ({ name, options: def.options || [] }));
+      // Only set template if attributes empty - do not overwrite user edits
+      setAttributes(prev => (prev.length === 0 ? attrs : prev));
+    };
+
+    loadTemplateForCategory(category || 'default');
+  }, [category, type]);
+
   const isFormValid = useMemo(() => {
     // Note: permission check should be performed externally and passed in if needed
     if (!category || !selectedService) return false;
@@ -164,6 +277,17 @@ export function useProductFormState({
     interp,
     isFormValid,
     loading,
-    setLoading
+    setLoading,
+    type, setType,
+    productName, setProductName,
+    brand, setBrand,
+    sku, setSku,
+    productPrice, setProductPrice,
+    stock, setStock,
+    productDescription, setProductDescription,
+    // attributes & variants
+    attributes, setAttributes,
+    variants, setVariants,
+    addAttribute, updateAttributeOptions, removeAttribute, generateVariants
   };
 }

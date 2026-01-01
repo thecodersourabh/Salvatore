@@ -1,0 +1,221 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-01",
+
+  "Technology": {
+    "category": "DIGITAL_REMOTE",
+    "products": [
+      {
+        "name": "Laptop",
+        "attributes": [
+          { "name": "Brand", "options": ["HP", "Dell", "Lenovo", "Asus", "Apple"], "isVariantAttribute": false },
+          { "name": "RAM", "options": ["8GB", "16GB", "32GB"], "isVariantAttribute": true },
+          { "name": "Storage", "options": ["256GB", "512GB", "1TB"], "isVariantAttribute": true },
+          { "name": "Color", "options": ["Black", "Silver", "White"], "isVariantAttribute": true }
+        ]
+      },
+      {
+        "name": "Smartphone",
+        "attributes": [
+          { "name": "Brand", "options": ["Samsung", "Xiaomi", "OnePlus", "Apple"], "isVariantAttribute": false },
+          { "name": "Storage", "options": ["64GB", "128GB", "256GB"], "isVariantAttribute": true },
+          { "name": "Color", "options": ["Black", "White", "Blue", "Red"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "RAM Module", "attributes": [ { "name": "Capacity", "options": ["4GB", "8GB", "16GB"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "SSD", "attributes": [ { "name": "Capacity", "options": ["256GB", "512GB", "1TB"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Laptop Charger", "attributes": [ { "name": "Wattage", "options": ["45W", "65W", "90W"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Electrician": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Light Fixture",
+        "attributes": [
+          { "name": "Color", "options": ["White", "Black", "Brass"], "isVariantAttribute": true },
+          { "name": "Material", "options": ["Metal", "Plastic", "Glass"], "isVariantAttribute": false },
+          { "name": "Wattage", "options": ["9W", "12W", "18W"], "isVariantAttribute": false }
+        ]
+      },
+      {
+        "name": "Switch",
+        "attributes": [
+          { "name": "Type", "options": ["Toggle", "Rocker", "Dimmer"], "isVariantAttribute": false },
+          { "name": "Finish", "options": ["White", "Silver", "Black"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Wire Spool", "attributes": [ { "name": "Gauge", "options": ["14AWG", "16AWG", "18AWG"], "isVariantAttribute": false } ], "isRaw": true },
+      { "name": "Light Bulb", "attributes": [ { "name": "Type", "options": ["LED", "CFL", "Halogen"], "isVariantAttribute": true } ], "isRaw": true }
+    ]
+  },
+
+  "Plumber": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Faucet",
+        "attributes": [
+          { "name": "Finish", "options": ["Chrome", "Brushed Nickel", "Matte Black"], "isVariantAttribute": true },
+          { "name": "Mount Type", "options": ["Single-hole", "Centerset", "Widespread"], "isVariantAttribute": false }
+        ]
+      },
+      {
+        "name": "Water Heater",
+        "attributes": [
+          { "name": "Capacity", "options": ["10L", "20L", "30L"], "isVariantAttribute": false },
+          { "name": "Fuel Type", "options": ["Electric", "Gas"], "isVariantAttribute": false }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "PVC Pipe", "attributes": [ { "name": "Diameter", "options": ["1/2\"", "3/4\"", "1\""], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Washer Set", "attributes": [ { "name": "Size", "options": ["1/2", "3/4"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Carpenter": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Wooden Table",
+        "attributes": [
+          { "name": "Material", "options": ["Teak", "Mango", "Oak"], "isVariantAttribute": false },
+          { "name": "Finish", "options": ["Natural", "Varnished", "Painted"], "isVariantAttribute": true },
+          { "name": "Size", "options": ["Small", "Medium", "Large"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Wood Plank", "attributes": [ { "name": "Material", "options": ["Teak", "Mango", "Oak"], "isVariantAttribute": true }, { "name": "Length", "options": ["6ft", "8ft"], "isVariantAttribute": false } ], "isRaw": true },
+      { "name": "Screws", "attributes": [ { "name": "Size", "options": ["1\"", "2\"", "3\""], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Mechanic": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Brake Pads",
+        "attributes": [
+          { "name": "Vehicle Brand", "options": ["Toyota", "Honda", "Hyundai"], "isVariantAttribute": false },
+          { "name": "Pad Type", "options": ["Ceramic", "Semi-metallic"], "isVariantAttribute": true }
+        ]
+      },
+      {
+        "name": "Oil Filter",
+        "attributes": [
+          { "name": "Compatibility", "options": ["Model A", "Model B", "Model C"], "isVariantAttribute": false }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Brake Pad Set", "attributes": [ { "name": "Material", "options": ["Ceramic", "Semi-metallic"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Oil Filter Element", "attributes": [ { "name": "Compatibility", "options": ["Model A", "Model B"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Tailor": {
+    "category": "TAILORING",
+    "products": [
+      {
+        "name": "Shirt",
+        "attributes": [
+          { "name": "Size", "options": ["S", "M", "L", "XL"], "isVariantAttribute": true },
+          { "name": "Fabric", "options": ["Cotton", "Silk", "Linen"], "isVariantAttribute": false },
+          { "name": "Color", "options": ["White", "Blue", "Black"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Fabric Yard", "attributes": [ { "name": "Fabric", "options": ["Cotton", "Silk", "Linen"], "isVariantAttribute": false }, { "name": "Color", "options": ["White", "Blue", "Black"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Buttons Pack", "attributes": [ { "name": "Material", "options": ["Plastic", "Metal"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Beautician": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Makeup Kit",
+        "attributes": [
+          { "name": "Shade", "options": ["Light", "Medium", "Dark"], "isVariantAttribute": true },
+          { "name": "Brand", "options": ["Brand A", "Brand B"], "isVariantAttribute": false }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Foundation Refill", "attributes": [ { "name": "Shade", "options": ["Light", "Medium", "Dark"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Brush Set", "attributes": [ { "name": "Pieces", "options": ["3", "5", "7"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Cleaner": {
+    "category": "PHYSICAL_ONSITE",
+    "products": [
+      {
+        "name": "Cleaning Solution",
+        "attributes": [
+          { "name": "Scent", "options": ["Lemon", "Pine", "Unscented"], "isVariantAttribute": false },
+          { "name": "Size", "options": ["500ml", "1L", "5L"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Detergent Concentrate", "attributes": [ { "name": "Size", "options": ["1L", "5L"], "isVariantAttribute": false } ], "isRaw": true },
+      { "name": "Microfiber Cloth", "attributes": [ { "name": "Color", "options": ["Blue", "Gray", "White"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Tutor": {
+    "category": "EDUCATION",
+    "products": [
+      {
+        "name": "Course Material",
+        "attributes": [
+          { "name": "Format", "options": ["PDF", "Video", "Interactive"], "isVariantAttribute": false },
+          { "name": "Level", "options": ["Beginner", "Intermediate", "Advanced"], "isVariantAttribute": false }
+        ]
+      }
+    ]
+  },
+
+  "Chef": {
+    "category": "CULINARY",
+    "products": [
+      {
+        "name": "Meal Kit",
+        "attributes": [
+          { "name": "Cuisine", "options": ["Indian", "Italian", "Chinese"], "isVariantAttribute": false },
+          { "name": "Servings", "options": ["1", "2", "4"], "isVariantAttribute": false }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Spice Pack", "attributes": [ { "name": "Cuisine", "options": ["Indian", "Italian"], "isVariantAttribute": false } ], "isRaw": true },
+      { "name": "Ingredient Box", "attributes": [ { "name": "Type", "options": ["Vegetables", "Meat", "Seafood"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  },
+
+  "Healthcare": {
+    "category": "HEALTHCARE",
+    "products": [
+      {
+        "name": "Pulse Oximeter",
+        "attributes": [
+          { "name": "Brand", "options": ["Brand X", "Brand Y"], "isVariantAttribute": false },
+          { "name": "Color", "options": ["White", "Black"], "isVariantAttribute": true }
+        ]
+      }
+    ],
+    "rawMaterials": [
+      { "name": "Disposable Gloves", "attributes": [ { "name": "Size", "options": ["S", "M", "L"], "isVariantAttribute": true } ], "isRaw": true },
+      { "name": "Face Mask Box", "attributes": [ { "name": "Type", "options": ["Surgical", "N95"], "isVariantAttribute": false } ], "isRaw": true }
+    ]
+  }
+}

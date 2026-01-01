@@ -48,6 +48,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     fullFormAnswersPerTier, setFullFormAnswersPerTier,
     interp,
     loading: formLoading,
+    // product-specific fields
+    productName, setProductName,
+    brand, setBrand,
+    sku, setSku,
+    productPrice, setProductPrice,
+    stock, setStock,
+    productDescription, setProductDescription,
+    // attributes & variants
+    attributes, setAttributes,
+    variants, setVariants,
+    // type
+    type, setType,
   } = form;
 
   // Fallback mapping from top-level sector to packageTierTemplates category key
@@ -218,7 +230,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
 
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-
   // Update service list when category changes (moved to form state)
   useEffect(() => {
     if (!form.category) return form.setServiceList([]);
@@ -298,15 +309,54 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       return;
     }
     
-    if (!selectedService?.name) {
-      const action = editProductId ? 'update' : 'create';
-      showValidationError(`Please select a service before ${action === 'update' ? 'updating' : 'creating'} the product`, 'service');
-      return;
+    if (type === 'service') {
+      if (!selectedService?.name) {
+        const action = editProductId ? 'update' : 'create';
+        showValidationError(`Please select a service before ${action === 'update' ? 'updating' : 'creating'} the product`, 'service');
+        return;
+      }
+
+      // Validate pricing for at least the basic tier
+      const basicPrice = prices.Basic;
+      if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) {
+        const action = editProductId ? 'update' : 'create';
+        showValidationError(`Please set a valid price for at least the Basic tier to ${action} the product`, 'price');
+        return;
+      }
+
+      // Validate delivery times for basic tier
+      const basicDeliveryTime = deliveryTimes.Basic;
+      if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) {
+        const action = editProductId ? 'update' : 'create';
+        showValidationError(`Please set a valid delivery time for at least the Basic tier to ${action} the product`, 'delivery');
+        return;
+      }
+    } else {
+      // Product specific validation
+      if (!productName || !brand || !sku) {
+        showValidationError('Please fill in the required product details (Name, Brand, SKU)', 'product');
+        return;
+      }
+
+      if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) {
+        showValidationError('Please set a valid product price', 'productPrice');
+        return;
+      }
+
+      if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) {
+        showValidationError('Please set a valid stock quantity', 'stock');
+        return;
+      }
+
+      if (!productDescription || productDescription.trim() === '') {
+        showValidationError('Please provide a product description', 'description');
+        return;
+      }
     }
 
     // Image validation - different rules for create vs update
     if (!editProductId) {
-      // For new products, must have at least one image
+      // For new products/services, must have at least one image
       if (!images || images.length === 0) {
         showValidationError('Please add at least one image to create a product', 'images');
         return;
@@ -320,32 +370,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       }
     }
 
-    // Validate pricing for at least the basic tier
-    const basicPrice = prices.Basic;
-    if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) {
-      const action = editProductId ? 'update' : 'create';
-      showValidationError(`Please set a valid price for at least the Basic tier to ${action} the product`, 'price');
-      return;
-    }
-
-    // Validate delivery times for basic tier
-    const basicDeliveryTime = deliveryTimes.Basic;
-    if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) {
-      const action = editProductId ? 'update' : 'create';
-      showValidationError(`Please set a valid delivery time for at least the Basic tier to ${action} the product`, 'delivery');
-      return;
-    }
-
     // Build product metadata using the service interface
     const productData: any = {
       category,
-      name: selectedService?.name,
-      serviceNames: selectedServiceNames,
-      tier,
-      prices,
-      deliveryTimes,
-      fullFormAnswersPerTier,
+      name: type === 'product' ? productName : selectedService?.name,
+      serviceNames: type === 'service' ? selectedServiceNames : [],
+      tier: type === 'service' ? tier : undefined,
+      prices: type === 'service' ? prices : { Basic: productPrice },
+      deliveryTimes: type === 'service' ? deliveryTimes : {},
+      fullFormAnswersPerTier: type === 'service' ? fullFormAnswersPerTier : {},
       tags,
+      // product-specific fields
+      productName,
+      brand,
+      sku,
+      productPrice,
+      stock,
+      productDescription,
     };
 
     setSubmitting(true);
@@ -509,22 +550,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
   // Comprehensive validation function to check if form is complete
   const isFormValid = useMemo(() => {
     if (!hasPermission) return false;
-    if (!category || !selectedService) return false;
+    if (!category) return false;
 
-    if (!editProductId) {
-      if (!images || images.length === 0) return false;
-    } else {
-      const totalImages = (existingImages?.length || 0) + (images?.length || 0);
-      if (totalImages === 0) return false;
-    }
+    // Type-specific checks
+    if (type === 'service') {
+      if (!selectedService) return false;
 
-    const basicPrice = prices.Basic;
-    if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) return false;
+      if (!editProductId) {
+        if (!images || images.length === 0) return false;
+      } else {
+        const totalImages = (existingImages?.length || 0) + (images?.length || 0);
+        if (totalImages === 0) return false;
+      }
 
-    const basicDeliveryTime = deliveryTimes.Basic;
-    if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) return false;
+      const basicPrice = prices.Basic;
+      if (!basicPrice || Number(basicPrice) <= 0 || isNaN(Number(basicPrice))) return false;
 
-    if (selectedService) {
+      const basicDeliveryTime = deliveryTimes.Basic;
+      if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) return false;
+
       const sectorToCategoryMap: Record<string, string> = {
         Technology: 'DIGITAL_REMOTE', Electrician: 'PHYSICAL_ONSITE', Plumber: 'PHYSICAL_ONSITE', Carpenter: 'PHYSICAL_ONSITE', Mechanic: 'PHYSICAL_ONSITE', Tailor: 'PHYSICAL_ONSITE', Beautician: 'PHYSICAL_ONSITE', Cleaner: 'PHYSICAL_ONSITE', Painter: 'PHYSICAL_ONSITE', Gardener: 'PHYSICAL_ONSITE', Tutor: 'EDUCATION', Chef: 'CULINARY', Agency: 'CONSULTATION', Courier: 'LOGISTICS', Healthcare: 'HEALTHCARE', Astrologer: 'CONSULTATION', Other: 'PHYSICAL_ONSITE'
       };
@@ -545,10 +589,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
           if (!answer || answer.trim() === '') return false;
         }
       }
+
+      return true;
     }
 
-    return true;
-  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates]);
+    // product specific checks
+    if (type === 'product') {
+      if (!productName || !brand || !sku) return false;
+      if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) return false;
+      if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) return false;
+      if (!productDescription || productDescription.trim() === '') return false;
+
+      if (!editProductId) {
+        if (!images || images.length === 0) return false;
+      } else {
+        const totalImages = (existingImages?.length || 0) + (images?.length || 0);
+        if (totalImages === 0) return false;
+      }
+
+      return true;
+    }
+
+    return false;
+  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, productName, brand, sku, productPrice, stock, productDescription, type]);
 
   // categoryForSelected removed (not needed when features are template-driven)
 
@@ -826,6 +889,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             ) : null;
           })()}
         </div>        
+
         {/* Media uploads: images + video */}
         <MediaUploadSection
           images={images}
@@ -849,38 +913,182 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
           showValidationError={showValidationError}
         />
 
-        {/* Service Tiers */}
-        <div className="space-y-6">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Service Packages</h2>
-            <span className="text-sm text-gray-500">Choose and configure your service tiers</span>
-          </div>
+        {/* Product or Service Switch */}
+        <div className="mt-8 flex items-center space-x-6">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Type:</span>
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              name="type"
+              value="product"
+              checked={type === 'product'}
+              onChange={() => setType('product')}
+              className="form-radio text-rose-600"
+            />
+            <span className="ml-2 text-gray-700 dark:text-gray-200">Product</span>
+          </label>
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              name="type"
+              value="service"
+              checked={type === 'service'}
+              onChange={() => setType('service')}
+              className="form-radio text-rose-600"
+            />
+            <span className="ml-2 text-gray-700 dark:text-gray-200">Service</span>
+          </label>
+        </div>
+
+        {/* Conditional fields based on type */}
+        {type === 'product' && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Product Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Product Name <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={productName || ''}
+                onChange={e => setProductName(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                required
+                disabled={submitting}
+              />
+            </div>
+            {/* Brand */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Brand <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={brand || ''}
+                onChange={e => setBrand(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                required
+                disabled={submitting}
+              />
+            </div>
+            {/* SKU */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">SKU <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={sku || ''}
+                onChange={e => setSku(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                required
+                disabled={submitting}
+              />
+            </div>
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Price (₹) <span className="text-rose-500">*</span></label>
+              <input
+                type="number"
+                min="0"
+                value={productPrice || ''}
+                onChange={e => setProductPrice(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                required
+                disabled={submitting}
+              />
+            </div>
+            {/* Stock */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Stock <span className="text-rose-500">*</span></label>
+              <input
+                type="number"
+                min="0"
+                value={stock || ''}
+                onChange={e => setStock(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                required
+                disabled={submitting}
+              />
+            </div>
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Description <span className="text-rose-500">*</span></label>
+              <textarea
+                value={productDescription || ''}
+                onChange={e => setProductDescription(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors resize-none"
+                rows={4}
+                required
+                disabled={submitting}
+              />
+            </div>
+
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {['Basic','Standard','Premium'].map((t) => {
-              const isActive = tier === t;
-              const tierAccents = {
-                Basic: 'text-blue-600 dark:text-blue-400',
-                Standard: 'text-emerald-600 dark:text-emerald-400',
-                Premium: 'text-purple-600 dark:text-purple-400'
-              };
+
+                {variants.length > 0 && (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-600 dark:text-gray-300">
+                          <th className="py-2">Variant</th>
+                          <th className="py-2">SKU</th>
+                          <th className="py-2">Price (₹)</th>
+                          <th className="py-2">Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variants.map((v) => (
+                          <tr key={v.id} className="border-t border-gray-200 dark:border-gray-700">
+                            <td className="py-3">
+                              <div className="text-sm">{Object.entries(v.attrs).map(([k,val]) => `${k}: ${val}`).join(' • ')}</div>
+                            </td>
+                            <td className="py-3">
+                              <input value={v.sku || ''} onChange={(e) => setVariants(prev => prev.map(x => x.id === v.id ? { ...x, sku: e.target.value } : x))} className="w-full px-2 py-1 rounded border" />
+                            </td>
+                            <td className="py-3">
+                              <input type="number" value={v.price as any || ''} onChange={(e) => setVariants(prev => prev.map(x => x.id === v.id ? { ...x, price: e.target.value === '' ? '' : Number(e.target.value) } : x))} className="w-full px-2 py-1 rounded border" />
+                            </td>
+                            <td className="py-3">
+                              <input type="number" value={v.stock as any || ''} onChange={(e) => setVariants(prev => prev.map(x => x.id === v.id ? { ...x, stock: e.target.value === '' ? '' : Number(e.target.value) } : x))} className="w-full px-2 py-1 rounded border" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+        )}
+
+        {/* Service Tiers - Only show for service */}
+        {type === 'service' && (
+          <>
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Service Packages</h2>
+                <span className="text-sm text-gray-500">Choose and configure your service tiers</span>
+              </div>
               
-              return (
-                <div key={t} className="relative">
-                  {canEdit && (
-                    <div className="flex justify-end mb-2 space-x-1">
-                      {editingTier === t ? (
-                        <>
-                          <button type="button" onClick={() => setEditingTier(null)} title="Cancel" disabled={submitting} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <XIcon size={16} className="text-gray-500" />
-                          </button>
-                          <button type="button" onClick={() => setEditingTier(null)} title="Save" disabled={submitting} className="p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <Check size={16} />
-                          </button>
-                        </>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {['Basic','Standard','Premium'].map((t) => {
+                  const isActive = tier === t;
+                  const tierAccents = {
+                    Basic: 'text-blue-600 dark:text-blue-400',
+                    Standard: 'text-emerald-600 dark:text-emerald-400',
+                    Premium: 'text-purple-600 dark:text-purple-400'
+                  };
+                  
+                  return (
+                    <div key={t} className="relative">
+                      {canEdit && (
+                        <div className="flex justify-end mb-2 space-x-1">
+                          {editingTier === t ? (
+                            <>
+                              <button type="button" onClick={() => setEditingTier(null)} title="Cancel" disabled={submitting} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <XIcon size={16} className="text-gray-500" />
+                              </button>
+                              <button type="button" onClick={() => setEditingTier(null)} title="Save" disabled={submitting} className="p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <Check size={16} />
+                              </button>
+                            </>
                       ) : (
                         <button type="button" onClick={() => setEditingTier(t)} title="Edit tier" disabled={submitting} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           <Edit2 size={16} className="text-gray-500" />
@@ -1138,7 +1346,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             })}
           </div>
         </div>
-       
+      </>
+    )}
+
         {/* Bottom actions - Cancel, Reset and Submit (Create/Update) */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto">
@@ -1188,6 +1398,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                 setImages([]);
                 setImagePreviews([]);
                 handleRemoveVideo(0);
+                // reset product fields
+                setProductName('');
+                setBrand('');
+                setSku('');
+                setProductPrice('');
+                setStock('');
+                setProductDescription('');
+                // reset attributes & variants
+                setAttributes([]);
+                setVariants([]);
+                setType('service');
               }}
               className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
             >
@@ -1198,9 +1419,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             </button>
           </div>
         </div>
-          </div>
-        </form>
-        )}
+      </div>
+    </form>
+    )}
       </div>
       
       {/* Validation Error Display */}

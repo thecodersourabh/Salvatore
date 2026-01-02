@@ -366,6 +366,29 @@ export const ProductDetailPage: React.FC = () => {
                   <Tag className="h-4 w-4 mr-1" />
                   {product.category}
                 </span>
+
+                {/* Subcategory (if available) */}
+                {product.subcategory && (
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+                    {product.subcategory}
+                  </span>
+                )}
+
+                {(() => {
+                  const productType = (product.type || (product.specifications ? 'service' : 'product')).toLowerCase();
+                  const isProduct = productType === 'product';
+                  const label = isProduct ? 'Product' : 'Service';
+                  const badgeClass = isProduct
+                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-200'
+                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200';
+                  return (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badgeClass}`}>
+                      {isProduct ? <Package className="h-4 w-4 mr-2" /> : <Tag className="h-4 w-4 mr-2" />}
+                      {label}
+                    </span>
+                  );
+                })()}
+
                 {product.brand && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                     <Package className="h-4 w-4 mr-1" />

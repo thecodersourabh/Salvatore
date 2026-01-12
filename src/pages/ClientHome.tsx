@@ -336,59 +336,7 @@ export const ClientHome: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-rose-600 via-rose-700 to-purple-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {/* Categories - Horizontal Ribbon */}
-          <div className="relative">
-            {/* Hidden Left Hover Zone */}
-            <div
-              onMouseEnter={startAutoScrollLeft}
-              onMouseLeave={stopAutoScroll}
-              className="absolute left-0 top-0 bottom-0 w-16 z-10 cursor-pointer"
-            />
-            
-            {/* Hidden Right Hover Zone */}
-            <div
-              onMouseEnter={startAutoScrollRight}
-              onMouseLeave={stopAutoScroll}
-              className="absolute right-0 top-0 bottom-0 w-16 z-10 cursor-pointer"
-            />
-            
-            {/* Categories Scroll Container */}
-            <div 
-              ref={categoryScrollRef}
-              className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-4"
-              style={{ scrollBehavior: 'auto' }}
-            >
-              {/* Create triple set for seamless infinite scroll: [All items] + [All items] + [All items] */}
-              {[...Array(3)].map((_, setIndex) => 
-                sectors.map((sector, index) => (
-                  <button
-                    key={`set${setIndex}-${sector}-${index}`}
-                    onClick={() => {
-                      setSelectedSector(sector);
-                      document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="flex-shrink-0 group"
-                  >
-                    <div className="w-32 h-40 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all group-active:scale-95 relative">
-                      <img 
-                        src={getCategoryImage(sector)} 
-                        alt={translateSector(sector)}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all"></div>
-                      <div className="absolute bottom-0 left-0 right-0 p-2">
-                        <p className="text-sm font-semibold text-white text-center leading-tight drop-shadow-lg">
-                          {translateSector(sector)}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+       
       </div>
 
       {/* Quick Actions - Desktop only: Quick Service and Prime Solution */}

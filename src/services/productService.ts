@@ -21,7 +21,7 @@ export interface TierBasedSpecifications {
 export interface LegacyFormData {
   sku: string;
   title: string;
-  category: string | null; // renamed from sector
+  category: string; // renamed from sector
   subCategory?: string; // service template or sub-category
   name: string; // renamed from serviceName or productName
   serviceNames: string[];
@@ -35,11 +35,11 @@ export interface LegacyFormData {
   productName?: string;
   productDescription?: string;
   brand?: string;
-  currency?: string;
+  currency: string;
   productUnit?: string;
   unit?: string;
   stock?: number | string;
-  price?: number;
+  price: number;
   id?: string;
 }
 
@@ -87,9 +87,9 @@ export interface ProductResponse {
   title?: string; // Custom business name/title separate from product name
   description?: string;
   brand?: string;
-  price?: number;
-  category?: string;
-  currency?: string;
+  price: number;
+  category: string;
+  currency: string;
   unit?: string;
   images?: Array<{
     url: string;
@@ -603,8 +603,8 @@ export class ProductService {
       category: category,
       name: product.name,
       // Expose top-level price & currency for product edit flows
-      price: product.price ?? undefined,
-      currency: product.currency || undefined,
+      price: product.price,
+      currency: product.currency,
       serviceNames: [product.name],
       tier: primaryTier,
       prices,

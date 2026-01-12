@@ -13,7 +13,7 @@ interface Product {
   id?: string;
   productId?: string;  // API returns productId instead of id
   name: string;
-  description: string;
+  description?: string;
   price: number;
   originalPrice?: number;
   currency: string;

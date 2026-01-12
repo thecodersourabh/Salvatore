@@ -16,7 +16,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useSectorTranslation } from '../hooks/useSectorTranslation';
 import { useFilterPersistence } from '../hooks/useFilterPersistence';
 import { ProductCard } from '../components/ProductCard';
 import { EnhancedFilters } from '../components/EnhancedFilters';
@@ -27,7 +26,6 @@ export const ClientHome: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { translateSector } = useSectorTranslation();
   
   // Enhanced filters with persistence
   const {
@@ -197,60 +195,6 @@ export const ClientHome: React.FC = () => {
       'Beautician': <Heart className="h-5 w-5" />
     };
     return icons[sector] || <Star className="h-5 w-5" />;
-  };
-
-  const getCategoryImage = (sector: string) => {
-    const images: Record<string, string> = {
-      'Technology': 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=100&h=100&fit=crop&crop=center',
-      'Electrician': 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=100&h=100&fit=crop&crop=center',
-      'Plumber': 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=100&h=100&fit=crop&crop=center',
-      'Cleaner': 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=100&h=100&fit=crop&crop=center',
-      'Carpenter': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=100&h=100&fit=crop&crop=center',
-      'Beautician': 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=100&h=100&fit=crop&crop=center'
-    };
-    return images[sector] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center';
-  };
-
-  // Auto-scroll functions for hover with proper circular infinite scroll
-  const startAutoScrollLeft = () => {
-    if (scrollIntervalRef.current) return;
-    scrollIntervalRef.current = setInterval(() => {
-      if (categoryScrollRef.current) {
-        const container = categoryScrollRef.current;
-        container.scrollLeft -= 2;
-        
-        // Seamless infinite scroll: when we reach the beginning of the first set,
-        // jump to the equivalent position in the middle set
-        const totalWidth = container.scrollWidth / 3;
-        if (container.scrollLeft <= 0) {
-          container.scrollLeft = totalWidth;
-        }
-      }
-    }, 16);
-  };
-
-  const startAutoScrollRight = () => {
-    if (scrollIntervalRef.current) return;
-    scrollIntervalRef.current = setInterval(() => {
-      if (categoryScrollRef.current) {
-        const container = categoryScrollRef.current;
-        container.scrollLeft += 2;
-        
-        // Seamless infinite scroll: when we reach the end of the second set,
-        // jump back to the equivalent position in the middle set
-        const totalWidth = container.scrollWidth / 3;
-        if (container.scrollLeft >= totalWidth * 2) {
-          container.scrollLeft = totalWidth;
-        }
-      }
-    }, 16);
-  };
-
-  const stopAutoScroll = () => {
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = null;
-    }
   };
 
   // Cleanup interval on unmount

@@ -121,16 +121,18 @@ export const ProductDetailPage: React.FC = () => {
                         product.images?.[0]?.url;
     
     // Use selected package price if available, otherwise fallback to product price
-    const finalPrice = selectedPackage?.data?.price || product.price;
+    const finalPrice = isLease && displayLeasePrice !== null ? Number(lease.price) : (selectedPackage?.data?.price || product.price);
     const packageInfo = selectedPackage ? ` (${selectedPackage.name} Package)` : '';
     
     const cartItem = {
       id: `${product.id || productId!}${selectedPackage ? `-${selectedPackage.name.toLowerCase()}` : ''}`,
-      name: `${product.name}${packageInfo}`,
+      name: `${product.name}${isLease ? ' (Rent)' : ''}${packageInfo}`,
       price: finalPrice,
-      image: primaryImage,
+      image: primaryImage || '',
       providerId: product.createdBy,
-      description: selectedPackage?.data?.features?.join(', ') || product.description
+      description: selectedPackage?.data?.features?.join(', ') || product.description,
+      listingMode: listingMode,
+      lease: isLease ? { price: lease.price, unit: lease.unit } : undefined
     };
     
     addItem(cartItem);
@@ -143,6 +145,20 @@ export const ProductDetailPage: React.FC = () => {
   );
 
   const isSeller = user && ((user as any).role === 'seller' || (user as any).userType === 'seller');
+
+  // Listing/lease helpers
+  const listingMode = product ? (((product as any).listingMode) || ((product as any).lease ? 'lease' : 'sell')) : 'sell';
+  const lease = product ? (product as any).lease || {} : {};
+  const isLease = listingMode === 'lease';
+  const displayUnit = lease?.unit || '';
+  const displayLeasePrice = lease?.price !== undefined && lease?.price !== null ? Math.round(Number(lease.price) || 0) : null;
+
+  // Normalize skills/tags for display
+  const skillsList: string[] = Array.isArray(product?.skills) && (product?.skills as any[])?.length > 0
+    ? (product?.skills as any[])
+    : Array.isArray((product as any)?.tags) && ((product as any).tags as any[])?.length > 0
+      ? (product as any).tags
+      : Array.isArray((product as any)?.specifications?.skills) ? (product as any).specifications.skills : [];
 
   if (loading) {
     return (
@@ -368,9 +384,9 @@ export const ProductDetailPage: React.FC = () => {
                 </span>
 
                 {/* Subcategory (if available) */}
-                {product.subcategory && (
+                {(product as any).subcategory && (
                   <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
-                    {product.subcategory}
+                    {(product as any).subcategory}
                   </span>
                 )}
 
@@ -385,6 +401,20 @@ export const ProductDetailPage: React.FC = () => {
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badgeClass}`}>
                       {isProduct ? <Package className="h-4 w-4 mr-2" /> : <Tag className="h-4 w-4 mr-2" />}
                       {label}
+                    </span>
+                  );
+                })()}
+
+                {/* Listing mode badge (Sell / Lease) */}
+                {(() => {
+                  const mode = listingMode;
+                  const badgeClass = mode === 'lease'
+                    ? 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200'
+                    : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200';
+                  return (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badgeClass}`}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      {mode === 'lease' ? 'Lease' : 'Sell'}
                     </span>
                   );
                 })()}
@@ -413,7 +443,14 @@ export const ProductDetailPage: React.FC = () => {
               {/* Price */}
               <div className="flex items-center flex-wrap gap-3 mb-6">
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(Math.round(Number(selectedPackage?.data?.price ?? product.price) || 0))}
+                  {isLease && displayLeasePrice !== null ? (
+                    <>
+                      {formatCurrency(displayLeasePrice)}
+                      {displayUnit && <span className="ml-2 text-lg text-gray-500">/{displayUnit}</span>}
+                    </>
+                  ) : (
+                    formatCurrency(Math.round(Number(selectedPackage?.data?.price ?? product.price) || 0))
+                  )}
                 </span>
                 {(product as any).originalPrice && ((selectedPackage?.data?.price ?? product.price) < (product as any).originalPrice) && (
                   <span className="text-2xl text-gray-500 dark:text-gray-400 line-through">
@@ -500,11 +537,9 @@ export const ProductDetailPage: React.FC = () => {
                     className="w-full bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <ShoppingCart className="h-5 w-5" />
-                    {(selectedPackage?.data?.price ?? product.price) !== undefined && (
-                      <span className="ml-2 text-sm">
-                        {formatCurrency(Math.round(Number(selectedPackage?.data?.price ?? product.price) || 0))}
-                      </span>
-                    )}
+                    <span className="ml-2 text-sm">
+                      {isLease && displayLeasePrice !== null ? `Rent • ${formatCurrency(displayLeasePrice)}${displayUnit ? `/${displayUnit}` : ''}` : `Add • ${formatCurrency(Math.round(Number(selectedPackage?.data?.price ?? product.price) || 0))}`}
+                    </span>
                   </button>
                   {selectedPackage && (
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
@@ -522,11 +557,11 @@ export const ProductDetailPage: React.FC = () => {
               </div>
 
               {/* Skills/Tags */}
-              {Array.isArray(product.skills || product.tags) && (product.skills || product.tags)?.length > 0 && (
+              {skillsList && skillsList.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Skills & Tags</h3>
                   <div className="flex flex-wrap gap-2">
-                    {(product.skills || product.tags)?.map((skill: string, index: number) => (
+                    {skillsList.map((skill: string, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full"
@@ -548,11 +583,24 @@ export const ProductDetailPage: React.FC = () => {
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                     }`}>
-                      {product.availability.inStock ? 'In Stock' : 'Out of Stock'}
+                      {/* For lease listings show a rent-specific label to clients */}
+                      {product.availability.inStock ? (isLease && currentRole === 'customer' ? 'Available for rent — reserve early' : 'In Stock') : 'Out of Stock'}
                     </span>
-                    {product.availability.quantity && (
+
+                    {/* Stock visibility rules:
+                        - Owners/Sellers can see exact quantity
+                        - Customers: hide exact stock; if sell listing and quantity is low show a short CTA instead
+                        - For lease listings, do not show exact quantity to customers
+                    */}
+                    {(isOwner || isSeller) && product.availability.quantity !== undefined && (
                       <span className="text-gray-600 dark:text-gray-300">
                         Quantity: {product.availability.quantity}
+                      </span>
+                    )}
+
+                    {!(isOwner || isSeller) && product.availability.quantity !== undefined && product.availability.quantity <= 5 && product.availability.quantity > 0 && !isLease && (
+                      <span title="Hurry" className="text-gray-600 dark:text-gray-300">
+                        Limited stock
                       </span>
                     )}
                   </div>

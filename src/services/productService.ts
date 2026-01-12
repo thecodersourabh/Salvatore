@@ -210,7 +210,11 @@ export class ProductService {
   ): CreateProductRequest {
     // Get the selected tier and its details
     const selectedTier = formData.tier || 'Basic';
-    const price = Number(formData.prices?.[selectedTier]) || 0;
+    let price = Number(formData.prices?.[selectedTier]) || 0;
+    // If this product is offered on lease, use the lease price as the top-level price
+    if ((formData as any).listingMode === 'lease') {
+      price = Number((formData as any).leasePrice) || price;
+    }
     
     // Create tags from various sources
     const apiTags: string[] = [];
@@ -264,7 +268,7 @@ export class ProductService {
       });
     }
 
-    return {
+    const result: any = {
       type: formData.type || (Object.keys(tierSpecifications).length ? 'service' : 'product'),
       name: formData.name,
       description: formData.type === 'product' ? (formData.productDescription || '') : (formData.fullFormAnswersPerTier?.[selectedTier]?.description || `Professional ${formData.name || 'service'} with ${selectedTier} tier features`),
@@ -279,13 +283,27 @@ export class ProductService {
         order: index + 1
       })),
       specifications: formData.type === 'product' ? null : tierSpecifications,
-      availability: {
+      availability: (formData as any).listingMode === 'lease' ? {
+        // Lease listings don't expose stock to users — show as available but quantity is 0
+        inStock: true,
+        quantity: 0
+      } : {
         inStock: (Number(formData.stock) || 0) > 0,
         quantity: Number(formData.stock) || 1
       },
+      // Lease metadata (if any)
+      lease: (formData as any).listingMode === 'lease' ? {
+        price: Number((formData as any).leasePrice) || undefined,
+        unit: (formData as any).leaseUnit || undefined
+      } : undefined,
       tags: apiTags,
       skills: formData.tags || []
     };
+
+    // Attach listingMode for backwards compatibility (not all API types include it explicitly)
+    (result as any).listingMode = (formData as any).listingMode || 'sell';
+
+    return result as CreateProductRequest;
   }
 
   /**
@@ -595,7 +613,7 @@ export class ProductService {
     // Extract category from product category or derive from tags
     const category = product.category ? 
       product.category.charAt(0).toUpperCase() + product.category.slice(1) : 
-      'Technology';
+      'Other';
 
     return {
       sku: product.id || product.productId || '',
@@ -619,9 +637,13 @@ export class ProductService {
       productUnit: (product.unit || '') as any,
       unit: (product.unit || '') as any,
       stock: product.availability?.quantity ?? '',
+      // Listing/lease fields (if provided by API)
+      listingMode: (product as any).listingMode || ((product as any).lease ? 'lease' : 'sell'),
+      leasePrice: (product as any).lease?.price ?? (product as any).leasePrice ?? '',
+      leaseUnit: (product as any).lease?.unit ?? (product as any).leaseUnit ?? '',
       // propagate subcategory (API uses `subcategory` but be flexible); fallback to name if absent
       subCategory: (product as any).subcategory || (product as any).subCategory || product.name || ''
-    };
+    } as any;
   }
 
   /**

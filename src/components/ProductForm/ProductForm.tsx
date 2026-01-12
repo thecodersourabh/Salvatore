@@ -61,6 +61,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     stock, setStock,
     productUnit, setProductUnit,
     productDescription, setProductDescription,
+    // Listing / Lease fields
+    listingMode, setListingMode,
+    leasePrice, setLeasePrice,
+    leaseUnit, setLeaseUnit,
     // attributes & variants
     attributes: _attributes, setAttributes,
     variants, setVariants,
@@ -288,6 +292,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
           form.setStock(formData.stock !== undefined && formData.stock !== '' ? String(formData.stock) : '');
           form.setProductUnit(formData.productUnit || formData.unit || 'pcs');
           form.setProductDescription(formData.productDescription || formData.fullFormAnswersPerTier?.[formData.tier]?.description || '');
+
+          // Listing/lease fields
+          if ((formData as any).listingMode) form.setListingMode((formData as any).listingMode);
+          if ((formData as any).leasePrice) form.setLeasePrice(String((formData as any).leasePrice || ''));
+          if ((formData as any).leaseUnit) form.setLeaseUnit((formData as any).leaseUnit);
         } else {
           form.setType('service');
         }
@@ -365,14 +374,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
         return;
       }
 
-      if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) {
-        showValidationError('Please set a valid product price', 'productPrice');
-        return;
-      }
+      if (listingMode === 'sell') {
+        if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) {
+          showValidationError('Please set a valid product price', 'productPrice');
+          return;
+        }
 
-      if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) {
-        showValidationError('Please set a valid stock quantity', 'stock');
-        return;
+        if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) {
+          showValidationError('Please set a valid stock quantity', 'stock');
+          return;
+        }
+      } else if (listingMode === 'lease') {
+        if (!leasePrice || Number(leasePrice) <= 0 || isNaN(Number(leasePrice))) {
+          showValidationError('Please set a valid lease price', 'leasePrice');
+          return;
+        }
+
+        if (!leaseUnit || leaseUnit.trim() === '') {
+          showValidationError('Please select a lease unit (hr/day/month/year)', 'leaseUnit');
+          return;
+        }
       }
 
       if (!productDescription || productDescription.trim() === '') {
@@ -417,6 +438,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       stock,
       productUnit,
       productDescription,
+      // Listing / Lease metadata
+      listingMode,
+      leasePrice,
+      leaseUnit,
       currency: currency || undefined
     }; 
 
@@ -621,8 +646,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     // product specific checks
     if (type === 'product') {
       if (!productName || !brand || !sku) return false;
-      if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) return false;
-      if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) return false;
+
+      if (listingMode === 'sell') {
+        if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) return false;
+        if (stock === '' || stock === null || isNaN(Number(stock)) || Number(stock) < 0) return false;
+      } else if (listingMode === 'lease') {
+        if (!leasePrice || Number(leasePrice) <= 0 || isNaN(Number(leasePrice))) return false;
+        if (!leaseUnit || leaseUnit.trim() === '') return false;
+      }
+
       if (!productDescription || productDescription.trim() === '') return false;
 
       if (!editProductId) {
@@ -636,7 +668,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     }
 
     return false;
-  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, productName, brand, sku, productPrice, stock, productDescription, type]);
+  }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, productName, brand, sku, productPrice, stock, productDescription, listingMode, leasePrice, leaseUnit, type]);
 
   // categoryForSelected removed (not needed when features are template-driven)
 
@@ -1004,43 +1036,103 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                 disabled={submitting}
               />
             </div>
-            {/* Price */}
+            {/* Price + Listing Mode (Sell / Lease) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                 Price ({currency === 'INR' ? '₹' : currency || ''}) <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="number"
-                min="0"
-                value={productPrice || ''}
-                onChange={e => setProductPrice(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                required
-                disabled={submitting}
-              />
-            </div>
-            {/* Stock */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Stock <span className="text-rose-500">*</span></label>
-              <div className="flex items-center space-x-2">
+
+              {/* Show product price for sell listings; show lease price for lease listings */}
+              {listingMode === 'sell' ? (
                 <input
                   type="number"
                   min="0"
-                  value={stock || ''}
-                  onChange={e => setStock(e.target.value)}
-                  className="w-2/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                  required
+                  value={productPrice || ''}
+                  onChange={e => setProductPrice(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                  required={listingMode === 'sell'}
                   disabled={submitting}
                 />
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <div className="w-2/3">
+                    <input
+                      type="number"
+                      min="0"
+                      value={leasePrice || ''}
+                      onChange={e => setLeasePrice(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                      placeholder="Lease price"
+                      required={listingMode === 'lease'}
+                      disabled={submitting}
+                    />
+                  </div>
 
-                <select value={productUnit} onChange={(e) => setProductUnit(e.target.value)} className="w-1/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
-                  <option value="pcs">pcs</option>
-                  <option value="m">m</option>
-                  <option value="meter">meter</option>
-                  <option value="kg">kg</option>
-                </select>
+                  <div className="w-1/3">
+                    <select value={leaseUnit || ''} onChange={(e) => setLeaseUnit(e.target.value as any)} className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white" disabled={submitting}>
+                      <option value="">Select unit</option>
+                      <option value="hr">/hr</option>
+                      <option value="day">/day</option>
+                      <option value="month">/month</option>
+                      <option value="year">/year</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Listing mode toggle */}
+              <div className="mt-2 flex items-center space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="listingMode"
+                    value="sell"
+                    checked={listingMode === 'sell'}
+                    onChange={() => setListingMode('sell')}
+                    className="form-radio text-rose-600"
+                    disabled={submitting}
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-200">Sell</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="listingMode"
+                    value="lease"
+                    checked={listingMode === 'lease'}
+                    onChange={() => setListingMode('lease')}
+                    className="form-radio text-rose-600"
+                    disabled={submitting}
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-200">Lease</span>
+                </label>
               </div>
             </div>
+
+            {/* Stock (hide for lease) */}
+            {listingMode === 'sell' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Stock <span className="text-rose-500">*</span></label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={stock || ''}
+                    onChange={e => setStock(e.target.value)}
+                    className="w-2/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                    required
+                    disabled={submitting}
+                  />
+
+                  <select value={productUnit} onChange={(e) => setProductUnit(e.target.value)} className="w-1/3 px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
+                    <option value="pcs">pcs</option>
+                    <option value="m">m</option>
+                    <option value="meter">meter</option>
+                    <option value="kg">kg</option>
+                  </select>
+                </div>
+              </div>
+            )}
             {/* Description */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Description <span className="text-rose-500">*</span></label>
@@ -1444,6 +1536,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                 // reset attributes & variants
                 setAttributes([]);
                 setVariants([]);
+                // reset listing mode / lease fields
+                setListingMode('sell');
+                setLeasePrice('');
+                setLeaseUnit('');
                 setType('service');
               }}
               className="flex-1 sm:flex-none sm:px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"

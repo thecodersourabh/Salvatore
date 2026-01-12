@@ -27,6 +27,10 @@ export function useProductFormState({
   const [stock, setStock] = useState('');
   const [productUnit, setProductUnit] = useState<string>('pcs'); // e.g., pcs, m, kg
   const [productDescription, setProductDescription] = useState('');
+  // Listing options: sell or lease
+  const [listingMode, setListingMode] = useState<'sell' | 'lease'>('sell');
+  const [leasePrice, setLeasePrice] = useState('');
+  const [leaseUnit, setLeaseUnit] = useState<'hr'|'day'|'month'|'year' | ''>('');
   // Sub-category (user-visible) — maps to API `subcategory`
   const [subCategory, setSubCategory] = useState('');
 
@@ -229,6 +233,11 @@ export function useProductFormState({
         setPrices(fd.prices);
         setDeliveryTimes(fd.deliveryTimes);
         setFullFormAnswersPerTier(fd.fullFormAnswersPerTier);
+        // Listing / lease fields (if present in form data)
+        if ((fd as any).listingMode) setListingMode((fd as any).listingMode);
+        if ((fd as any).leasePrice) setLeasePrice(String((fd as any).leasePrice || ''));
+        if ((fd as any).leaseUnit) setLeaseUnit((fd as any).leaseUnit);
+
         // Determine if existing item is a product or service
         if (fd.variants || fd.brand || fd.sku) {
           setType('product');
@@ -368,9 +377,14 @@ export function useProductFormState({
     stock, setStock,
     productUnit, setProductUnit,
     productDescription, setProductDescription,
+    // Listing / Lease fields
+    listingMode, setListingMode,
+    leasePrice, setLeasePrice,
+    leaseUnit, setLeaseUnit,
     // attributes & variants
     attributes, setAttributes,
     variants, setVariants,
-    addAttribute, updateAttributeOptions, removeAttribute, generateVariants
+    addAttribute, updateAttributeOptions, removeAttribute, generateVariants,
+    // Note: listing/lease helpers are returned above
   };
 }

@@ -27,8 +27,6 @@ export const AppRoutes = () => {
   // Determine if user is a client based on role
   const isClient = currentRole === 'customer';
   
-  console.log('AppRoutes: currentRole =', currentRole, 'isClient =', isClient);
-  
   return (
     <Routes>
       <Route path="/" element={

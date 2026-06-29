@@ -18,11 +18,11 @@ export const useProgressiveProfiling = () => {
 
   // Determine if profiling is required
   const isProfilingRequired = useMemo(() => {
-    // Required if:
-    // 1. User is authenticated as a seller/service provider
-    // 2. Not yet completed
-    // 3. Any step (phone, username, sectors) is incomplete
-    if (!auth.isAuthenticated || profiling.profilingComplete) return false;
+    const isSellerRole = auth.user?.role === 'seller';
+
+    // Required only for authenticated seller/service provider accounts
+    // that have not completed profiling yet.
+    if (!auth.isAuthenticated || profiling.profilingComplete || !isSellerRole) return false;
 
     // Check phone
     if (!profiling.phoneVerified) return true;
@@ -32,7 +32,7 @@ export const useProgressiveProfiling = () => {
     if (!profiling.selectedSectors || profiling.selectedSectors.length === 0) return true;
     // All required steps are done
     return false;
-  }, [auth.isAuthenticated, profiling.profilingComplete, profiling.phoneVerified, profiling.username, profiling.selectedSectors]);
+  }, [auth.isAuthenticated, auth.user?.role, profiling.profilingComplete, profiling.phoneVerified, profiling.username, profiling.selectedSectors]);
 
   // Handle requirement check
   const checkProfilingRequired = useCallback(

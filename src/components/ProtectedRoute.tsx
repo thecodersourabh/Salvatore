@@ -36,8 +36,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/home" replace />;
   }
 
-  // Show profiling flash if required and not completed
-  if (isProfilingRequired && !profilingComplete) {
+  // Show profiling flash only for seller accounts that still need profiling
+  if (isProfilingRequired && !profilingComplete && currentRole === 'seller') {
     return (
       <ProgressiveProfilingFlash
         onComplete={() => {

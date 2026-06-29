@@ -14,7 +14,6 @@ interface PhoneVerificationProps {
 
 const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onPhoneSent, onSkip }) => {
   const dispatch = useAppDispatch();
-  console.log('PhoneVerification component rendered');
   const { phoneNumber, phoneSending, phoneError } = useAppSelector(
     (state) => state.profiling
   );

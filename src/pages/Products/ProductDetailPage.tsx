@@ -469,27 +469,29 @@ export const ProductDetailPage: React.FC = () => {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Package</h3>
                   <div className="flex flex-wrap gap-2">
-                    {Object.entries(product.specifications)
+                    {Object.entries(product.specifications ?? {})
                       .filter(([_, value]) => value && typeof value === 'object')
-                      .map(([tierName, tierData]: [string, any]) => (
-                        <button
-                          key={tierName}
-                          onClick={() => setSelectedPackage({ name: tierName, data: tierData })}
-                          className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 font-medium ${
-                            selectedPackage?.name === tierName
-                              ? 'border-rose-500 bg-rose-500 text-white'
-                              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20'
-                          }`}
-                        >
-                          {tierName}
-                          {tierData.price && (
-                            <span className="ml-2 text-sm">
-                              {formatCurrency(tierData.price)}
-                            </span>
-                          )}
-                        </button>
-                      ))
-                    }
+                      .map(([tierName, packageData]: [string, any]) => {
+                        const tierData = packageData as Record<string, any>;
+                        return (
+                          <button
+                            key={tierName}
+                            onClick={() => setSelectedPackage({ name: tierName, data: tierData })}
+                            className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 font-medium ${
+                              selectedPackage?.name === tierName
+                                ? 'border-rose-500 bg-rose-500 text-white'
+                                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                            }`}
+                          >
+                            {tierName}
+                            {tierData?.price && (
+                              <span className="ml-2 text-sm">
+                                {formatCurrency(tierData.price)}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                   </div>
                   {selectedPackage && (
                     <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -615,57 +617,60 @@ export const ProductDetailPage: React.FC = () => {
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Service Packages</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Object.entries(product.specifications)
+              {Object.entries(product.specifications ?? {})
                 .filter(([_, value]) => value && typeof value === 'object')
-                .map(([tierName, tierData]: [string, any]) => (
-                  <div key={tierName} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                        tierName.toLowerCase() === 'basic' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                        tierName.toLowerCase() === 'standard' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                        'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                      }`}>
-                        {tierName}
-                      </span>
-                      {tierData.price && (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(tierData.price)}
+                .map(([tierName, packageData]: [string, any]) => {
+                  const tierData = packageData as Record<string, any>;
+                  return (
+                    <div key={tierName} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                          tierName.toLowerCase() === 'basic' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                          tierName.toLowerCase() === 'standard' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+                        }`}>
+                          {tierName}
                         </span>
+                        {tierData?.price && (
+                          <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(tierData.price)}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {tierData?.deliveryTime && (
+                        <div className="flex items-center mb-2">
+                          <Clock className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            Delivery: {tierData.deliveryTime}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {tierData?.revisions && (
+                        <div className="flex items-center mb-2">
+                          <CheckCircle className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            Revisions: {tierData.revisions}
+                          </span>
+                        </div>
+                      )}
+
+                      {Array.isArray(tierData?.features) && tierData.features.length > 0 && (
+                        <div className="mt-3">
+                          <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                            {tierData.features.slice(0, 3).map((feature: string, index: number) => (
+                              <li key={index} className="flex items-start">
+                                <CheckCircle className="h-3 w-3 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
-                    
-                    {tierData.deliveryTime && (
-                      <div className="flex items-center mb-2">
-                        <Clock className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          Delivery: {tierData.deliveryTime}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {tierData.revisions && (
-                      <div className="flex items-center mb-2">
-                        <CheckCircle className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          Revisions: {tierData.revisions}
-                        </span>
-                      </div>
-                    )}
-
-                    {Array.isArray(tierData.features) && tierData.features.length > 0 && (
-                      <div className="mt-3">
-                        <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                          {tierData.features.slice(0, 3).map((feature: string, index: number) => (
-                            <li key={index} className="flex items-start">
-                              <CheckCircle className="h-3 w-3 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </div>
         )}

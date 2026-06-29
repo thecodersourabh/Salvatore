@@ -1,4 +1,4 @@
-import{r as k}from"./vendor-B_deTkiR.js";var o={exports:{}},l={};/**
+import{r as k}from"./router-BpGlpfXu.js";var o={exports:{}},l={};/**
  * @license React
  * react-jsx-runtime.production.min.js
  *

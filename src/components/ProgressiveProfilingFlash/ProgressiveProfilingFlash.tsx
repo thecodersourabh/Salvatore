@@ -12,7 +12,6 @@ import OTPVerification from './OTPVerification';
 import UsernameCheck from './UsernameCheck';
 
 interface ProgressiveProfilingFlashProps {
-  onComplete?: () => void;
   onSkip?: () => void;
 }
 
@@ -22,7 +21,6 @@ interface ProgressiveProfilingFlashProps {
  * Collects: Phone verification, Username, Sectors/Services
  */
 const ProgressiveProfilingFlash: React.FC<ProgressiveProfilingFlashProps> = ({
-  onComplete,
   onSkip,
 }) => {
   const dispatch = useAppDispatch();
@@ -60,6 +58,11 @@ const ProgressiveProfilingFlash: React.FC<ProgressiveProfilingFlashProps> = ({
   // Handle phone verification sent
   const handlePhoneSent = () => {
     dispatch(setCurrentStep('otp'));
+  };
+
+  const handleSkip = () => {
+    dispatch(setProfilingComplete(true));
+    onSkip?.();
   };
 
   // Handle OTP verified
@@ -125,7 +128,7 @@ const ProgressiveProfilingFlash: React.FC<ProgressiveProfilingFlashProps> = ({
           {currentStep === 'phone' && (
             <PhoneVerification
               onPhoneSent={handlePhoneSent}
-              onSkip={onSkip}
+              onSkip={handleSkip}
             />
           )}
           {currentStep === 'otp' && (

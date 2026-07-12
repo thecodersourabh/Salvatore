@@ -92,6 +92,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       }
     } catch (error) {
       // Error is handled by Redux
+      console.error('Failed to verify OTP:', error);
     }
   };
 

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   setPhoneNumber,
   clearPhoneError,
   sendPhoneVerification,
 } from '../../store/slices/progressiveProfilingSlice';
-import { VerificationService } from '../../services/verificationService';
+import { countries, Country, getCountryByCode } from '../../data/countries';
+import { useLocationRedux } from '../../hooks/useLocationRedux';
 
 interface PhoneVerificationProps {
   onPhoneSent: () => void;
@@ -17,8 +18,16 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onPhoneSent, onSk
   const { phoneNumber, phoneSending, phoneError } = useAppSelector(
     (state) => state.profiling
   );
+  const { locationData } = useLocationRedux();
 
   const [localError, setLocalError] = useState<string>('');
+  const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
+    if (typeof window === 'undefined') return countries[0];
+
+    const browserLocale = (window.navigator.language || window.navigator.languages?.[0] || 'en-IN').split(/[-_]/).pop()?.toUpperCase();
+    const localeCountry = browserLocale ? getCountryByCode(browserLocale) : undefined;
+    return localeCountry || countries[0];
+  });
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
@@ -31,9 +40,28 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onPhoneSent, onSk
     }
   };
 
+  useEffect(() => {
+    const detectedCountry = locationData?.address?.country
+      ? countries.find((country) => country.name.toLowerCase() === locationData.address!.country.toLowerCase())
+      : undefined;
+
+    if (detectedCountry) {
+      setSelectedCountry(detectedCountry);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const browserLocale = (window.navigator.language || window.navigator.languages?.[0] || 'en-IN').split(/[-_]/).pop()?.toUpperCase();
+      const localeCountry = browserLocale ? getCountryByCode(browserLocale) : undefined;
+      if (localeCountry) {
+        setSelectedCountry(localeCountry);
+      }
+    }
+  }, [locationData?.address?.country, locationData?.address]);
+
   const getPhoneDisplay = (): string => {
     if (!phoneNumber) return '';
-    return VerificationService.formatPhoneForDisplay(phoneNumber);
+    return `${selectedCountry.flag} ${selectedCountry.phoneCode} ${phoneNumber}`;
   };
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -41,27 +69,31 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onPhoneSent, onSk
 
     setLocalError('');
 
+    const localDigits = phoneNumber.replace(/\D/g, '');
+
     // Validate phone number
-    if (!phoneNumber) {
+    if (!localDigits) {
       setLocalError('Please enter your phone number');
       return;
     }
 
-    if (!VerificationService.isValidPhoneNumber(phoneNumber)) {
-      setLocalError('Please enter a valid phone number (10-15 digits)');
+    if (localDigits.length < 7 || localDigits.length > 15) {
+      setLocalError('Please enter a valid phone number (7-15 digits)');
       return;
     }
 
     try {
-      await dispatch(sendPhoneVerification({ phoneNumber })).unwrap();
+      const fullPhoneNumber = `${selectedCountry.phoneCode}${localDigits}`;
+      await dispatch(sendPhoneVerification({ phoneNumber: fullPhoneNumber })).unwrap();
       onPhoneSent();
     } catch (error) {
       // Error is handled by Redux
+      console.error('Failed to send OTP:', error);
     }
   };
 
   const isFormValid =
-    phoneNumber && VerificationService.isValidPhoneNumber(phoneNumber);
+    phoneNumber && phoneNumber.replace(/\D/g, '').length >= 7 && phoneNumber.replace(/\D/g, '').length <= 15;
 
   return (
     <div className="w-full max-w-md mx-auto p-6">
@@ -102,12 +134,30 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onPhoneSent, onSk
             Phone Number
           </label>
           <div className="flex items-center space-x-2">
-            <span className="text-gray-600 dark:text-gray-400 font-medium">+</span>
+            <div className="relative">
+              <select
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const country = countries.find((item) => item.code === e.target.value);
+                  if (country) {
+                    setSelectedCountry(country);
+                  }
+                }}
+                disabled={phoneSending}
+                className="appearance-none min-w-[150px] px-3 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-rose-500 dark:focus:border-rose-500 focus:ring-2 focus:ring-rose-200 dark:focus:ring-rose-900 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-colors dark:bg-gray-900 dark:text-white bg-white dark:bg-gray-900"
+              >
+                {countries.map((country) => (
+                  <option key={country.code} value={country.code}>
+                    {country.flag} {country.phoneCode} {country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               id="phone"
               type="tel"
               inputMode="numeric"
-              placeholder="91 XXXXX XXXXX"
+              placeholder={selectedCountry.phoneCode === '+91' ? '98765 43210' : '9876543210'}
               value={phoneNumber}
               onChange={handlePhoneChange}
               disabled={phoneSending}

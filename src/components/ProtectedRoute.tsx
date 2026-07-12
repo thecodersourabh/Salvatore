@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, loading, userCreated, currentRole } = useAuth();
   const location = useLocation();
-  const { isProfilingRequired, profilingComplete, checkProfilingRequired, reset } = useProgressiveProfiling();
+  const { isProfilingRequired, profilingComplete, checkProfilingRequired, markComplete } = useProgressiveProfiling();
 
   // Check if profiling is required for this user
   useEffect(() => {
@@ -40,13 +40,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (isProfilingRequired && !profilingComplete && currentRole === 'seller') {
     return (
       <ProgressiveProfilingFlash
-        onComplete={() => {
-          // Profiling complete, continue to the page
-          // Flash will unmount automatically
-        }}
         onSkip={() => {
-          // Skip profiling (can be done later)
-          reset();
+          // Skip profiling for now and allow the user to continue
+          checkProfilingRequired(false);
+          markComplete();
         }}
       />
     );

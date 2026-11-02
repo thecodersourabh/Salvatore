@@ -30,7 +30,10 @@ export const useAuth = () => {
       appState: { 
         returnTo: window.location.pathname
       },
-      authorizationParams: role === 'seller' ? { screen_hint: 'signup' } : undefined
+      authorizationParams: {
+        connection: 'sms',
+        ...(role === 'seller' ? { screen_hint: 'signup' } : {})
+      }
     });
   }, [loginWithRedirect]);
 

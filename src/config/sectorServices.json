@@ -895,6 +895,46 @@
           
           
         }
+      },
+      {
+        "name": "Personal Driver",
+        "description": "Local passenger transport and pre-booked driving assistance",
+        "skills": ["Defensive driving", "GPS navigation", "Route planning", "Passenger assistance", "City driving", "Pre-trip vehicle checks", "Time management", "Luggage assistance"],
+        "category": "LOGISTICS",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      },
+      {
+        "name": "Errands & Shopping Assistance",
+        "description": "Local errands, grocery shopping, and pickup or drop-off assistance",
+        "skills": ["Grocery shopping", "Errand running", "Pickup and drop-off", "Receipt handling", "Time management", "Customer communication", "Local route planning"],
+        "category": "PHYSICAL_ONSITE",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      },
+      {
+        "name": "Event Setup & Support",
+        "description": "Practical setup and on-site assistance for small events",
+        "skills": ["Venue setup", "Table and chair arrangement", "Signage setup", "Guest assistance", "Equipment handling", "Event cleanup", "Time coordination"],
+        "category": "PHYSICAL_ONSITE",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      },
+      {
+        "name": "Handyman & Small Home Tasks",
+        "description": "Basic home assembly, installation, and minor non-specialist tasks",
+        "skills": ["Furniture assembly", "Shelf installation", "Picture hanging", "Basic tool handling", "Minor household fixes", "Measurement", "Work area cleanup", "Job safety"],
+        "category": "PHYSICAL_ONSITE",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      },
+      {
+        "name": "Other Service",
+        "description": "For a service not listed above; describe the specific work in your provider profile",
+        "skills": ["Custom service description", "Specialized service", "Task-based service", "On-site service", "Remote service", "Consultation", "Custom request handling"],
+        "category": "CONSULTATION",
+        "timeUnit": "hours",
+        "packageTiers": {}
       }
     ]
   }

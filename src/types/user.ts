@@ -1,18 +1,21 @@
 export type ServiceSector =
   | "Technology"
-  | "electrician"
-  | "plumber"
-  | "carpenter"
-  | "mechanic"
-  | "tailor"
-  | "beautician"
-  | "cleaner"
-  | "painter"
-  | "gardener"
-  | "tutor"
-  | "chef"
-  | "agency"
-  | "other";
+  | "Electrician"
+  | "Plumber"
+  | "Carpenter"
+  | "Mechanic"
+  | "Tailor"
+  | "Beautician"
+  | "Cleaner"
+  | "Painter"
+  | "Gardener"
+  | "Tutor"
+  | "Chef"
+  | "Agency"
+  | "Courier"
+  | "Healthcare"
+  | "Astrologer"
+  | "Other";
 
 export type UserRole = 'customer' | 'seller';
 

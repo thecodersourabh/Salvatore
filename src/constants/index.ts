@@ -20,12 +20,6 @@ export const STORAGE_PREFIXES = {
   AUTH0: ['auth0', '@@auth0spajs@@'],
 } as const;
 
-// Router configuration
-export const ROUTER_FUTURE_CONFIG = {
-  v7_startTransition: true,
-  v7_relativeSplatPath: true,
-} as const;
-
 // UI constants
 export const PROFILE_STEPS = {
   BASIC_INFO: 0,

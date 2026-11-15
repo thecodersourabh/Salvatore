@@ -1,0 +1,63 @@
+name: Security scans
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sast-sca:
+    name: SVA and SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run security:check
+
+  dva:
+    name: Local frontend DVA (OWASP ZAP baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build --ignore-scripts
+      - name: Scan the local frontend preview
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap-report"
+          ./node_modules/.bin/vite preview --host 0.0.0.0 --port 4173 --strictPort > "$RUNNER_TEMP/vite-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/Salvatore/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/Salvatore/ > /dev/null
+
+          docker run --rm --network host \
+            -v "$RUNNER_TEMP/zap-report:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+              -t http://127.0.0.1:4173/Salvatore/ \
+              -I \
+              -r /zap/wrk/zap-report.html \
+              -w /zap/wrk/zap-report.md \
+              -J /zap/wrk/zap-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-baseline-report
+          path: ${{ runner.temp }}/zap-report/
+          if-no-files-found: ignore

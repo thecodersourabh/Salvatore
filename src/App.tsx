@@ -25,7 +25,6 @@ import { getRedirectUri } from "./utils/getRedirectUri";
 import { StatusBarManager } from "./utils/statusBar";
 import {
   DEEP_LINK_SCHEMES,
-  ROUTER_FUTURE_CONFIG,
   SPLASH_CONFIG
 } from "./constants";
 import { AddressBar } from './components/AddressBar';
@@ -57,7 +56,7 @@ function MyApp() {
   }, []);
 
   return (
-    <Router future={ROUTER_FUTURE_CONFIG}>
+    <Router>
       <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
         <AuthProvider>
           <NotificationProvider>

@@ -23,6 +23,7 @@ Provide project context and coding guidelines that AI should follow when generat
 	- Ensure all backgrounds, borders, and text are readable in both themes.
 	- Test responsiveness for mobile and web.
 	- Prefer minimal, reusable code and follow the existing theme structure.
+11. Before checking in code, review the staged changes for security issues and run `npm run security:check` for SVA/SAST and SCA. The pull-request workflow runs a DVA/DAST baseline scan against the locally built frontend; do not point it at a remote or production target. Do not bypass a failed or unavailable security scan.
 
 ---
 API search (brief)

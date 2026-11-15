@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectCurrency } from '../../store/slices/currencySlice';
@@ -19,6 +19,7 @@ import { useProductFormPermissions } from './useProductFormPermissions';
 import { useProductMedia } from './useProductMedia';
 import { useProductFormState } from './useProductFormState';
 import { MediaUploadSection } from './ProductFormSections';
+import { getSectorPackageCategory } from '../../utils/sectorServices';
 
 // NOTE: features are now driven by template questions; no helper fallback is required
 
@@ -36,7 +37,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
   // Currency selector from global store
   const currency = useSelector(selectCurrency);
   const media = useProductMedia();
-  const form = useProductFormState({ editProductId, onSetExistingImages: media.setExistingImages, onSetExistingVideos: media.setExistingVideos });
+  const form = useProductFormState({
+    editProductId,
+    onSetExistingImages: (images) => {
+      media.setExistingImages(images);
+      media.setImages([]);
+      media.setImagePreviews([]);
+    },
+    onSetExistingVideos: (videos) => {
+      media.setExistingVideos(videos);
+      media.setVideos([]);
+      media.setVideoPreviews([]);
+    }
+  });
 
   // Unpack commonly used form & media values for backward compatibility with existing JSX
   const {
@@ -72,27 +85,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     type, setType,
   } = form;
 
-  // Fallback mapping from top-level sector to packageTierTemplates category key
-  const sectorToCategoryMap: Record<string, string> = {
-    Technology: 'DIGITAL_REMOTE',
-    Electrician: 'PHYSICAL_ONSITE',
-    Plumber: 'PHYSICAL_ONSITE',
-    Carpenter: 'PHYSICAL_ONSITE',
-    Mechanic: 'PHYSICAL_ONSITE',
-    Tailor: 'PHYSICAL_ONSITE',
-    Beautician: 'PHYSICAL_ONSITE',
-    Cleaner: 'PHYSICAL_ONSITE',
-    Painter: 'PHYSICAL_ONSITE',
-    Gardener: 'PHYSICAL_ONSITE',
-    Tutor: 'EDUCATION',
-    Chef: 'CULINARY',
-    Agency: 'CONSULTATION',
-    Courier: 'LOGISTICS',
-    Healthcare: 'HEALTHCARE',
-    Astrologer: 'CONSULTATION',
-    Other: 'PHYSICAL_ONSITE'
-  };
-
   const {
     images, setImages,
     imagePreviews, setImagePreviews,
@@ -111,10 +103,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
   // Toast state for validation feedback
   const [validationError, setValidationError] = useState('');
   const [validationField, setValidationField] = useState('');
+  const submissionInProgress = useRef(false);
 
-  // Early permission check - show permission message if user doesn't have access
-  if (authUser && !hasPermission) {
-    return (
+  const renderPermissionDenied = () => (
       <>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16 md:pb-0 pt-16 md:pt-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -187,9 +178,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
         </div>
       </>
     );
-  }
-
-
 
   // Prevent default drag behavior on the document
   useEffect(() => {
@@ -240,16 +228,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
 
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  // Update service list when category changes (moved to form state)
-  useEffect(() => {
-    if (!form.category) return form.setServiceList([]);
-    const list = (sectorServices as any)[form.category]?.services || [];
-    form.setServiceList(list);
-    if (!editProductId && !form.loading) {
-      form.setSelectedService(null);
-    }
-  }, [form.category, editProductId, form.loading]);
-
+  const submitEntityLabel = type === 'service' ? 'Service' : 'Product';
+  const submitActionLabel = editProductId
+    ? 'Updating'
+    : type === 'service'
+      ? 'Adding'
+      : 'Creating';
   // Auto-map selected service/template to Sub-category when in service mode
   useEffect(() => {
     if (selectedService) {
@@ -257,84 +241,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     }
   }, [selectedService, type]);
 
-  // Load existing product data if in edit mode
-  useEffect(() => {
-    const loadProductForEditing = async () => {
-      if (!editProductId) return;
-      
-      form.setLoading(true);
-      try {
-        const product = await ProductService.getProduct(editProductId);
-        
-        if (!product) {
-          throw new Error('Product not found');
-        }
-        
-        // Transform product data to form format
-        const formData = BaseProductService.transformProductResponseToFormData(product);
-        
-        // Populate form fields
-        form.setCategory(formData.category);
-        form.setSelectedServiceNames(formData.serviceNames);
-        form.setTags(formData.tags);
-        form.setTier(formData.tier);
-        form.setPrices(formData.prices);
-        form.setDeliveryTimes(formData.deliveryTimes);
-        form.setFullFormAnswersPerTier(formData.fullFormAnswersPerTier);
-
-        // Populate product-specific fields when editing an existing product
-        if (formData.type === 'product') {
-          form.setType('product');
-          form.setProductName(formData.productName || formData.name || '');
-          form.setBrand(formData.brand || '');
-          form.setSku(formData.sku || '');
-          form.setProductPrice(formData.price ? String(formData.price) : '');
-          form.setStock(formData.stock !== undefined && formData.stock !== '' ? String(formData.stock) : '');
-          form.setProductUnit(formData.productUnit || formData.unit || 'pcs');
-          form.setProductDescription(formData.productDescription || formData.fullFormAnswersPerTier?.[formData.tier]?.description || '');
-
-          // Listing/lease fields
-          if ((formData as any).listingMode) form.setListingMode((formData as any).listingMode);
-          if ((formData as any).leasePrice) form.setLeasePrice(String((formData as any).leasePrice || ''));
-          if ((formData as any).leaseUnit) form.setLeaseUnit((formData as any).leaseUnit);
-        } else {
-          form.setType('service');
-        }
-        
-        // Load existing images from product into media slice
-        if (product.images && product.images.length > 0) {
-          media.setExistingImages(product.images);
-
-          // Clear any new images since we're loading existing ones
-          media.setImages([]);
-          media.setImagePreviews([]);
-        }
-        
-        // Load existing video from product
-        if (product.videoKey) {
-          const videoUrl = ImageService.getImageUrl(product.videoKey);
-          media.setExistingVideos([{ url: videoUrl }]);
-          media.setVideos([]);
-          media.setVideoPreviews([]);
-        }
-        
-      } catch (error) {
-        console.error('Failed to load product for editing:', error);
-      } finally {
-        form.setLoading(false);
-      }
-    };
-
-    loadProductForEditing();
-  }, [editProductId]);
-
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple submissions
-    if (submitting) {
+    // Lock synchronously so repeated clicks cannot start overlapping requests before React rerenders.
+    if (submissionInProgress.current) {
       return;
     }
     
@@ -369,8 +280,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       }
     } else {
       // Product specific validation
-      if (!productName || !brand || !sku) {
-        showValidationError('Please fill in the required product details (Name, Brand, SKU)', 'product');
+      if (!productName || !brand) {
+        showValidationError('Please fill in the required product details (Name, Brand)', 'product');
         return;
       }
 
@@ -446,6 +357,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
     }; 
 
     // Wrap create/update operations in a try/catch so we can show error messages
+    submissionInProgress.current = true;
+    setSubmitting(true);
     try {
       // If editing an existing product, update flow
       if (editProductId) {
@@ -593,6 +506,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       const operation = editProductId ? 'update' : 'create';
       showValidationError(`Failed to ${operation} product: ${errorMessage}`, 'general');
     } finally {
+      submissionInProgress.current = false;
       setSubmitting(false);
     }
   };
@@ -619,12 +533,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
       const basicDeliveryTime = deliveryTimes.Basic;
       if (!basicDeliveryTime || Number(basicDeliveryTime) <= 0 || isNaN(Number(basicDeliveryTime))) return false;
 
-      const sectorToCategoryMap: Record<string, string> = {
-        Technology: 'DIGITAL_REMOTE', Electrician: 'PHYSICAL_ONSITE', Plumber: 'PHYSICAL_ONSITE', Carpenter: 'PHYSICAL_ONSITE', Mechanic: 'PHYSICAL_ONSITE', Tailor: 'PHYSICAL_ONSITE', Beautician: 'PHYSICAL_ONSITE', Cleaner: 'PHYSICAL_ONSITE', Painter: 'PHYSICAL_ONSITE', Gardener: 'PHYSICAL_ONSITE', Tutor: 'EDUCATION', Chef: 'CULINARY', Agency: 'CONSULTATION', Courier: 'LOGISTICS', Healthcare: 'HEALTHCARE', Astrologer: 'CONSULTATION', Other: 'PHYSICAL_ONSITE'
-      };
-
       const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
-      const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
+      const categoryKey = selectedService?.category || getSectorPackageCategory(category || '');
       const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
       const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
       const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
@@ -645,7 +555,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
 
     // product specific checks
     if (type === 'product') {
-      if (!productName || !brand || !sku) return false;
+      if (!productName || !brand) return false;
 
       if (listingMode === 'sell') {
         if (!productPrice || Number(productPrice) <= 0 || isNaN(Number(productPrice))) return false;
@@ -671,6 +581,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
   }, [hasPermission, category, selectedService, images, existingImages, prices, deliveryTimes, fullFormAnswersPerTier, tier, editProductId, packageTierTemplates, productName, brand, sku, productPrice, stock, productDescription, listingMode, leasePrice, leaseUnit, type]);
 
   // categoryForSelected removed (not needed when features are template-driven)
+
+  if (authUser && !hasPermission) {
+    return renderPermissionDenied();
+  }
 
   return (
     <>
@@ -713,7 +627,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                   {submitting ? (
                     <>
                       <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
-                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Processing...</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">{submitActionLabel} {submitEntityLabel}...</span>
                     </>
                   ) : (
                     <>
@@ -755,7 +669,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{editProductId ? 'Updating Service...' : 'Creating Service...'}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{submitActionLabel} {submitEntityLabel}...</div>
                     <div className="text-xs text-gray-500">This may take a few minutes for large videos. Please keep this window open.</div>
                   </div>
                 </div>
@@ -1026,13 +940,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
             </div>
             {/* SKU */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">SKU <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">SKU <span className="text-gray-500 text-xs">(optional)</span></label>
               <input
                 type="text"
                 value={sku || ''}
                 onChange={e => setSku(e.target.value)}
                 className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                required
                 disabled={submitting}
               />
             </div>
@@ -1281,7 +1194,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                           {(() => {
                             // Use global template commonQuestions labels (show these for every service)
                             const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
-                            const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || '';
+                            const categoryKey = selectedService?.category || getSectorPackageCategory(category || '');
                             const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
                             const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
                             const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
@@ -1301,7 +1214,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
                                   const variant = commonDef.variants && commonDef.variants[t] && commonDef.variants[t].placeholder;
                                   placeholder = variant || commonDef.placeholder || '';
                                 } else {
-                                  const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
+                                  const categoryKey = selectedService?.category || getSectorPackageCategory(category || '');
                                   catDef = (packageTierTemplates as any).categoryQuestions?.[categoryKey]?.[qKey];
                                   if (catDef) {
                                     label = catDef.label || label;
@@ -1492,7 +1405,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ ownerId: _ownerId = nu
               {submitting ? (
                 <>
                   <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
-                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Processing...</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">{submitActionLabel} {submitEntityLabel}...</span>
                 </>
               ) : (
                 <>

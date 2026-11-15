@@ -628,19 +628,6 @@
           
           
         }
-      },
-      {
-        "name": "Event Management",
-        "description": "Professional event planning and management",
-        "skills": ["Planning", "Coordination", "Budgeting", "Execution", "Vendor management", "Venue booking", "Guest management", "Virtual events", "Hybrid events", "Corporate events"],
-        "category": "CONSULTATION",
-        "timeUnit": "days",
-        "packageTiers": {
-          
-          
-          
-          
-        }
       }
     ]
   },
@@ -841,8 +828,8 @@
       }
     ]
   },
-  "Other": {
-    "description": "Miscellaneous professional services",
+  "Pet Care": {
+    "description": "Pet sitting, grooming, walking, and everyday animal care",
     "services": [
       {
         "name": "Pet Care",
@@ -850,57 +837,31 @@
         "skills": ["Animal handling", "Grooming", "Feeding", "Safety", "Pet first aid", "Dog walking", "Cat sitting", "Medication administration", "Pet boarding", "Pet training"],
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Moving Services",
-        "description": "Residential and commercial moving",
-        "skills": ["Packing", "Lifting", "Transport", "Organization", "Furniture assembly", "Unpacking", "Storage solutions", "Local moving", "Long distance moving", "Office relocation"],
-        "category": "LOGISTICS",
-        "timeUnit": "hours",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
+        "packageTiers": {}
+      }
+    ]
+  },
+  "Photography & Media": {
+    "description": "Photography services for people, events, and businesses",
+    "services": [
       {
         "name": "Photography",
         "description": "Professional photography services",
         "skills": ["Camera operation", "Lighting", "Editing", "Composition", "Photo retouching", "Portrait photography", "Event photography", "Wedding photography", "Product photography", "Real estate photography"],
         "category": "CREATIVE",
         "timeUnit": "hours",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
+        "packageTiers": {}
+      }
+    ]
+  },
+  "Personal Assistance": {
+    "description": "Personal assistance, errands, and everyday task support",
+    "services": [
       {
         "name": "Personal Assistant",
         "description": "Personal assistance and errand services",
         "skills": ["Scheduling", "Task management", "Communication", "Problem solving", "Travel booking", "Errand running", "Document organization", "Virtual assistant", "Administrative support", "Calendar management"],
         "category": "CONSULTATION",
-        "timeUnit": "hours",
-        "packageTiers": {
-          
-          
-          
-          
-        }
-      },
-      {
-        "name": "Personal Driver",
-        "description": "Local passenger transport and pre-booked driving assistance",
-        "skills": ["Defensive driving", "GPS navigation", "Route planning", "Passenger assistance", "City driving", "Pre-trip vehicle checks", "Time management", "Luggage assistance"],
-        "category": "LOGISTICS",
         "timeUnit": "hours",
         "packageTiers": {}
       },
@@ -911,6 +872,40 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {}
+      }
+    ]
+  },
+  "Transportation": {
+    "description": "Passenger driving, moving, and local transportation services",
+    "services": [
+      {
+        "name": "Personal Driver",
+        "description": "Local passenger transport and pre-booked driving assistance",
+        "skills": ["Defensive driving", "GPS navigation", "Route planning", "Passenger assistance", "City driving", "Pre-trip vehicle checks", "Time management", "Luggage assistance"],
+        "category": "LOGISTICS",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      },
+      {
+        "name": "Moving Services",
+        "description": "Residential and commercial moving",
+        "skills": ["Packing", "Lifting", "Transport", "Organization", "Furniture assembly", "Unpacking", "Storage solutions", "Local moving", "Long distance moving", "Office relocation"],
+        "category": "LOGISTICS",
+        "timeUnit": "hours",
+        "packageTiers": {}
+      }
+    ]
+  },
+  "Event Services": {
+    "description": "Event planning, setup, coordination, and on-site assistance",
+    "services": [
+      {
+        "name": "Event Management",
+        "description": "Professional event planning and management",
+        "skills": ["Planning", "Coordination", "Budgeting", "Execution", "Vendor management", "Venue booking", "Guest management", "Virtual events", "Hybrid events", "Corporate events"],
+        "category": "CONSULTATION",
+        "timeUnit": "days",
+        "packageTiers": {}
       },
       {
         "name": "Event Setup & Support",
@@ -919,7 +914,12 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {}
-      },
+      }
+    ]
+  },
+  "Handyman": {
+    "description": "Basic home assembly, installation, and minor non-specialist tasks",
+    "services": [
       {
         "name": "Handyman & Small Home Tasks",
         "description": "Basic home assembly, installation, and minor non-specialist tasks",
@@ -927,7 +927,12 @@
         "category": "PHYSICAL_ONSITE",
         "timeUnit": "hours",
         "packageTiers": {}
-      },
+      }
+    ]
+  },
+  "Other": {
+    "description": "Choose this only when your service does not fit an available sector",
+    "services": [
       {
         "name": "Other Service",
         "description": "For a service not listed above; describe the specific work in your provider profile",

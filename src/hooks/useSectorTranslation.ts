@@ -40,6 +40,12 @@ const sectorKeyMappings: Record<string, string> = {
   'Courier': 'कूरियर',
   'Healthcare': 'हेल्थकेयर',
   'Astrologer': 'ज्योतिषी',
+  'Pet Care': 'पालतू पशु देखभाल',
+  'Photography & Media': 'फोटोग्राफी और मीडिया',
+  'Personal Assistance': 'व्यक्तिगत सहायता',
+  'Transportation': 'परिवहन',
+  'Event Services': 'कार्यक्रम सेवाएं',
+  'Handyman': 'घरेलू मरम्मत सेवाएं',
   'Other': 'अन्य'
 };
 

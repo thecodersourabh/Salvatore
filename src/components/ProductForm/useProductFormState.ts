@@ -1,11 +1,40 @@
 import { useEffect, useMemo, useState } from 'react';
-import sectorServices from '../../config/sectorServices.json';
 import packageTierTemplates from '../../config/packageTierTemplates.json';
 import productAttributeTemplates from '../../config/productAttributeTemplates.json';
 import productSuggestionConfig from '../../config/productSuggestionConfig.json';
 import { ProductService } from '../../services/cachedServices';
 import { ProductService as BaseProductService } from '../../services/productService';
 import { ImageService } from '../../services/imageService';
+import {
+  findSectorForService,
+  getSectorPackageCategory,
+  getSectorServices
+} from '../../utils/sectorServices';
+
+const isAsciiWordCharacter = (character: string | undefined) => {
+  if (character === undefined) return false;
+  const code = character.charCodeAt(0);
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95;
+};
+
+const findWordMatch = (text: string, word: string) => {
+  const normalizedWord = word.toLowerCase();
+  if (!normalizedWord) return null;
+
+  let index = 0;
+  while (index < text.length) {
+    if (!isAsciiWordCharacter(text[index])) {
+      index += 1;
+      continue;
+    }
+
+    const start = index;
+    while (isAsciiWordCharacter(text[index])) index += 1;
+    const match = text.slice(start, index);
+    if (match.toLowerCase() === normalizedWord) return match;
+  }
+  return null;
+};
 
 // This hook manages all product form state and logic except media and permissions
 export function useProductFormState({
@@ -58,19 +87,11 @@ export function useProductFormState({
 
   // Extract a recent item token from product name using config (returns original casing when possible)
   const extractItemToken = (name = '') => {
-    const cfg: any = (productSuggestionConfig as any) || {};
-    const tokenPriority: string[] = cfg.tokenPriority || [];
+    const tokenPriority = productSuggestionConfig.tokenPriority;
     // Check priority tokens (case-insensitive) and return the matched fragment from original name to preserve casing
     for (const p of tokenPriority) {
-      const rx = new RegExp(`\\b${p}\\b`, 'i');
-      const m = String(name || '').match(rx);
-      if (m && m[0]) return m[0].trim();
-    }
-
-    // Fallback to itemRegex if provided
-    if (cfg.itemRegex) {
-      const m = String(name || '').match(new RegExp(cfg.itemRegex, 'i'));
-      if (m && m[0]) return m[0].trim();
+      const match = findWordMatch(name, p);
+      if (match) return match.trim();
     }
 
     return '';
@@ -154,26 +175,6 @@ export function useProductFormState({
 
   const [loading, setLoading] = useState(false);
 
-  const sectorToCategoryMap: Record<string, string> = {
-    Technology: 'DIGITAL_REMOTE',
-    Electrician: 'PHYSICAL_ONSITE',
-    Plumber: 'PHYSICAL_ONSITE',
-    Carpenter: 'PHYSICAL_ONSITE',
-    Mechanic: 'PHYSICAL_ONSITE',
-    Tailor: 'PHYSICAL_ONSITE',
-    Beautician: 'PHYSICAL_ONSITE',
-    Cleaner: 'PHYSICAL_ONSITE',
-    Painter: 'PHYSICAL_ONSITE',
-    Gardener: 'PHYSICAL_ONSITE',
-    Tutor: 'EDUCATION',
-    Chef: 'CULINARY',
-    Agency: 'CONSULTATION',
-    Courier: 'LOGISTICS',
-    Healthcare: 'HEALTHCARE',
-    Astrologer: 'CONSULTATION',
-    Other: 'PHYSICAL_ONSITE'
-  };
-
   const interp = (s?: string) => {
     if (!s) return s || '';
     const timeUnit = selectedService?.timeUnit || 'days';
@@ -185,7 +186,7 @@ export function useProductFormState({
     if (!selectedService) return;
 
     const commonQs: string[] = Object.keys((packageTierTemplates as any).commonQuestions || {});
-    const categoryKey = selectedService?.category || sectorToCategoryMap[category || ''] || 'PHYSICAL_ONSITE';
+    const categoryKey = selectedService?.category || getSectorPackageCategory(category || '');
     const catQs: string[] = Object.keys(((packageTierTemplates as any).categoryQuestions?.[categoryKey]) || {});
     const serviceQsPerTier: Record<string, Record<string, string>> = (selectedService?.packageTiers?.ServiceQuestions) || {};
     const reqMap: Record<string, boolean> = (selectedService?.packageTiers?.requiredMap) || {};
@@ -208,8 +209,7 @@ export function useProductFormState({
   // Update service list when category changes
   useEffect(() => {
     if (!category) return setServiceList([]);
-    const list = (sectorServices as any)[category]?.services || [];
-    setServiceList(list);
+    setServiceList(getSectorServices(category).services);
     if (!editProductId && !loading) {
       setSelectedService(null);
     }
@@ -226,36 +226,47 @@ export function useProductFormState({
         const formData = BaseProductService.transformProductResponseToFormData(product);
         const fd: any = formData;
 
-        setCategory(fd.category);
-        setSelectedServiceNames(fd.serviceNames);
-        setTags(fd.tags);
-        setTier(fd.tier);
-        setPrices(fd.prices);
-        setDeliveryTimes(fd.deliveryTimes);
-        setFullFormAnswersPerTier(fd.fullFormAnswersPerTier);
-        // Listing / lease fields (if present in form data)
-        if ((fd as any).listingMode) setListingMode((fd as any).listingMode);
-        if ((fd as any).leasePrice) setLeasePrice(String((fd as any).leasePrice || ''));
-        if ((fd as any).leaseUnit) setLeaseUnit((fd as any).leaseUnit);
+        setSelectedServiceNames(fd.serviceNames || []);
+        setTags(fd.tags || []);
+        setTier(fd.tier || 'Basic');
+        setPrices(fd.prices || { Basic: '', Standard: '', Premium: '' });
+        setDeliveryTimes(fd.deliveryTimes || { Basic: '', Standard: '', Premium: '' });
+        setFullFormAnswersPerTier(fd.fullFormAnswersPerTier || { Basic: {}, Standard: {}, Premium: {} });
 
-        // Determine if existing item is a product or service
-        if (fd.variants || fd.brand || fd.sku) {
-          setType('product');
-        } else {
-          setType('service');
+        const isProduct = fd.type === 'product' || (
+          fd.type !== 'service' && Boolean(fd.variants || fd.brand || fd.sku)
+        );
+        setType(isProduct ? 'product' : 'service');
+        setProductName(fd.productName || fd.name || '');
+        setBrand(fd.brand || '');
+        setSku(fd.sku || '');
+        setProductPrice(fd.price != null ? String(fd.price) : fd.productPrice != null ? String(fd.productPrice) : '');
+        setStock(fd.stock != null ? String(fd.stock) : '');
+        setProductUnit(fd.productUnit || fd.unit || 'pcs');
+        setProductDescription(fd.productDescription || fd.fullFormAnswersPerTier?.[fd.tier]?.description || '');
+        setListingMode(fd.listingMode || 'sell');
+        setLeasePrice(fd.leasePrice != null ? String(fd.leasePrice) : '');
+        setLeaseUnit(fd.leaseUnit || '');
+        const serviceLookup = String(fd.subCategory || fd.subcategory || fd.name || '').trim();
+        const requestedCategory = String(fd.category || '');
+        const matchingService = getSectorServices(requestedCategory).services.find(
+          service => service.name.trim().toLowerCase() === serviceLookup.toLowerCase()
+        );
+        const relocatedService = matchingService ? null : findSectorForService(serviceLookup);
+        const resolvedCategory = relocatedService?.sector || requestedCategory;
+        const resolvedService = matchingService || relocatedService?.service || null;
+        setCategory(resolvedCategory || null);
+        setServiceList(getSectorServices(resolvedCategory).services);
+        setSubCategory(resolvedService?.name || fd.subCategory || fd.subcategory || '');
+        setSelectedService(resolvedService);
+        if (serviceLookup && !resolvedService) {
+          console.warn('No matching service found for:', serviceLookup, 'in category:', resolvedCategory);
         }
 
-        if (product.images && product.images.length > 0) {
-          onSetExistingImages(product.images);
-        }
-
-        if (product.videoKey) {
-          const videoUrl = ImageService.getImageUrl(product.videoKey);
-          onSetExistingVideos([{ url: videoUrl }]);
-        }
-
-        // Populate sub-category if present in form data
-        setSubCategory(fd.subCategory || (fd as any).subcategory || '');
+        onSetExistingImages(product.images || []);
+        onSetExistingVideos(
+          product.videoKey ? [{ url: ImageService.getImageUrl(product.videoKey) }] : []
+        );
 
         // Load attributes & variants when editing existing product
         if (fd.variants && Array.isArray(fd.variants) && fd.variants.length > 0) {
@@ -289,33 +300,6 @@ export function useProductFormState({
 
     loadProductForEditing();
   }, [editProductId]);
-
-  // Separate effect to handle service selection after category is set (fallback)
-  useEffect(() => {
-    const loadServiceFromCategory = async () => {
-      if (!editProductId || !category) return;
-      try {
-        const product = await ProductService.getProduct(editProductId);
-        if (!product) return;
-        const formData = BaseProductService.transformProductResponseToFormData(product) as any;
-        // Prefer subCategory for mapping to a service/template; fall back to name if absent
-        const lookup = (formData.subCategory || formData.subcategory || formData.name || '').toString().trim();
-        if (category && lookup) {
-          const categoryServices = (sectorServices as any)[category]?.services || [];
-          const matchingService = categoryServices.find((service: any) => {
-            const svcName = (service.name || '').toString().trim();
-            return svcName.toLowerCase() === lookup.toLowerCase();
-          });
-          if (matchingService) setSelectedService(matchingService);
-          else console.warn('No matching service found for:', lookup, 'in category:', category);
-        }
-      } catch (error) {
-        console.error('Failed to set selected service:', error);
-      }
-    };
-
-    loadServiceFromCategory();
-  }, [editProductId, category]);
 
   // Auto-load product attribute template when category changes (only for products)
   useEffect(() => {

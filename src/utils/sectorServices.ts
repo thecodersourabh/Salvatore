@@ -19,6 +19,35 @@ export const getSectorNames = (): ServiceSector[] => {
   return Object.keys(sectorServicesData) as ServiceSector[];
 };
 
+const sectorPackageCategoryMap: Record<string, string> = {
+  Technology: 'DIGITAL_REMOTE',
+  Electrician: 'PHYSICAL_ONSITE',
+  Plumber: 'PHYSICAL_ONSITE',
+  Carpenter: 'PHYSICAL_ONSITE',
+  Mechanic: 'PHYSICAL_ONSITE',
+  Tailor: 'PHYSICAL_ONSITE',
+  Beautician: 'PHYSICAL_ONSITE',
+  Cleaner: 'PHYSICAL_ONSITE',
+  Painter: 'PHYSICAL_ONSITE',
+  Gardener: 'PHYSICAL_ONSITE',
+  Tutor: 'EDUCATION',
+  Chef: 'CULINARY',
+  Agency: 'CONSULTATION',
+  Courier: 'LOGISTICS',
+  Healthcare: 'HEALTHCARE',
+  Astrologer: 'CONSULTATION',
+  'Pet Care': 'PHYSICAL_ONSITE',
+  'Photography & Media': 'CREATIVE',
+  'Personal Assistance': 'CONSULTATION',
+  Transportation: 'LOGISTICS',
+  'Event Services': 'CONSULTATION',
+  Handyman: 'PHYSICAL_ONSITE',
+  Other: 'PHYSICAL_ONSITE'
+};
+
+export const getSectorPackageCategory = (sector: string): string =>
+  sectorPackageCategoryMap[sector] || 'PHYSICAL_ONSITE';
+
 /**
  * Normalize sector name to match the format in data
  * Uses case-insensitive comparison to find the correct sector format from the data
@@ -45,6 +74,22 @@ export const getSectorServices = (sector: ServiceSector | string): SectorService
     description: 'Services not found',
     services: []
   };
+};
+
+export const findSectorForService = (
+  serviceName: string
+): { sector: ServiceSector; service: Service } | null => {
+  const normalizedName = serviceName.trim().toLowerCase();
+  if (!normalizedName) return null;
+
+  for (const sector of getSectorNames()) {
+    const service = getSectorServices(sector).services.find(
+      candidate => candidate.name.trim().toLowerCase() === normalizedName
+    );
+    if (service) return { sector, service };
+  }
+
+  return null;
 };
 
 /**

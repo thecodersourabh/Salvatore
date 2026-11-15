@@ -15,6 +15,12 @@ export type ServiceSector =
   | "Courier"
   | "Healthcare"
   | "Astrologer"
+  | "Pet Care"
+  | "Photography & Media"
+  | "Personal Assistance"
+  | "Transportation"
+  | "Event Services"
+  | "Handyman"
   | "Other";
 
 export type UserRole = 'customer' | 'seller';

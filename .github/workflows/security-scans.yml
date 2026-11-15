@@ -52,9 +52,9 @@ jobs:
             zap-baseline.py \
               -t http://127.0.0.1:4173/Salvatore/ \
               -I \
-              -r /zap/wrk/zap-report.html \
-              -w /zap/wrk/zap-report.md \
-              -J /zap/wrk/zap-report.json
+              -r zap-report.html \
+              -w zap-report.md \
+              -J zap-report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

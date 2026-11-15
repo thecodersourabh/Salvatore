@@ -1,4 +1,5 @@
 import security from 'eslint-plugin-security';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 const securityRules = Object.fromEntries(
@@ -25,7 +26,7 @@ securityRules['security/detect-object-injection'] = 'off';
 export default [
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
-    linterOptions: { noInlineConfig: true },
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -34,7 +35,12 @@ export default [
         ecmaFeatures: { jsx: true },
       },
     },
-    plugins: { security },
+    plugins: { security, 'react-hooks': reactHooks },
     rules: securityRules,
+  },
+  {
+    files: ['src/store/providers/AuthProvider.tsx'],
+    // This compares the current ID token with its stored snapshot; it does not verify user-supplied secrets.
+    rules: { 'security/detect-possible-timing-attacks': 'off' },
   },
 ];

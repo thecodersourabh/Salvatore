@@ -457,7 +457,6 @@ export const Orders = () => {
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
                           {order.items && order.items.length > 0 && order.items[0].images && order.items[0].images.length > 0 ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={order.items[0].images![0]} alt={order.items[0].name || 'Item image'} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>

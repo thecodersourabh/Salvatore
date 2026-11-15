@@ -588,7 +588,7 @@ export class ProductService {
           
           // Parse delivery time to extract numeric value
           const deliveryTimeStr = tierSpec.deliveryTime || '';
-          const timeMatch = deliveryTimeStr ? deliveryTimeStr.match(/(\d+)(-\d+)?/) : null;
+          const timeMatch = deliveryTimeStr ? deliveryTimeStr.match(/(\d+)/) : null;
           deliveryTimes[tier] = timeMatch ? parseInt(timeMatch[1]) : "";
           
           // Populate tier answers

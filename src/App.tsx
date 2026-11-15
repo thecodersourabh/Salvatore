@@ -1,165 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { HashRouter as Router } from "react-router-dom";
-import { useTransition } from "react";
-import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import { Auth0Provider } from "@auth0/auth0-react";
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { Capacitor } from '@capacitor/core';
-import { App as CapApp } from '@capacitor/app';
-import { Browser } from '@capacitor/browser';
 
 // Redux
 import { store, persistor } from './store';
 import { AuthProvider, NotificationProvider, ThemeProvider } from './store/providers';
 
 // Components
+import { Auth0CallbackHandler } from './components/Auth0CallbackHandler';
 import { Navigation } from "./components/Navigation";
 import { ChatBot } from "./components/ChatBot";
 import { Cart } from "./components/Cart";
 import { MobileSplashScreen } from "./components/MobileSplashScreen";
 import { MobileNavBar } from "./components/MobileNavBar";
 import { AppRoutes } from "./routes/AppRoutes";
+import { useWebSocket } from './hooks/useWebSocket';
 
-// Context providers - all migrated to Redux
-// (no longer needed)
-
-
-// Utils and Config
+// Utils and config
 import * as config from "./auth_config.json";
 import { getRedirectUri } from "./utils/getRedirectUri";
 import { StatusBarManager } from "./utils/statusBar";
-import { 
-  AUTH_CODE_SESSION_KEY, 
-  REDIRECT_DELAYS, 
-  DEEP_LINK_SCHEMES, 
-  STORAGE_PREFIXES, 
+import {
+  DEEP_LINK_SCHEMES,
   ROUTER_FUTURE_CONFIG,
   SPLASH_CONFIG
 } from "./constants";
 import { AddressBar } from './components/AddressBar';
-
-// Auth0 callback handler for mobile deep linking
-function Auth0CallbackHandler() {
-  const { handleRedirectCallback } = useAuth0();
-
-  useEffect(() => {
-    const setupMobileListener = async () => {
-      if (!Capacitor.isNativePlatform()) return;
-
-      const listener = await CapApp.addListener('appUrlOpen', async ({ url }) => {
-        await handleDeepLink(url, handleRedirectCallback);
-      });
-
-      return () => listener.remove();
-    };
-
-    setupMobileListener().then(cleanup => {
-      return cleanup;
-    });
-  }, [handleRedirectCallback]);
-
-  return null;
-}
-
-// Handle deep link callbacks
-async function handleDeepLink(url: string, handleRedirectCallback: (url?: string) => Promise<any>) {
-  try {
-    // Handle logout callback
-    if (url.includes(DEEP_LINK_SCHEMES.LOGOUT)) {
-      clearAuthData();
-      redirectToHome();
-      return;
-    }
-    
-    // Handle authentication callback
-    if (url.includes('state') && (url.includes('code') || url.includes('error'))) {
-      const code = extractCodeFromUrl(url);
-      
-      if (isDuplicateCode(code)) return;
-      
-      if (code) sessionStorage.setItem(AUTH_CODE_SESSION_KEY, code);
-      
-      await processAuthCallback(url, handleRedirectCallback);
-    }
-  } finally {
-    closeBrowser();
-  }
-}
-
-// Helper functions for auth callback processing
-function clearAuthData() {
-  sessionStorage.removeItem(AUTH_CODE_SESSION_KEY);
-  clearStorageByPrefix(STORAGE_PREFIXES.AUTH0);
-}
-
-function clearStorageByPrefix(prefixes: readonly string[]) {
-  [localStorage, sessionStorage].forEach(storage => {
-    Object.keys(storage).forEach(key => {
-      if (prefixes.some(prefix => key.startsWith(prefix))) {
-        storage.removeItem(key);
-      }
-    });
-  });
-}
-
-function redirectToHome() {
-  setTimeout(() => {
-    window.location.hash = '/';
-    window.location.reload();
-  }, REDIRECT_DELAYS.LOGOUT);
-}
-
-function extractCodeFromUrl(url: string): string | null {
-  const urlParams = new URLSearchParams(url.split('?')[1] || '');
-  return urlParams.get('code');
-}
-
-function isDuplicateCode(code: string | null): boolean {
-  if (!code) return false;
-  return code === sessionStorage.getItem(AUTH_CODE_SESSION_KEY);
-}
-
-async function processAuthCallback(url: string, handleRedirectCallback: (url?: string) => Promise<any>) {
-  try {
-    await handleRedirectCallback(url);
-    redirectToDashboard();
-  } catch (error) {
-    handleAuthError(error);
-  }
-}
-
-function redirectToDashboard() {
-  setTimeout(() => {
-    window.location.hash = '/';
-  }, REDIRECT_DELAYS.SUCCESS);
-}
-
-function handleAuthError(error: any) {
-  const isNetworkError = error instanceof Error && (
-    error.message.includes('Failed to fetch') ||
-    error.message.includes('CORS') ||
-    error.message.includes('Network request failed')
-  );
-  
-  const isCodeError = error instanceof Error && 
-    error.message.includes('Invalid authorization code');
-
-  if (isNetworkError || isCodeError) {
-    redirectToDashboard();
-  } else {
-    setTimeout(() => {
-      window.location.hash = '/auth?error=callback_failed';
-    }, REDIRECT_DELAYS.ERROR);
-  }
-}
-
-async function closeBrowser() {
-  try {
-    await Browser.close();
-  } catch {
-    // Browser close expected to fail on Android
-  }
-}
 
 // Loading component
 function LoadingSpinner() {
@@ -173,68 +42,23 @@ function LoadingSpinner() {
   );
 }
 
-// Transition indicator
-function TransitionIndicator() {
-  return (
-    <div className="fixed top-4 right-4 z-50 bg-white rounded-full p-2 shadow-lg">
-      <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-600 border-t-transparent"></div>
-    </div>
-  );
-}
-
 // Main App component
 function MyApp() {
-  const [isPending] = useTransition();
-  const [isLoading, setIsLoading] = useState(true);
-  // WebSocket connection status logging
-  try {
-    // Dynamically import to avoid breaking SSR or test environments
-    // If you want to move this to a top-level import, that's fine too
-    // But this avoids issues if the hook is not available in all environments
-    // @ts-ignore
-    const { useWebSocket } = require('./hooks/useWebSocket');
-    const { isConnected, connectionStatus, error } = useWebSocket();
-    useEffect(() => {
-      console.log('[WebSocket] Connected:', isConnected, 'Status:', connectionStatus, 'Error:', error);
-    }, [isConnected, connectionStatus, error]);
-  } catch (e) {
-    // Ignore if hook is not available
-  }
+  const { isConnected, connectionStatus, error } = useWebSocket();
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
-    const initializeApp = async () => {
-      // Test StatusBar first
-      try {
-        await StatusBarManager.initialize();
-      } catch (error) {
-        console.error('STEP 1: StatusBar initialization failed:', error);
-      }
-      
-      // Finish initialization
-      timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-    };
+    if (import.meta.env.DEV) {
+      console.debug('[WebSocket]', { isConnected, connectionStatus, error });
+    }
+  }, [isConnected, connectionStatus, error]);
 
-    initializeApp();
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
+  useEffect(() => {
+    void StatusBarManager.initialize();
   }, []);
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
 
   return (
     <Router future={ROUTER_FUTURE_CONFIG}>
       <div className="h-screen overflow-hidden bg-white dark:bg-gray-900">
-        {isPending && <TransitionIndicator />}
-        
         <AuthProvider>
           <NotificationProvider>
             <ThemeProvider>

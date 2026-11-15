@@ -30,7 +30,7 @@ export const useDashboard = (user: any, idToken: string | null) => {
       profileCompletion: 0,
       activeOrdersCount: null,
     },
-    loading: false,
+    loading: true,
     error: null,
   });
 

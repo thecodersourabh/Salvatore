@@ -137,14 +137,6 @@ export const Dashboard = React.memo(() => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-rose-600 dark:border-rose-500 border-t-transparent"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
       {/* Network Error Message */}

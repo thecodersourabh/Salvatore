@@ -10,25 +10,31 @@ import {
   CheckCircle,
   Shield
 } from "lucide-react";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import bannerImage from "../assets/banner.png";
 
 export const Home = () => {
-  const { loginWithRedirect, isAuthenticated, userCreated, loading } = useAuth();
-  const navigate = useNavigate();
-  
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (isAuthenticated && userCreated && !loading) {
-      const redirectTimer = setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 10); // Minimal delay for state stability
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [isAuthenticated, userCreated, loading, navigate]);
+  const { loginWithRedirect, isAuthenticated, userCreated, loading, accountSetupPending, error } = useAuth();
+
+  if (isAuthenticated && accountSetupPending && error) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (isAuthenticated && loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-rose-600 border-t-transparent"></div>
+          <p className="font-medium text-gray-600 dark:text-gray-300">Preparing your account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && userCreated) {
+    return <Navigate to="/" replace />;
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">

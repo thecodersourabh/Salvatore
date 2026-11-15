@@ -19,6 +19,7 @@ export const useAuth = () => {
   const auth = useAppSelector(selectAuth);
   const currentRole = useAppSelector(selectUserRole);
   const dispatch = useAppDispatch();
+  const accountSetupPending = auth.isAuthenticated && !auth.userCreated;
 
   const loginWithRedirectEnhanced = useCallback((role?: 'seller' | 'customer') => {
     // Store role for processing after login
@@ -87,7 +88,8 @@ export const useAuth = () => {
   return useMemo(() => ({
     // Auth properties
     isAuthenticated: auth.isAuthenticated,
-    loading: auth.loading || auth.creatingUser,
+    loading: auth.loading || auth.creatingUser || (accountSetupPending && !auth.error),
+    accountSetupPending,
     logout: logoutEnhanced,
     loginWithRedirect: loginWithRedirectEnhanced,
     userCreated: auth.userCreated,
@@ -109,6 +111,7 @@ export const useAuth = () => {
     auth.loading,
     auth.creatingUser,
     auth.userCreated,
+    accountSetupPending,
     auth.user,
     auth.apiUser,
     auth.idToken,

@@ -10,6 +10,7 @@ import {
   logout,
   resetCreatingUser,
   selectAuth,
+  setError,
 } from '../slices/authSlice';
 
 // Redux Auth Provider that bridges Auth0 with Redux
@@ -65,27 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchToken = async () => {
       if (isAuthenticated && user?.email) {
         try {
-          // Get fresh access token to ensure session is valid
-          try {
-            await getAccessTokenSilently({ cacheMode: 'off' });
-          } catch (accessTokenError) {
-            const errorMessage = (accessTokenError as any)?.message || '';
-            if (errorMessage.includes('refresh token') || 
-                errorMessage.includes('403') ||
-                errorMessage.includes('Forbidden')) {
-              console.warn('Invalid refresh token detected, logging out');
-              dispatch(logout());
-              auth0Logout({ 
-                logoutParams: {
-                  returnTo: window.location.origin
-                }
-              });
-              return;
-            }
-          }
-          
           const claims = await getIdTokenClaims();
           const token = claims?.__raw || null;
+          if (!token) {
+            throw new Error('Unable to retrieve an authentication token.');
+          }
           
           // Only update if token actually changed
           if (token !== auth.idToken) {
@@ -130,7 +115,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
           console.error('Error fetching ID token:', error);
           dispatch(setIdToken(null));
+          dispatch(setError(error instanceof Error ? error.message : 'Failed to retrieve an authentication token.'));
         }
+      } else if (isAuthenticated && !isLoading) {
+        dispatch(setError('Your Auth0 account must include an email address to continue.'));
       } else if (!isAuthenticated) {
         // Clear token and reset user creation state when not authenticated
         dispatch(setIdToken(null));
@@ -141,16 +129,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchToken();
-  }, [isAuthenticated, user?.email, getIdTokenClaims, getAccessTokenSilently, dispatch, auth0Logout]);
+  }, [isAuthenticated, isLoading, user?.email, getIdTokenClaims, getAccessTokenSilently, dispatch, auth0Logout]);
 
   // Handle user creation/update when authenticated
   useEffect(() => {
     const handleUserCreation = async () => {
       // Early return if not authenticated or missing required data
-      if (!isAuthenticated || !user?.sub || !user?.email || 
-          auth.userCreated || auth.creatingUser || !auth.idToken) {
+      if (!isAuthenticated || isLoading || auth.userCreated || auth.creatingUser) {
         return;
       }
+
+      if (!user?.sub) {
+        dispatch(setError('Unable to identify your Auth0 account.'));
+        return;
+      }
+
+      if (!user.email) return;
+      if (!auth.idToken) return;
         
       const signupRole = localStorage.getItem('signup_role') as 'seller' | 'customer' || 'customer';
       
@@ -168,12 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     // Only run if we need to create a user AND have a token AND are authenticated
-    if (isAuthenticated && user?.sub && user?.email && 
-        !auth.userCreated && !auth.creatingUser && auth.idToken) {
+    if (isAuthenticated && !isLoading && !auth.userCreated && !auth.creatingUser) {
       const timeoutId = setTimeout(handleUserCreation, 25); // Optimized timing
       return () => clearTimeout(timeoutId);
     }
-  }, [isAuthenticated, user?.sub, user?.email, auth.userCreated, auth.creatingUser, auth.idToken, dispatch]);
+  }, [isAuthenticated, isLoading, user?.sub, user?.email, auth.userCreated, auth.creatingUser, auth.idToken, dispatch]);
 
   // Listen for auth state refresh events
   useEffect(() => {

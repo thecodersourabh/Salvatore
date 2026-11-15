@@ -62,12 +62,9 @@ export const createOrUpdateUser = createAsyncThunk(
         throw new Error('No authentication token available');
       }
 
-      // Check if user already exists
-      const userExists = await UserService.isUserExists(user.email);
-      
-      let fetchedUser: User | null = null;
-      
-      if (!userExists) {
+      let fetchedUser = await UserService.getUserByEmail(user.email);
+
+      if (!fetchedUser) {
         // Create new user
         const userData = {
           email: user.email,
@@ -79,14 +76,8 @@ export const createOrUpdateUser = createAsyncThunk(
         };
         
         fetchedUser = await UserService.createUser(userData);
-      } else {
-        // Get existing user
-        fetchedUser = await UserService.getUserByEmail(user.email);
-        
-        // Update role if needed (only for seller signups)
-        if (signupRole === 'seller' && fetchedUser && fetchedUser.role !== 'seller') {
-          fetchedUser = await UserService.updateUser(user.email, { role: 'seller' });
-        }
+      } else if (signupRole === 'seller' && fetchedUser.role !== 'seller') {
+        fetchedUser = await UserService.updateUser(user.email, { role: 'seller' });
       }
       
       // Store user mapping
@@ -274,7 +265,9 @@ export const authSlice = createSlice({
       })
       .addCase(createOrUpdateUser.rejected, (state, action) => {
         state.creatingUser = false;
-        state.error = action.error.message || 'Failed to create/update user';
+        state.error = (typeof action.payload === 'string' && action.payload) ||
+          action.error.message ||
+          'Failed to create/update user';
       })
       .addCase(switchRole.pending, (state) => {
         state.loading = true;

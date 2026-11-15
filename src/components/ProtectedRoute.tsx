@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading, userCreated, currentRole } = useAuth();
+  const { isAuthenticated, loading, accountSetupPending, userCreated, currentRole, error } = useAuth();
   const location = useLocation();
   const { isProfilingRequired, profilingComplete, checkProfilingRequired, markComplete } = useProgressiveProfiling();
 
@@ -27,6 +27,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-600 mx-auto"></div>
           <p className="mt-4 text-sm text-gray-600">Loading, please wait...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accountSetupPending && error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
+        <div className="max-w-md text-center" role="alert">
+          <p className="font-medium text-gray-900 dark:text-white">We couldn&apos;t finish setting up your account.</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-lg bg-rose-600 px-4 py-2 font-medium text-white hover:bg-rose-700"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );

@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
+import type { PersistConfig } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
 import cartReducer from './slices/cartSlice';
@@ -17,10 +18,22 @@ import { userApi } from './api/userApi';
 import { authMiddleware } from './middleware/authMiddleware';
 
 // Persist configuration for auth slice
-const authPersistConfig = {
+const authPersistConfig: PersistConfig<ReturnType<typeof authReducer>> = {
   key: 'auth',
-  version: 1,
+  version: 2,
   storage,
+  blacklist: ['loading', 'userCreated', 'creatingUser', 'error'],
+  migrate: async (state) => {
+    if (!state) return state;
+
+    return {
+      ...state,
+      loading: false,
+      userCreated: false,
+      creatingUser: false,
+      error: null,
+    };
+  },
 };
 
 // Persist configuration for theme slice

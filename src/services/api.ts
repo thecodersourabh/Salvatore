@@ -132,52 +132,13 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
     const maxRetries = ((init as any).retryCount as number | undefined) ?? (isGet ? 0 : 1);
     let attempt = 0;
     while (true) {
+      let response: Response;
       try {
-        const response = await fetch(url, {
+        response = await fetch(url, {
           headers,
           ...init,
         });
-
-        // If successful, parse and return
-        if (response.ok) {
-          return await handleResponse<T>(response);
-        }
-
-        // Handle 401 Unauthorized - Token expired (fallback safety net)
-        if (response.status === 401 && !isRetryAfterRefresh) {
-          console.log('🔐 Received 401 - Token expired unexpectedly, attempting silent refresh...');
-          
-          const newToken = await refreshTokenSilently();
-          
-          if (newToken) {
-            // Retry the request with the new token
-            console.log('🔄 Retrying request with refreshed token...');
-            console.log('🔍 New token length:', newToken.length, 'Token starts with:', newToken.substring(0, 20) + '...');
-            
-            // Create a new options object with the refreshed token
-            const retryOptions = {
-              ...options,
-              idToken: newToken
-            } as ApiOptions;
-            
-            return makeRequest<T>(endpoint, retryOptions, true);
-          } else {
-            // Token refresh failed, proceed with error handling
-            console.warn('⚠️ Token refresh failed, redirecting to login may be required');
-          }
-        }
-
-        // For server errors, optionally retry
-        if (response.status >= 500 && response.status < 600 && attempt < maxRetries) {
-          attempt++;
-          const backoff = 300 * attempt;
-          await new Promise((res) => setTimeout(res, backoff));
-          continue;
-        }
-
-        // No retry or non-server error - let handler throw the appropriate ApiError
-        await ApiErrorHandler.handleResponseError(response);
-      } catch (fetchError) {
+      } catch {
         // Network-level error - retry if attempts left
         if (attempt < maxRetries) {
           attempt++;
@@ -192,6 +153,46 @@ const makeRequest = async <T>(endpoint: string, options: ApiOptions = {}, isRetr
           ErrorType.NETWORK
         );
       }
+
+      // If successful, parse and return
+      if (response.ok) {
+        return await handleResponse<T>(response);
+      }
+
+      // Handle 401 Unauthorized - Token expired (fallback safety net)
+      if (response.status === 401 && !isRetryAfterRefresh) {
+        console.log('🔐 Received 401 - Token expired unexpectedly, attempting silent refresh...');
+
+        const newToken = await refreshTokenSilently();
+
+        if (newToken) {
+          // Retry the request with the new token
+          console.log('🔄 Retrying request with refreshed token...');
+          console.log('🔍 New token length:', newToken.length, 'Token starts with:', newToken.substring(0, 20) + '...');
+
+          // Create a new options object with the refreshed token
+          const retryOptions = {
+            ...options,
+            idToken: newToken
+          } as ApiOptions;
+
+          return makeRequest<T>(endpoint, retryOptions, true);
+        } else {
+          // Token refresh failed, proceed with error handling
+          console.warn('⚠️ Token refresh failed, redirecting to login may be required');
+        }
+      }
+
+      // For server errors, optionally retry
+      if (response.status >= 500 && response.status < 600 && attempt < maxRetries) {
+        attempt++;
+        const backoff = 300 * attempt;
+        await new Promise((res) => setTimeout(res, backoff));
+        continue;
+      }
+
+      // No retry or non-server error - let handler throw the appropriate ApiError
+      await ApiErrorHandler.handleResponseError(response);
     }
   } catch (error) {
     throw ApiErrorHandler.handleError(error);
